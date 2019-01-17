@@ -45,7 +45,7 @@ SUITE (StarterTests) {
         auto runner = starter.createRunner(1, argv);
 
         // Strings in the array cannot be deleted, but delete the array itself immediately.
-        CHECK(runner.get() && runner->isShowStopper());
+        CHECK(runner && runner->isShowStopper());
 
         auto explicitRunner = boost::static_pointer_cast<ShowStopperRunner>(runner);
 
@@ -68,7 +68,7 @@ SUITE (StarterTests) {
 
         auto runner = starter.createRunner(3, argv);
 
-                CHECK (runner.get() && runner->isIndexer());
+                CHECK (runner && runner->isIndexer());
 
         auto explicitRunner = boost::static_pointer_cast<IndexerRunner>(runner);
     }
@@ -90,7 +90,7 @@ SUITE (StarterTests) {
 
         auto runner = starter.createRunner(3, argv);
 
-                CHECK (runner.get() && runner->isIndexer());
+                CHECK (runner && runner->isIndexer());
 
         auto explicitRunner = boost::static_pointer_cast<IndexerRunner>(runner);
     }
@@ -114,7 +114,7 @@ SUITE (StarterTests) {
 
         auto runner = starter.createRunner(3, argv);
 
-                CHECK (runner.get() && runner->isExtractor());
+                CHECK (runner && runner->isExtractor());
 
         auto explicitRunner = boost::static_pointer_cast<ExtractorRunner>(runner);
     }

@@ -8,3 +8,6 @@ Makefile
 CMakeCache.txt
 Testing
 cmake-build-debug/
+src/fastqindex
+test/testapp
+

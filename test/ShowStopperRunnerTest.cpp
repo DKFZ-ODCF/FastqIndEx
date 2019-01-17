@@ -8,12 +8,12 @@
 #include "TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
 
-const string SUITE_INDEXERRUNNER_TESTS = "ShowStopperRunnerTests";
-const string TEST_INDEXERRUNNER_CREATION = "ShowStopperRunnerCreation";
+const char* SUITE_INDEXERRUNNER_TESTS = "ShowStopperRunnerTests";
+const char* TEST_SHOWSTOPPERRUNNER_CREATION = "ShowStopperRunnerCreation";
 
 SUITE (SUITE_INDEXERRUNNER_TESTS) {
     TEST (TEST_INDEXERRUNNER_CREATION) {
-        TestResourcesAndFunctions res(SUITE_INDEXERRUNNER_TESTS, TEST_INDEXERRUNNER_CREATION);
+        TestResourcesAndFunctions res(SUITE_INDEXERRUNNER_TESTS, TEST_SHOWSTOPPERRUNNER_CREATION);
         ShowStopperRunner r;
                 CHECK(r.checkPremises());
                 CHECK(r.isShowStopper());

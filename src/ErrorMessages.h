@@ -9,7 +9,7 @@
 
 #include <string>
 
-const std::string ERR_MESSAGE_FASTQ_INVALID("The fastq file does not exist or cannot be read.");
-const std::string ERR_MESSAGE_INDEX_INVALID("The index file already exists and is either not a file or cannot be written.");
+extern const char *ERR_MESSAGE_FASTQ_INVALID;
+extern const char *ERR_MESSAGE_INDEX_INVALID;
 
 #endif //FASTQINDEX_ERRORMESSAGES_H

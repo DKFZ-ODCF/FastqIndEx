@@ -61,6 +61,10 @@ path TestResourcesAndFunctions::filePath(string filename) {
     return getTestPath().string() + "/" + filename;
 }
 
+path TestResourcesAndFunctions::getResource(string filename) {
+    return path(current_path().string() + string("/resources/") + filename);
+}
+
 path TestResourcesAndFunctions::createEmptyFile(string filename) {
     path _path = filePath(move(filename));
     CreateEmptyFile(_path);

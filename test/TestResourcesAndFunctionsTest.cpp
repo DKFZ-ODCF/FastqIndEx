@@ -6,6 +6,9 @@
 
 #include "TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
+#include <boost/filesystem.hpp>
+
+using namespace boost::filesystem;
 
 SUITE (TestResourcesAndFunctionsTest) {
 
@@ -38,6 +41,13 @@ SUITE (TestResourcesAndFunctionsTest) {
     TEST (testFilePath) {
         TestResourcesAndFunctions res("testFilePath");
                 CHECK(res.filePath("abc.def") == res.getTestPath().string() + "/abc.def");
+    }
+
+    TEST (testGetResource) {
+        TestResourcesAndFunctions res("testGetResource");
+        path expectedPath(current_path().string() + string("/resources/test2.fastq.gz"));
+        path resourcePath = res.getResource("test2.fastq.gz");
+                CHECK(expectedPath == resourcePath);
     }
 
     TEST (testCreateEmptyFile) {

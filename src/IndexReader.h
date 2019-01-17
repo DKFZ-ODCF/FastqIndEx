@@ -1,13 +1,48 @@
-//
-// Created by heinold on 11.01.19.
-//
+/**
+ * Copyright (c) 2019 DKFZ - ODCF
+ *
+ * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqInDex/blob/master/LICENSE.txt).
+ */
 
 #ifndef FASTQINDEX_INDEXREADER_H
 #define FASTQINDEX_INDEXREADER_H
 
+#include "CommonStructs.h"
+#include "IndexProcessor.h"
+#include <boost/shared_ptr.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 
-class IndexReader {
+using namespace boost::filesystem;
+using namespace boost::interprocess;
 
+class IndexReader : public IndexProcessor {
+
+private:
+
+    bool headerWasRead = false;
+
+    explicit IndexReader(const path &indexFile);
+
+    bool open();
+
+    // Weird behaviour, but I could not get this running with a shared_ptr.
+    // This threw boost assertion errors for null pointers.
+    ifstream *inputStream;
+
+    long indicesLeft;
+
+public:
+
+    static boost::shared_ptr<IndexReader> create(const path &indexFile);
+
+    virtual ~IndexReader();
+
+    boost::shared_ptr<IndexHeader> readIndexHeader();
+
+    boost::shared_ptr<IndexEntry> readIndexEntry();
+
+    long getIndicesLeft() { return indicesLeft; }
 };
 
 

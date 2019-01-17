@@ -14,16 +14,16 @@
 
 using namespace boost::filesystem;
 
-const string TEST_FILEPATH_HELPER_METHOD = "testFilePathHelperMethod";
-const string TEST_CHECK_PREMISES_WITH_FASTQ = "testCheckPremisesWithFastq";
-const string TEST_CHECK_PREMISES_WITH_MISSING_FASTQ = "testCheckPremisesWithMissingFastq";
-const string TEST_CHECK_PREMISES_WITH_EXISTING_INDEX = "testCheckPremisesWithExistingIndex";
-const string TEST_CHECK_PREMISES_WITH_FASTQ_BEHIND_SYMLINK_CHAIN = "testCheckPremisesWithFastqBehindSymlinkChain";
-const string TEST_CHECK_PREMISES_WITH_UNREADABLE_FASTQ_BEHIND_SYMLINK_CHAIN = "testCheckPremisesWithUnreadbleFastqBehindSymlinkChain";
+const char* TEST_FILEPATH_HELPER_METHOD = "testFilePathHelperMethod";
+const char* TEST_CHECK_PREMISES_WITH_FASTQ = "testCheckPremisesWithFastq";
+const char* TEST_CHECK_PREMISES_WITH_MISSING_FASTQ = "testCheckPremisesWithMissingFastq";
+const char* TEST_CHECK_PREMISES_WITH_EXISTING_INDEX = "testCheckPremisesWithExistingIndex";
+const char* TEST_CHECK_PREMISES_WITH_FASTQ_BEHIND_SYMLINK_CHAIN = "testCheckPremisesWithFastqBehindSymlinkChain";
+const char* TEST_CHECK_PREMISES_WITH_UNREADABLE_FASTQ_BEHIND_SYMLINK_CHAIN = "testCheckPremisesWithUnreadbleFastqBehindSymlinkChain";
 
-const string SUITE_ID = "RunnerTests";
-const string FASTQ_FILENAME = "some_fastq.fastq";
-const string INDEX_FILENAME = "some_fastq.fastq.idx";
+const char* SUITE_ID = "RunnerTests";
+const char* FASTQ_FILENAME = "some_fastq.fastq";
+const char* INDEX_FILENAME = "some_fastq.fastq.idx";
 
 
 path fastqFile(TestResourcesAndFunctions *res) {

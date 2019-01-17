@@ -26,7 +26,7 @@ bool ActualRunner::checkPremises() {
     bool fastqIsValid = is_regular_file(fastqFile);
 
     if (!fastqIsValid)
-        errorMessages.push_back(ERR_MESSAGE_FASTQ_INVALID);
+        errorMessages.emplace_back(ERR_MESSAGE_FASTQ_INVALID);
 
     // Index files are automatically override but need to have write access!
     bool indexIsValid = true;
@@ -36,7 +36,7 @@ bool ActualRunner::checkPremises() {
 
         if (!is_regular(indexFile)) {
             indexIsValid = false;
-            errorMessages.push_back(ERR_MESSAGE_INDEX_INVALID);
+            errorMessages.emplace_back(ERR_MESSAGE_INDEX_INVALID);
         }
 
     } // It is totally ok, if the index does not exists. We'll create it then.

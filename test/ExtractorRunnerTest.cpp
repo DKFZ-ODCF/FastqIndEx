@@ -8,8 +8,8 @@
 #include "TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
 
-const string SUITE_EXTRACTORRUNNER_TESTS = "ExtractorRunnerTests";
-const string TEST_EXTRACTORRUNNER_CREATION = "ExtractorRunnerCreation";
+const char* SUITE_EXTRACTORRUNNER_TESTS = "ExtractorRunnerTests";
+const char* TEST_EXTRACTORRUNNER_CREATION = "ExtractorRunnerCreation";
 
 SUITE (SUITE_EXTRACTORRUNNER_TESTS) {
     TEST (TEST_EXTRACTORRUNNER_CREATION) {

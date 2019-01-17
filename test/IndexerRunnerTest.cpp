@@ -9,8 +9,8 @@
 #include "TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
 
-const string INDEXERRUNNER_SUITE_TESTS = "IndexerRunnerTests";
-const string TEST_INDEXERRUNNER_CREATION = "IndexerRunnerCreation";
+const char* INDEXERRUNNER_SUITE_TESTS = "IndexerRunnerTests";
+const char* TEST_INDEXERRUNNER_CREATION = "IndexerRunnerCreation";
 
 SUITE (INDEXERRUNNER_SUITE_TESTS) {
     TEST (TEST_INDEXERRUNNER_CREATION) {

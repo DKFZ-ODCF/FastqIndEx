@@ -6,13 +6,13 @@
 
 #include "UnitTest++/UnitTest++.h"
 
+const char *SANITY_TEST = "Sanity";
+
 // See https://github.com/unittest-cpp/unittest-cpp/wiki/Writing-and-Running-Your-First-Test
-TEST(Sanity)
-{
+TEST (SANITY_TEST) {
             CHECK_EQUAL(1, 1);
 }
 
-int main(int, const char *[])
-{
+int main(int, const char *[]) {
     return UnitTest::RunAllTests();
 }

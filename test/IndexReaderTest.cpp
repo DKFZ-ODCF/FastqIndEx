@@ -1,79 +1,223 @@
 /**
- * Copyright (c) 2018 DKFZ - ODCF
+ * Copyright (c) 2019 DKFZ - ODCF
  *
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqInDex/blob/master/LICENSE.txt).
  */
 
-#include "../src/Runner.h"
-#include "../src/Indexer.h"
-#include "../src/IndexerRunner.h"
+#include "../src/IndexReader.h"
+#include "../src/IndexWriter.h"
 #include "TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
+#include <boost/make_shared.hpp>
 
-const string INDEXER_SUITE_TESTS = "IndexerTests";
-const string TEST_INDEXER_CREATION = "IndexerCreation";
-const string TEST_CREATE_INDEX = "testCreateIndex";
+const char *SUITE_INDEXREADER_TESTS = "IndexReaderTestSuite";
+const char *TEST_READER_CREATION_WITH_EXISTING_FILE = "Creation with existing file";
+const char *TEST_READER_CREATION_WITH_UNREADABLE_FILE = "Creation with unreadable file";
+const char *TEST_READER_CREATION_WITH_MISSING_FILE = "Creation with missing file";
+const char *TEST_READER_CREATION_WITH_SIZE_MISMATCH = "Creation with file with size mismatch";
+const char *TEST_READER_CREATION_WITH_TOO_FEW_ENTRIES = "Creation with file with too few entries";
+const char *TEST_READ_HEADER_FROM_NEWLY_OPENED_FILE = "Read header from newly opened file";
+const char *TEST_READ_HEADER_TWICE = "Read header a second time";
+const char *TEST_READ_INDEX_FROM_NEWLY_OPENED_FILE = "Read index entry from newly opened file";
+const char *TEST_READ_INDEX_FROM_FILE = "Read index entry from file";
+const char *TEST_READ_SEVERAL_ENTRIES_FROM_FILE = "Read several index entries from file";
+const char *TEST_READ_INDEX_FROM_END_OF_FILE = "Read index entry at end of file";
 
-SUITE (INDEXER_SUITE_TESTS) {
-    TEST (TEST_INDEXER_CREATION) {
-        TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_INDEXER_CREATION);
+const size_t BASE_FILE_SIZE = sizeof(IndexEntry) + sizeof(IndexHeader);
 
-        path fastq = res.getResource(string("test2.fastq.gz"));
-        path index = res.filePath("test2.fastq.gz.idx");
+auto createCharArray(int size) {
+    boost::shared_ptr<char> arr(new char[size]);
+    memset(arr.get(), 0, size);
+    return arr;
+}
 
-        Indexer indexer(fastq, index);
+path writeTestFile(TestResourcesAndFunctions *res, size_t size) {
+    path idx = res->createEmptyFile("someIndex.idx");
 
-                CHECK_EQUAL(fastq, indexer.getFastq());
-                CHECK_EQUAL(index, indexer.getIndex());
-                CHECK_EQUAL(false, indexer.isDebuggingEnabled());
-                CHECK_EQUAL(false, indexer.wasSuccessful());
-                CHECK_EQUAL(0, indexer.getFoundEntries());
-                CHECK(!indexer.getStoredHeader().get());
+    boost::filesystem::ofstream out(idx);
 
-        indexer = Indexer(fastq, index, true);
-                CHECK_EQUAL(true, indexer.isDebuggingEnabled());
+    auto chars = createCharArray(size);
+    out.write(chars.get(), size);
+    out.flush();
+    return idx;
+}
+
+SUITE (SUITE_INDEXREADER_TESTS) {
+    TEST (TEST_READER_CREATION_WITH_EXISTING_FILE) {
+        TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READER_CREATION_WITH_EXISTING_FILE);
+        path idx = writeTestFile(&res, BASE_FILE_SIZE);
+        auto ir = IndexReader::create(idx);
+                CHECK(ir);
+                CHECK_EQUAL(ir->getIndicesLeft(), 1);
     }
 
-    TEST (TEST_CREATE_HEADER) {
-        TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_INDEX);
+    TEST (TEST_READER_CREATION_WITH_UNREADABLE_FILE) {
+        TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READER_CREATION_WITH_UNREADABLE_FILE);
+        path idx = res.createEmptyFile("someIndex.idx");
+        boost::filesystem::permissions(idx, owner_write | owner_exe);
+        auto ir = IndexReader::create(idx);
 
-        path fastq = res.getResource(string("test2.fastq.gz"));
-        path index = res.filePath("test2.fastq.gz.idx");
-
-        Indexer indexer(fastq, index, true); // Tell the indexer to store entries. This is solely a debug feature but it
-        boost::shared_ptr<IndexHeader> header = indexer.createHeader();
-        CHECK(header.get());
-        CHECK_EQUAL(Indexer::INDEXER_VERSION, header->binary_version);
+                CHECK(!ir);
     }
 
-    TEST (TEST_CREATE_INDEX) {
-        TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_INDEX);
+    TEST (TEST_READER_CREATION_WITH_MISSING_FILE) {
+        TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READER_CREATION_WITH_MISSING_FILE);
+        path idx = res.filePath("someIndex.idx");
+        auto ir = IndexReader::create(idx);
 
-        path fastq = res.getResource(string("test2.fastq.gz"));
-        path index = res.filePath("test2.fastq.gz.idx");
+                CHECK(!ir);
+    }
 
-        Indexer indexer(fastq, index, true); // Tell the indexer to store entries. This is solely a debug feature but it
+    TEST (TEST_READER_CREATION_WITH_SIZE_MISMATCH) {
+        TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READER_CREATION_WITH_SIZE_MISMATCH);
+        path idx = writeTestFile(&res, BASE_FILE_SIZE + 3);
+        auto ir = IndexReader::create(idx);
 
-        bool result = indexer.createIndex();
+                CHECK(!ir);
+    }
 
-        auto storedHeader = indexer.getStoredHeader();
-        auto storedEntries = indexer.getStoredEntries();
-        auto storedLines = indexer.getStoredLines();
+    TEST (TEST_READER_CREATION_WITH_TOO_FEW_ENTRIES) {
+        TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READER_CREATION_WITH_TOO_FEW_ENTRIES);
+        path idx = writeTestFile(&res, sizeof(IndexHeader));
+        auto ir = IndexReader::create(idx);
 
-        int noOfEntriesInTestFastq = 160000;
+                CHECK(!ir);
+    }
 
-                CHECK_EQUAL(true, result);
-                CHECK(exists(index));
-                CHECK(indexer.wasSuccessful());
-                CHECK_EQUAL(noOfEntriesInTestFastq, indexer.getFoundEntries());
+    TEST (TEST_READ_HEADER_FROM_NEWLY_OPENED_FILE) {
+        TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_HEADER_FROM_NEWLY_OPENED_FILE);
+        path idx = writeTestFile(&res, BASE_FILE_SIZE);
+        auto ir = IndexReader::create(idx);
+        auto header = ir->readIndexHeader();
+        // The current test data is just a 0'ed file.
+                CHECK(header);
+                CHECK_EQUAL(header->binary_version, 0);
+                CHECK_EQUAL(header->reserved_0, 0);
+                CHECK_EQUAL(header->reserved_1, 0);
+                CHECK_EQUAL(header->reserved_2, 0);
+                CHECK_EQUAL(header->reserved_3, 0);
+                CHECK_EQUAL(header->magic_no, 0);
+    }
 
-                CHECK(storedHeader.get());
-                CHECK(storedHeader.get()->binary_version == Indexer::INDEXER_VERSION);
+    TEST (TEST_READ_HEADER_TWICE) {
+        TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_HEADER_TWICE);
+        path idx = writeTestFile(&res, BASE_FILE_SIZE);
+        auto ir = IndexReader::create(idx);
+        auto header1 = ir->readIndexHeader();
+        auto header2 = ir->readIndexHeader();
+                CHECK(header1);
+                CHECK(!header2);
+    }
 
-                CHECK(storedEntries.get());
-                CHECK(storedEntries->size() > 1);
+    TEST (TEST_READ_INDEX_FROM_NEWLY_OPENED_FILE) {
+        TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_NEWLY_OPENED_FILE);
+        path idx = writeTestFile(&res, BASE_FILE_SIZE);
+        auto ir = IndexReader::create(idx);
+        auto entry = ir->readIndexEntry();
+                CHECK(!entry);
+    }
 
-                CHECK(storedLines.get());
-                CHECK(storedLines->size() == noOfEntriesInTestFastq);
+    TEST (TEST_READ_INDEX_FROM_FILE) {
+        TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_FILE);
+        path idx = writeTestFile(&res, BASE_FILE_SIZE);
+        auto ir = IndexReader::create(idx);
+        auto header = ir->readIndexHeader();
+        // The current test data is just a 0'ed file.
+                CHECK(header);
+        auto entry = ir->readIndexEntry();
+                CHECK(entry);
+                CHECK_EQUAL(entry->line_starts_at_pos_0, 0);
+                CHECK_EQUAL(entry->starting_line_in_entry, 0);
+                CHECK_EQUAL(entry->bits, 0);
+                CHECK_EQUAL(entry->offset, 0);
+                CHECK_EQUAL(entry->entry_no, 0);
+    }
+
+    TEST (TEST_READ_SEVERAL_ENTRIES_FROM_FILE) {
+        TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_SEVERAL_ENTRIES_FROM_FILE);
+        path idx = writeTestFile(&res, BASE_FILE_SIZE + 4 * sizeof(IndexEntry));
+        auto ir = IndexReader::create(idx);
+        auto header = ir->readIndexHeader();
+        // The current test data is just a 0'ed file.
+                CHECK(header);
+                CHECK(ir->readIndexEntry());
+                CHECK(ir->readIndexEntry());
+                CHECK(ir->readIndexEntry());
+                CHECK(ir->readIndexEntry());
+        auto entry = ir->readIndexEntry();
+                CHECK(entry);
+                CHECK_EQUAL(entry->line_starts_at_pos_0, 0);
+                CHECK_EQUAL(entry->starting_line_in_entry, 0);
+                CHECK_EQUAL(entry->bits, 0);
+                CHECK_EQUAL(entry->offset, 0);
+                CHECK_EQUAL(entry->entry_no, 0);
+    }
+
+    TEST (TEST_READ_INDEX_FROM_END_OF_FILE) {
+        TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_END_OF_FILE);
+        path idx = writeTestFile(&res, BASE_FILE_SIZE);
+        auto ir = IndexReader::create(idx);
+        auto header = ir->readIndexHeader();
+        // The current test data is just a 0'ed file.
+                CHECK(header);
+                CHECK_EQUAL(1, ir->getIndicesLeft());
+        auto entry1 = ir->readIndexEntry();
+                CHECK_EQUAL(0, ir->getIndicesLeft());
+        auto entry2 = ir->readIndexEntry();
+                CHECK_EQUAL(0, ir->getIndicesLeft());
+                CHECK(entry1);
+                CHECK(!entry2); // Test below works? Why is the stream still good? It is too small...
+    }
+
+    bool compareHeader(const boost::shared_ptr<IndexHeader> &left, const boost::shared_ptr<IndexHeader> &right) {
+        return left->magic_no == right->magic_no &&
+               left->reserved_0 == right->reserved_0 &&
+               left->reserved_1 == right->reserved_1 &&
+               left->reserved_2 == right->reserved_2 &&
+               left->reserved_3 == right->reserved_3 &&
+               left->binary_version == right->binary_version;
+    }
+
+    bool compareEntry(const boost::shared_ptr<IndexEntry> &left, const boost::shared_ptr<IndexEntry> &right) {
+        return left->entry_no == right->entry_no &&
+               left->offset == right->offset &&
+               left->bits == right->bits &&
+               left->starting_line_in_entry == right->starting_line_in_entry &&
+               left->line_starts_at_pos_0 == right->line_starts_at_pos_0;
+    }
+
+    TEST (TEST_COMBINED_READ_AND_WRITE) {
+        TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_END_OF_FILE);
+        path idx = res.filePath("someIndex.idx");
+        auto header = boost::make_shared<IndexHeader>(1);
+        auto entry0 = boost::make_shared<IndexEntry>(0, 10, 0, 0, 1);
+        auto entry1 = boost::make_shared<IndexEntry>(0, 10, 0, 0, 0);
+        auto entry2 = boost::make_shared<IndexEntry>(0, 10, 0, 0, 1);
+        auto entry3 = boost::make_shared<IndexEntry>(0, 10, 0, 0, 0);
+
+        auto writer = IndexWriter::create(idx);
+        writer->writeIndexHeader(header);
+        writer->writeIndexEntry(entry0);
+        writer->writeIndexEntry(entry1);
+        writer->writeIndexEntry(entry2);
+        writer->writeIndexEntry(entry3);
+
+        writer->flush();
+        writer->unlock(); // Code smell... ?
+
+        auto reader = IndexReader::create(idx);
+                CHECK_EQUAL(reader->getIndicesLeft(), 4);
+
+        auto readHeader = reader->readIndexHeader();
+        auto readEntry0 = reader->readIndexEntry();
+        auto readEntry1 = reader->readIndexEntry();
+        auto readEntry2 = reader->readIndexEntry();
+        auto readEntry3 = reader->readIndexEntry();
+
+                CHECK(compareHeader(header, readHeader));
+                CHECK(compareEntry(entry0, readEntry0));
+                CHECK(compareEntry(entry1, readEntry1));
+                CHECK(compareEntry(entry2, readEntry2));
+                CHECK(compareEntry(entry3, readEntry3));
     }
 }

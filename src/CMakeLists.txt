@@ -5,6 +5,7 @@
 #
 
 find_package(Boost COMPONENTS system filesystem program_options REQUIRED)
+find_package(Threads)
 include_directories(
         ${TEST_SOURCE_DIR}/src
         ${Boost_INCLUDE_DIRS}
@@ -12,13 +13,25 @@ include_directories(
 
 add_executable(fastqindex main.cpp main.h)
 
-add_library(fastqindexlib  CommonStructs.h Starter.cpp Starter.h
-        Runner.cpp Runner.h ActualRunner.cpp ActualRunner.h IndexerRunner.cpp IndexerRunner.h ExtractorRunner.cpp ExtractorRunner.h ErrorMessages.h Indexer.cpp Indexer.h)
+add_library(
+        fastqindexlib
+        CommonStructs.h
+        Starter.cpp Starter.h
+        Runner.cpp Runner.h
+        ActualRunner.cpp ActualRunner.h
+        IndexerRunner.cpp IndexerRunner.h
+        ExtractorRunner.cpp ExtractorRunner.h
+        ErrorMessages.cpp
+        ErrorMessages.h
+        Indexer.cpp Indexer.h
+        IndexReader.cpp IndexReader.h
+        IndexWriter.cpp IndexWriter.h IndexProcessor.cpp IndexProcessor.h)
 
 target_link_libraries(
         fastqindexlib
         LINK_PUBLIC
         ${Boost_LIBRARIES}
+        ${CMAKE_THREAD_LIBS_INIT}
 )
 
 target_link_libraries(

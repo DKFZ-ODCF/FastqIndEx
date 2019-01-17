@@ -46,6 +46,8 @@ public:
 
     path filePath(string filename);
 
+    path getResource(string filename);
+
     path createEmptyFile(string filename);
 
     static void CreateEmptyFile(path _path);

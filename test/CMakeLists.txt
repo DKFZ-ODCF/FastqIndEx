@@ -21,12 +21,17 @@ add_executable(
         testapp
         main.cpp
         ActualRunnerTest.cpp
+        CommonStructsTest.cpp
+        ExtractorRunnerTest.cpp
+        IndexerRunnerTest.cpp
+        IndexerTest.cpp
+        IndexProcessorTest.cpp
+        IndexReaderTest.cpp
+        IndexWriterTest.cpp
+        ShowStopperRunnerTest.cpp
         StarterTest.cpp
         TestResourcesAndFunctions.cpp TestResourcesAndFunctions.h
         TestResourcesAndFunctionsTest.cpp
-        ShowStopperRunnerTest.cpp
-        IndexerRunnerTest.cpp
-        ExtractorRunnerTest.cpp
 )
 
 target_link_libraries(

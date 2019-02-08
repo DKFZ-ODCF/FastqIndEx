@@ -7,6 +7,7 @@
 #include "../src/Starter.h"
 #include "../src/IndexerRunner.h"
 #include "../src/ExtractorRunner.h"
+#include "TestConstants.h"
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -45,9 +46,9 @@ SUITE (StarterTests) {
         auto runner = starter.createRunner(1, argv);
 
         // Strings in the array cannot be deleted, but delete the array itself immediately.
-        CHECK(runner && runner->isShowStopper());
+        CHECK(runner && runner->isCLIOptionsPrinter());
 
-        auto explicitRunner = boost::static_pointer_cast<ShowStopperRunner>(runner);
+        auto explicitRunner = boost::static_pointer_cast<PrintCLIOptionsRunner>(runner);
 
     }
 
@@ -61,7 +62,7 @@ SUITE (StarterTests) {
 
         Starter starter;
         const char *argv[] = {
-                "/data/michael/Projekte/FastqInDex/src/FastqInDex",
+                TEST_BINARY,
                 "--index",
                 "afastq.gz"
         };
@@ -83,7 +84,7 @@ SUITE (StarterTests) {
 
         Starter starter;
         const char *argv[] = {
-                "/data/michael/Projekte/FastqInDex/src/FastqInDex",
+                TEST_BINARY,
                 "--index",
                 "test2.fastq.gz"
         };
@@ -107,7 +108,7 @@ SUITE (StarterTests) {
 
         Starter starter;
         const char *argv[] = {
-                "/data/michael/Projekte/FastqInDex/src/FastqInDex",
+                TEST_BINARY,
                 "--extract",
                 "test2.fastq.gz"
         };

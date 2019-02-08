@@ -9,54 +9,64 @@
 
 #include <string>
 #include <vector>
+#include "ErrorAccumulator.h"
 
 using namespace std;
 
-class Runner {
+/**
+ * When the application is started it will first create a Starter object which will parse CLI options and finally create
+ * a Runner instance. The Runner instance will afterwards be used to run the application logic (index, extract or print
+ * cli opts).
+ */
+class Runner : public ErrorAccumulator {
+
 protected:
     Runner() = default;
 
-    vector<string> errorMessages;
-
 public:
 
-    vector<string> getErrorMessages() { return errorMessages; }
-
     /**
-     * Can return an exit between 0 and 255
-     * @return
+     * Can return an exit code between 0 and 255.
      */
     virtual unsigned char run() {};
 
+    /**
+     * Check premises for the runner instance and accumulate errors, if the checks fail.
+     * @return true if the premises were validated or false.
+     */
     virtual bool checkPremises() { return true; };
 
     /**
      * Actually for debugging.
-     * @return
      */
-    virtual bool isShowStopper() { return false; };
+    virtual bool isCLIOptionsPrinter() { return false; };
 
     /**
      * Actually for debugging.
-     * @return
      */
     virtual bool isIndexer() { return false; };
 
     /**
      * Actually for debugging.
-     * @return
      */
     virtual bool isExtractor() { return false; };
 };
 
-class ShowStopperRunner : public Runner {
+/**
+ * When the application is started, it will create a Starter, which parses the CLI options. The Starter instance will
+ * afterwards be used to create a Runner (Extractor, Indexer). If the options are somehow wrong and no valid mode could
+ * be determined, a PrintCLIOptionsRunner will be created instead and this will then print out the command line options.
+ */
+class PrintCLIOptionsRunner : public Runner {
 public :
-    ShowStopperRunner() = default;
+    PrintCLIOptionsRunner() = default;
 
+    /**
+     * Print CLI options to cerr
+     */
     unsigned char run() override;
 
-    bool isShowStopper() override { return true; }
-
+    bool isCLIOptionsPrinter() override { return true; }
 };
 
 

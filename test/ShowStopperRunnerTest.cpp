@@ -8,15 +8,15 @@
 #include "TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
 
-const char* SUITE_INDEXERRUNNER_TESTS = "ShowStopperRunnerTests";
-const char* TEST_SHOWSTOPPERRUNNER_CREATION = "ShowStopperRunnerCreation";
+const char* SUITE_INDEXERRUNNER_TESTS = "PrintCLIOptionsRunnerTests";
+const char* TEST_PRINTCLIOPTIONSRUNNER_CREATION = "PrintCLIOptionsRunnerCreation";
 
 SUITE (SUITE_INDEXERRUNNER_TESTS) {
     TEST (TEST_INDEXERRUNNER_CREATION) {
-        TestResourcesAndFunctions res(SUITE_INDEXERRUNNER_TESTS, TEST_SHOWSTOPPERRUNNER_CREATION);
-        ShowStopperRunner r;
+        TestResourcesAndFunctions res(SUITE_INDEXERRUNNER_TESTS, TEST_PRINTCLIOPTIONSRUNNER_CREATION);
+        PrintCLIOptionsRunner r;
                 CHECK(r.checkPremises());
-                CHECK(r.isShowStopper());
+                CHECK(r.isCLIOptionsPrinter());
                 CHECK(!r.isExtractor());
                 CHECK(!r.isIndexer());
                 CHECK(r.getErrorMessages().empty());

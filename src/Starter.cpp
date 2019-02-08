@@ -80,5 +80,5 @@ boost::shared_ptr<Runner> Starter::createRunner(int argc, const char *argv[]) {
         }
     }
 
-    return boost::shared_ptr<Runner>(new ShowStopperRunner());
+    return boost::shared_ptr<Runner>(new PrintCLIOptionsRunner());
 }

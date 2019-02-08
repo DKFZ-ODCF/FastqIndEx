@@ -10,8 +10,8 @@
 
 using namespace std;
 
-unsigned char ShowStopperRunner::run() {
-    cout << *Starter::getInstance()->getCLIOptions();
+unsigned char PrintCLIOptionsRunner::run() {
+    cerr << *Starter::getInstance()->getCLIOptions();
 }
 
 

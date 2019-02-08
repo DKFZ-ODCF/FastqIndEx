@@ -7,7 +7,7 @@
 #ifndef FASTQINDEX_INDEXREADER_H
 #define FASTQINDEX_INDEXREADER_H
 
-#include "CommonStructs.h"
+#include "CommonStructsAndConstants.h"
 #include "IndexProcessor.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/filesystem.hpp>
@@ -16,6 +16,9 @@
 using namespace boost::filesystem;
 using namespace boost::interprocess;
 
+/**
+ * Class for reading an index file.
+ */
 class IndexReader : public IndexProcessor {
 
 private:
@@ -28,7 +31,7 @@ private:
 
     // Weird behaviour, but I could not get this running with a shared_ptr.
     // This threw boost assertion errors for null pointers.
-    ifstream *inputStream;
+    boost::filesystem::ifstream *inputStream;
 
     long indicesLeft;
 
@@ -40,7 +43,7 @@ public:
 
     boost::shared_ptr<IndexHeader> readIndexHeader();
 
-    boost::shared_ptr<IndexEntry> readIndexEntry();
+    boost::shared_ptr<IndexEntryV1> readIndexEntry();
 
     long getIndicesLeft() { return indicesLeft; }
 };

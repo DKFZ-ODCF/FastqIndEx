@@ -32,7 +32,7 @@ add_executable(
         StarterTest.cpp
         TestResourcesAndFunctions.cpp TestResourcesAndFunctions.h
         TestResourcesAndFunctionsTest.cpp
-)
+        TestConstants.cpp TestConstants.h)
 
 target_link_libraries(
         testapp

@@ -18,6 +18,9 @@ ActualRunner::ActualRunner(path fastqfile, path indexfile) {
 }
 
 bool ActualRunner::checkPremises() {
+
+    // TODO Will need to be extended for pipe i/o
+
     // Fastq needs to be an ((existing file OR symlink with a file) AND readable)
 
     if (is_symlink(fastqFile))
@@ -26,20 +29,20 @@ bool ActualRunner::checkPremises() {
     bool fastqIsValid = is_regular_file(fastqFile);
 
     if (!fastqIsValid)
-        errorMessages.emplace_back(ERR_MESSAGE_FASTQ_INVALID);
+        addErrorMessage(ERR_MESSAGE_FASTQ_INVALID);
 
-    // Index files are automatically override but need to have write access!
+    // Index files are automatically overwrite but need to have write access!
     bool indexIsValid = true;
+    // It is totally ok, if the index does not exist. We'll create it then.
     if (exists(indexFile)) {
         if (is_symlink(indexFile))
             indexFile = read_symlink(indexFile);
 
         if (!is_regular(indexFile)) {
             indexIsValid = false;
-            errorMessages.emplace_back(ERR_MESSAGE_INDEX_INVALID);
+            addErrorMessage(ERR_MESSAGE_INDEX_INVALID);
         }
-
-    } // It is totally ok, if the index does not exists. We'll create it then.
+    }
 
     return fastqIsValid && indexIsValid;
 }

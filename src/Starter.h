@@ -22,6 +22,12 @@ static const char *const NOOFREADS_PARAMETER = "noofreads";
 using namespace boost::program_options;
 using namespace std;
 
+/**
+ * The starter is the entrypoint for our application. It will take the command line arguments and try to transform them
+ * to an object of the Runner type. If the options could not be recognized, an object of type PrintCLIOptionsRunner will
+ * be created and used to display all command line options.
+ * The starter is a singleton and will be created and destroyed in the main method.
+ */
 class Starter {
 private:
     options_description cliOptions;

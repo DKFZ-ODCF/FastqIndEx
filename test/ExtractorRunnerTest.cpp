@@ -20,7 +20,7 @@ SUITE (SUITE_EXTRACTORRUNNER_TESTS) {
 
         ExtractorRunner r(fastq, index, 0, 100);
                 CHECK(r.checkPremises());
-                CHECK(!r.isShowStopper());
+                CHECK(!r.isCLIOptionsPrinter());
                 CHECK(r.isExtractor());
                 CHECK(!r.isIndexer());
                 CHECK(r.getErrorMessages().empty());

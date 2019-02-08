@@ -14,18 +14,31 @@
 using namespace std;
 using namespace boost::filesystem;
 
+/**
+ * ActualRunner is a base class for Runners which will (actually) perform operations on FASTQ files (index / extract)
+ */
 class ActualRunner : public Runner {
 
 protected:
 
+    /**
+     * The fastq file to work with.
+     */
     path fastqFile;
 
+    /**
+     * The index file to work with.
+     */
     path indexFile;
 
     ActualRunner(path fastqfile, path indexfile);
 
 public:
 
+    /**
+     * Used to check
+     * @return
+     */
     bool checkPremises() override;
 
     path getFastqFile() { return fastqFile; }

@@ -44,6 +44,10 @@ bool IndexProcessor::lockForWriting() {
     return result;
 }
 
+bool IndexProcessor::hasLock() {
+    return readLockActive || writeLockActive;
+}
+
 /**
  * Note the comment for openRead!
  */

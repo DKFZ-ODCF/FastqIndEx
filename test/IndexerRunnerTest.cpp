@@ -9,21 +9,44 @@
 #include "TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
 
-const char* INDEXERRUNNER_SUITE_TESTS = "IndexerRunnerTests";
-const char* TEST_INDEXERRUNNER_CREATION = "IndexerRunnerCreation";
+const char *INDEXERRUNNER_SUITE_TESTS = "IndexerRunnerTests";
+const char *TEST_INDEXERRUNNER_CREATION = "IndexerRunnerCreation";
+const char *TEST_INDEXERRUNNER_ERRORMESSAGE_PASSTHROUGH = "IndexerRunnerWithErrorMessagPassthrough";
+
+boost::shared_ptr<IndexerRunner> createRunner(const char *const testID, bool createIndex) {
+    TestResourcesAndFunctions res(INDEXERRUNNER_SUITE_TESTS, testID);
+
+    path fastq = res.createEmptyFile("fastq.fastq");
+    if (createIndex)
+        return boost::make_shared<IndexerRunner>(fastq, res.createEmptyFile("fastq.fastq.idx"));
+    else
+        return boost::make_shared<IndexerRunner>(fastq, res.filePath("fastq.fastq.idx"));
+}
 
 SUITE (INDEXERRUNNER_SUITE_TESTS) {
     TEST (TEST_INDEXERRUNNER_CREATION) {
         TestResourcesAndFunctions res(INDEXERRUNNER_SUITE_TESTS, TEST_INDEXERRUNNER_CREATION);
+        path fastq = res.createEmptyFile("fastq.fastq");
+        path index = res.filePath("fastq.fastq.idx");
 
+        auto r = boost::make_shared<IndexerRunner>(fastq, index);
+                CHECK(r->checkPremises()); // Index file missing.
+                CHECK(!r->isCLIOptionsPrinter());
+                CHECK(!r->isExtractor());
+                CHECK(r->isIndexer());
+                CHECK(r->getErrorMessages().empty());
+    }
+
+    TEST (TEST_INDEXERRUNNER_ERRORMESSAGE_PASSTHROUGH) {
+        TestResourcesAndFunctions res(INDEXERRUNNER_SUITE_TESTS, TEST_INDEXERRUNNER_ERRORMESSAGE_PASSTHROUGH);
         path fastq = res.createEmptyFile("fastq.fastq");
         path index = res.createEmptyFile("fastq.fastq.idx");
 
-        IndexerRunner r(fastq, index);
-                CHECK(r.checkPremises());
-                CHECK(!r.isShowStopper());
-                CHECK(!r.isExtractor());
-                CHECK(r.isIndexer());
-                CHECK(r.getErrorMessages().empty());
+        auto r = boost::make_shared<IndexerRunner>(fastq, index);
+                CHECK(!r->checkPremises()); // Index exists. Not indexable!
+                CHECK(!r->isCLIOptionsPrinter());
+                CHECK(!r->isExtractor());
+                CHECK(r->isIndexer());
+                CHECK(!r->getErrorMessages().empty());
     }
 }

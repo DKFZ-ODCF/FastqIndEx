@@ -12,6 +12,11 @@
 
 using namespace boost::filesystem;
 
+/**
+ * The ExtractorRunner will, once started, read in the IndexHeader of an FASTQ index file and, based on the encoded
+ * indexer version, run the appropriate Extractor version to read in an index file.
+ * This modular layout could maybe also be used in another step to convert old indices to new ones.
+ */
 class ExtractorRunner : public ActualRunner {
 protected:
 

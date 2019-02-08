@@ -43,7 +43,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         Indexer indexer(fastq, index, true); // Tell the indexer to store entries. This is solely a debug feature but it
         boost::shared_ptr<IndexHeader> header = indexer.createHeader();
                 CHECK(header.get());
-                CHECK_EQUAL(Indexer::INDEXER_VERSION, header->binary_version);
+                CHECK_EQUAL(Indexer::INDEXER_VERSION, header->indexWriterVersion);
     }
 
     TEST (TEST_CREATE_INDEX) {
@@ -68,7 +68,7 @@ SUITE (INDEXER_SUITE_TESTS) {
                 CHECK_EQUAL(noOfEntriesInTestFastq, indexer.getFoundEntries());
 
                 CHECK(storedHeader);
-                CHECK(storedHeader->binary_version == Indexer::INDEXER_VERSION);
+                CHECK(storedHeader->indexWriterVersion == Indexer::INDEXER_VERSION);
 
                 CHECK(storedEntries);
         if (storedEntries) // Without the if, other tests won't start! At least, we have an error message here and can go on.

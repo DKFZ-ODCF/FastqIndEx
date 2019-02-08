@@ -32,37 +32,35 @@ bool IndexReader::open() {
     if (!lockForReading())
         return false;
     uintmax_t fileSize = file_size(indexFile);
-    if (sizeof(IndexHeader) + sizeof(IndexEntry) > fileSize)
+    if (sizeof(IndexHeader) + sizeof(IndexEntryV1) > fileSize)
         return false;
-    if (0 != (fileSize - sizeof(IndexHeader)) % sizeof(IndexEntry))
+    if (0 != (fileSize - sizeof(IndexHeader)) % sizeof(IndexEntryV1))
         return false;
 
-    this->indicesLeft = (fileSize - sizeof(IndexHeader)) / sizeof(IndexEntry);
+    this->indicesLeft = (fileSize - sizeof(IndexHeader)) / sizeof(IndexEntryV1);
     
-    this->inputStream = new ifstream(indexFile);
+    this->inputStream = new boost::filesystem::ifstream(indexFile);
     return this->inputStream->good();
 }
 
 boost::shared_ptr<IndexHeader> IndexReader::readIndexHeader() {
-
     if (headerWasRead)
         return boost::shared_ptr<IndexHeader>(nullptr);
 
-    auto header = make_shared<IndexHeader>(IndexWriter::INDEX_WRITER_VERSION);
+    auto header = make_shared<IndexHeader>(IndexWriter::INDEX_WRITER_VERSION, sizeof(IndexEntryV1));
     inputStream->read((char *) header.get(), sizeof(IndexHeader));
 
     headerWasRead = true;
     return header;
 }
 
-boost::shared_ptr<IndexEntry> IndexReader::readIndexEntry() {
+boost::shared_ptr<IndexEntryV1> IndexReader::readIndexEntry() {
     //Whyever, eof does not seem to work reliably, so use indicesLeft.
     if (!headerWasRead || inputStream->eof() || indicesLeft <= 0)
-        return boost::shared_ptr<IndexEntry>(nullptr);
+        return boost::shared_ptr<IndexEntryV1>(nullptr);
 
-    auto entry = make_shared<IndexEntry>();
-//    auto get = inputStream->get();
-    inputStream->read((char *) entry.get(), sizeof(IndexEntry));
+    auto entry = make_shared<IndexEntryV1>();
+    inputStream->read((char *) entry.get(), sizeof(IndexEntryV1));
     indicesLeft--;
     return entry;
 }

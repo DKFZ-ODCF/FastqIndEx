@@ -15,7 +15,7 @@ add_executable(fastqindex main.cpp main.h)
 
 add_library(
         fastqindexlib
-        CommonStructs.h
+        CommonStructsAndConstants.h
         Starter.cpp Starter.h
         Runner.cpp Runner.h
         ActualRunner.cpp ActualRunner.h
@@ -25,7 +25,7 @@ add_library(
         ErrorMessages.h
         Indexer.cpp Indexer.h
         IndexReader.cpp IndexReader.h
-        IndexWriter.cpp IndexWriter.h IndexProcessor.cpp IndexProcessor.h)
+        IndexWriter.cpp IndexWriter.h IndexProcessor.cpp IndexProcessor.h CommonStructsAndConstants.cpp ErrorAccumulator.cpp ErrorAccumulator.h)
 
 target_link_libraries(
         fastqindexlib

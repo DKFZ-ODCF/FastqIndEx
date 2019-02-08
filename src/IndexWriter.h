@@ -7,7 +7,7 @@
 #ifndef FASTQINDEX_INDEXWRITER_H
 #define FASTQINDEX_INDEXWRITER_H
 
-#include "CommonStructs.h"
+#include "CommonStructsAndConstants.h"
 #include "IndexProcessor.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/filesystem.hpp>
@@ -17,7 +17,6 @@ using namespace boost::filesystem;
 using namespace boost::interprocess;
 
 class IndexWriter : public IndexProcessor {
-
 private:
 
     /**
@@ -26,23 +25,27 @@ private:
      */
     bool headerWasWritten = false;
 
-    explicit IndexWriter(const path &indexFile);
+    bool writerIsOpen = false;
 
-    bool open();
-
-    boost::shared_ptr<ofstream> outputStream;
+    boost::shared_ptr<boost::filesystem::ofstream> outputStream;
 
 public:
 
     static const unsigned int INDEX_WRITER_VERSION;
 
-    static boost::shared_ptr<IndexWriter> create(const path &indexFile);
+    explicit IndexWriter(const path &indexFile);
+
+    virtual ~IndexWriter();
+
+    bool tryOpen();
 
     bool writeIndexHeader(boost::shared_ptr<IndexHeader> header);
 
-    bool writeIndexEntry(boost::shared_ptr<IndexEntry> entry);
+    bool writeIndexEntry(boost::shared_ptr<IndexEntryV1> entry);
 
     void flush();
+
+    bool close();
 };
 
 

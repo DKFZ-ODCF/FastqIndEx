@@ -12,9 +12,9 @@ const char *SUITE_INDEXPROCESSOR_TESTS = "IndexProcessorTestSuite";
 const char *TEST_GET_CREATION = "Test creation";
 const char *TEST_IP_OPEN_CLOSE_OPEN = "Test write after read and close, effectively test the unlock op.";
 const char *TEST_IP_OPEN_READ_TWICE = "Test read two times";
-const char *TEST_IP_OPEN_READ_WRITE = "Test open of read first, write second";
-const char *TEST_IP_OPEN_WRITE_READ = "Test open of write first, read second";
-const char *TEST_IP_OPEN_WRITE_WRITE = "Test open of write twice";
+const char *TEST_IP_OPEN_READ_WRITE = "Test tryOpen of read first, write second";
+const char *TEST_IP_OPEN_WRITE_READ = "Test tryOpen of write first, read second";
+const char *TEST_IP_OPEN_WRITE_WRITE = "Test tryOpen of write twice";
 
 /**
  * We cannot really test interprocess communication (ok, we could somehow but it is not a real unit test anmyore)
@@ -36,8 +36,11 @@ SUITE (SUITE_INDEXPROCESSOR_TESTS) {
         auto idx = res.createEmptyFile("someTest.idx");
         IndexProcessor ip1(idx);
                 CHECK(ip1.lockForReading());
+                CHECK(ip1.hasLock());
         ip1.unlock();
+                CHECK(!ip1.hasLock());
                 CHECK(ip1.lockForWriting());
+                CHECK(ip1.hasLock());
         ip1.unlock();
     }
 
@@ -54,6 +57,7 @@ SUITE (SUITE_INDEXPROCESSOR_TESTS) {
         auto idx = res.createEmptyFile("someTest.idx");
         IndexProcessor ip1(idx);
                 CHECK(ip1.lockForReading());
+                CHECK(ip1.hasLock());
                 CHECK(!ip1.lockForWriting());
     }
 
@@ -72,5 +76,6 @@ SUITE (SUITE_INDEXPROCESSOR_TESTS) {
                 CHECK(ip1.lockForWriting());
                 CHECK(!ip1.lockForWriting());
         ip1.unlock();
+                CHECK(!ip1.hasLock());
     }
 }

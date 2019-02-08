@@ -13,12 +13,16 @@ int main(int argc, const char *argv[]) {
     Starter *starter = Starter::getInstance();
     auto runner = starter->createRunner(argc, argv);
 
+    int exitCode = 0;
     if (!runner->checkPremises()) {
-        cerr << "There were errors preventing FastqInDex to start:\n";
+        cerr << "There were errors preventing FastqIndEx to start:\n";
         for (auto const &message : runner->getErrorMessages()) {
             cerr << "\t" << message << "\n";
         }
+        exitCode = 1;
     } else {
-        return runner->run();
+        exitCode = runner->run();
     }
+    delete starter;
+    return exitCode;
 }

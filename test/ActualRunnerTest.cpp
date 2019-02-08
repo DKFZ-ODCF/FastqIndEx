@@ -7,6 +7,7 @@
 #include "../src/ActualRunner.h"
 #include "../src/IndexerRunner.h"
 #include "../src/ErrorMessages.h"
+#include "TestConstants.h"
 #include "TestResourcesAndFunctions.h"
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -14,17 +15,14 @@
 
 using namespace boost::filesystem;
 
-const char* TEST_FILEPATH_HELPER_METHOD = "testFilePathHelperMethod";
-const char* TEST_CHECK_PREMISES_WITH_FASTQ = "testCheckPremisesWithFastq";
-const char* TEST_CHECK_PREMISES_WITH_MISSING_FASTQ = "testCheckPremisesWithMissingFastq";
-const char* TEST_CHECK_PREMISES_WITH_EXISTING_INDEX = "testCheckPremisesWithExistingIndex";
-const char* TEST_CHECK_PREMISES_WITH_FASTQ_BEHIND_SYMLINK_CHAIN = "testCheckPremisesWithFastqBehindSymlinkChain";
-const char* TEST_CHECK_PREMISES_WITH_UNREADABLE_FASTQ_BEHIND_SYMLINK_CHAIN = "testCheckPremisesWithUnreadbleFastqBehindSymlinkChain";
+const char *TEST_FILEPATH_HELPER_METHOD = "testFilePathHelperMethod";
+const char *TEST_CHECK_PREMISES_WITH_FASTQ = "testCheckPremisesWithFastq";
+const char *TEST_CHECK_PREMISES_WITH_MISSING_FASTQ = "testCheckPremisesWithMissingFastq";
+const char *TEST_CHECK_PREMISES_WITH_EXISTING_INDEX = "testCheckPremisesWithExistingIndex";
+const char *TEST_CHECK_PREMISES_WITH_FASTQ_BEHIND_SYMLINK_CHAIN = "testCheckPremisesWithFastqBehindSymlinkChain";
+const char *TEST_CHECK_PREMISES_WITH_UNREADABLE_FASTQ_BEHIND_SYMLINK_CHAIN = "testCheckPremisesWithUnreadbleFastqBehindSymlinkChain";
 
-const char* SUITE_ID = "RunnerTests";
-const char* FASTQ_FILENAME = "some_fastq.fastq";
-const char* INDEX_FILENAME = "some_fastq.fastq.idx";
-
+const char *SUITE_ID = "RunnerTests";
 
 path fastqFile(TestResourcesAndFunctions *res) {
     return res->filePath(FASTQ_FILENAME);
@@ -91,6 +89,7 @@ SUITE (SUITE_ID) {
         res.createEmptyFile(INDEX_FILENAME);
         IndexerRunner runner(fastqFile(&res), indexFile(&res));
         bool result = runner.checkPremises();
-                CHECK(result);
+        // It is not allowed to override an existing file! Test has to "fail"
+                CHECK(!result);
     }
 }

@@ -7,6 +7,7 @@
 #ifndef FASTQINDEX_INDEXPROCESSOR_H
 #define FASTQINDEX_INDEXPROCESSOR_H
 
+#include "ErrorAccumulator.h"
 #include <boost/filesystem.hpp>
 #include <boost/interprocess/sync/interprocess_sharable_mutex.hpp>
 #include <boost/thread/mutex.hpp>
@@ -19,10 +20,11 @@ using namespace boost::interprocess;
  * Base class for IndexReader and IndexWriter.
  * Handles interprocess locking for the input/output file.
  * Access to the index file is mutually exclusive!
+ * Reading from or writing to index files never happens with a pipe as index files are really small.
  *
  * @see https://stackoverflow.com/questions/12439099/interprocess-reader-writer-lock-with-boost
  */
-class IndexProcessor {
+class IndexProcessor : public ErrorAccumulator {
 
 private:
 
@@ -69,6 +71,11 @@ public:
      * @return
      */
     bool lockForWriting();
+
+    /**
+     * @return true, if the object has a read or write lock otherwise false.
+     */
+    bool hasLock();
 
     /**
      * Use this to close the output file.

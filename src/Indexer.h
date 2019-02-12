@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2019 DKFZ - ODCF
  *
- * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqInDex/blob/master/LICENSE.txt).
+ * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
 #ifndef FASTQINDEX_INDEXER_H
@@ -14,6 +14,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/ptr_container/ptr_list.hpp>
 #include <boost/make_shared.hpp>
+#include <zlib.h>
 
 using namespace std;
 using namespace boost;
@@ -22,41 +23,12 @@ using namespace boost::ptr_container;
 
 /**
  * The Indexer class is used to walk through a gz compressed FASTQ file and to write an index for this file.
+ * An Indexer is a one-time-use only object! Attempts to reuse it will fail.
+ * While tryOpen() and checkPremises() will call thread / interprocess safe check and access methods for the index file,
+ * all other methods are not. However, createIndex() will call tryOpen() and fail, if a write lock is already active.
+ * It is also not allowed to rerun createIndex().
  */
 class Indexer : public ErrorAccumulator {
-
-private:
-
-    path fastq;
-
-    path index;
-
-    bool finishedSuccessful = false;
-
-    long numberOfFoundEntries = 0;
-
-    bool debuggingEnabled;
-
-    boost::shared_ptr<IndexWriter> indexWriter;
-
-    /**
-     * For debug and test purposes, used when debuggingEnabled is true
-     * keeps the index header
-     */
-    boost::shared_ptr<IndexHeader> storedHeader = boost::shared_ptr<IndexHeader>(nullptr);
-
-    /**
-     * For debug and test purposes, used when debuggingEnabled is true
-     * Keeps all generated index entries
-     */
-    boost::shared_ptr<boost::ptr_list<IndexEntryV1>> storedEntries;
-
-    /**
-     * For debug and test purposes, used when debuggingEnabled is true
-     * Keeps all lines read from the fastq file.
-     */
-    boost::shared_ptr<boost::ptr_list<string>> storedLines;
-
 public:
 
     static const unsigned int CHUNK_SIZE;
@@ -71,8 +43,72 @@ public:
      */
     static const unsigned int INDEXER_VERSION;
 
+private:
+
+    path fastq;
+
+    path index;
+
+    bool finishedSuccessful = false;
+
+    long numberOfFoundEntries = 0;
+
+    bool debuggingEnabled = false;
+
     /**
-     * Be careful, when you enableDebuggin. This will tell the Indexer to store information about the process, which can
+     * Set to true, as soon as createIndex() was started.
+     */
+    bool wasStarted = false;
+
+    boost::shared_ptr<IndexWriter> indexWriter;
+
+    /**
+     * For debug and test purposes, used when debuggingEnabled is true
+     * keeps the index header
+     */
+    boost::shared_ptr<IndexHeader> storedHeader = boost::shared_ptr<IndexHeader>(nullptr);
+
+    /**
+     * For debug and test purposes, used when debuggingEnabled is true
+     * Keeps all generated index entries
+     */
+    vector<boost::shared_ptr<IndexEntryV1>> storedEntries;
+
+    /**
+     * For debug and test purposes, used when debuggingEnabled is true
+     * Keeps all lines read from the fastq file.
+     */
+    vector<string> storedLines;
+
+
+    // Variables used in createIndex() and subsequent methods.
+
+
+    uint totalBytesIn{0};        /* our own total counters to avoid 4GB limit */
+    uint totalBytesOut{0};
+    uint lastBytesIn{0};
+    long offset{0};
+
+    // Marks, if the last inflated block ended with the newline character.
+    // If true, the relativeBlockOffsetInRawFile for the first line in the new block will be 0.
+    // If false, we have to look for the byte relativeBlockOffsetInRawFile.
+    bool lastBlockEndedWithNewline = true;
+
+    ulong lastBlockOffset{0};
+    ulong startingLineOfLastBlock{0};
+
+    bool firstBlock = true;         // Ignore the first block! Does not contain any data.
+    ulong totalLineCount{0};             // The compression block we are in.
+
+    z_stream zStream;
+
+    ulong indexCounter{0};          // Identifier for the new IndexEntry
+
+
+public:
+
+    /**
+     * Be careful, when you enableDebugging. This will tell the Indexer to store information about the process, which can
      * e.g. be used for unit test. E.g. this will store ALL lines found in the FASTQ file! So it is absolutely not
      * advisable to use it with large FASTQ files. For test data it is safe to use.
      * @param fastq The FASTQ we are working on.
@@ -102,15 +138,36 @@ public:
     boost::shared_ptr<IndexHeader> createHeader();
 
     /**
+     * Will create a struct instance of type z_stream, initialise some fields like to be seen in
+     * https://github.com/madler/zlib/blob/master/examples/zran.c
+     *
+     * @return true, if the strm initialize was successful, otherwise false.
+     */
+    bool initializeZStream(z_stream *const strm);
+
+    /**
+     * Read a chunk of data from the z_strm strm and check for errors. If errors pop up, they are stored.
+     * @param strm to read to
+     * @return true, if everything went fine, otherwise false.
+     */
+    bool readCompressedDataFromStream(FILE *const inputFile, z_stream *const strm, Byte *const buffer);
+
+    /**
      * Start the index creation,
      * @return true, if everything went fine.
      */
     bool createIndex();
 
+    bool checkStreamForBlockEnd(const z_stream &strm) const;
+
+    void finalizeProcessingForCurrentBlock(stringstream &currentDecompressedBlock);
+
+    void storeLinesOfCurrentBlockForDebugMode(std::stringstream &currentDecompressedBlock);
+
+
     bool wasSuccessful() { return finishedSuccessful; };
 
     long getFoundEntries() { return numberOfFoundEntries; };
-
 
     /**
      * For debugging, works only, when enableDebugging was true on object construction.
@@ -122,13 +179,13 @@ public:
      * For debugging, works only, when enableDebugging was true on object construction.
      * @return The index entries, which were created during the index run.
      */
-    const boost::shared_ptr<boost::ptr_list<IndexEntryV1>> &getStoredEntries() { return storedEntries; }
+    const vector<boost::shared_ptr<IndexEntryV1>> &getStoredEntries() { return storedEntries; }
 
     /**
      * For debugging, works only, when enableDebugging was true on object construction.
      * Be sure what you do, before you turn on enableDebugging! This will return ALL lines found in the FASTQ file!
      */
-    const boost::shared_ptr<boost::ptr_list<string>> &getStoredLines() { return storedLines; }
+    const vector<string> &getStoredLines() { return storedLines; }
 };
 
 

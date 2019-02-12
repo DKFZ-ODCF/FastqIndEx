@@ -6,6 +6,11 @@
 
 find_package(Boost COMPONENTS system filesystem program_options REQUIRED)
 find_package(Threads)
+find_package(ZLIB REQUIRED)
+#if (ZLIB_FOUND)
+#    include_directories(${ZLIB_INCLUDE_DIRS})
+#endif ()
+
 include_directories(
         ${TEST_SOURCE_DIR}/src
         ${Boost_INCLUDE_DIRS}
@@ -15,23 +20,25 @@ add_executable(fastqindex main.cpp main.h)
 
 add_library(
         fastqindexlib
-        CommonStructsAndConstants.h
+        CommonStructsAndConstants.cpp CommonStructsAndConstants.h
         Starter.cpp Starter.h
         Runner.cpp Runner.h
         ActualRunner.cpp ActualRunner.h
         IndexerRunner.cpp IndexerRunner.h
         ExtractorRunner.cpp ExtractorRunner.h
-        ErrorMessages.cpp
-        ErrorMessages.h
+        ErrorMessages.cpp ErrorMessages.h
         Indexer.cpp Indexer.h
         IndexReader.cpp IndexReader.h
-        IndexWriter.cpp IndexWriter.h IndexProcessor.cpp IndexProcessor.h CommonStructsAndConstants.cpp ErrorAccumulator.cpp ErrorAccumulator.h)
+        IndexWriter.cpp IndexWriter.h
+        IndexProcessor.cpp IndexProcessor.h
+        ErrorAccumulator.cpp ErrorAccumulator.h)
 
 target_link_libraries(
         fastqindexlib
         LINK_PUBLIC
         ${Boost_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT}
+        ${ZLIB_LIBRARIES}
 )
 
 target_link_libraries(

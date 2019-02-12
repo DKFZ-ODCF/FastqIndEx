@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2019 DKFZ - ODCF
  *
- * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqInDex/blob/master/LICENSE.txt).
+ * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
 #ifndef FASTQINDEX_COMMONSTRUCTS_H
@@ -66,33 +66,36 @@ struct VirtualIndexEntry {
  * The order of the entries is set so, that we have a reduced padding of only 2 Bytes.
  * Please take a look here for some explanations:
  *   https://stackoverflow.com/questions/119123/why-isnt-sizeof-for-a-struct-equal-to-the-sum-of-sizeof-of-each-member
- * The size of this struct is 24 Bytes.
+ * The size of this struct is 8 Bytes.
  */
 struct IndexEntryV1 : public VirtualIndexEntry {
 
     /**
-     * Number of the entry, not of the line in the FASTQ
-     * Each entry marks an entry point into a gz file
+     * Does this block / entry start with a fresh line? If so, offset is zero, otherwise the position of the first line.
      */
-    unsigned int entryNumber{0};        // Will align with bits and entryStartsWith to 8Byte
+    ushort offsetOfFirstValidLine{0};
+
+    /**
+     * Block offset in raw gz file. Note, that this is not the absolute offset but a relative offset to the last entry.
+     * That said, you need to read in the whole index file, before you can effectively use it.
+     */
+    ushort relativeBlockOffsetInRawFile{0};
+
+    /**
+     * The id of the first valid line in the block / entry. Note, that this value is relative to the last entry. That
+     * said, you need to read in the whole index file, before you can effectively use it.
+     */
+    ushort startingLineInEntry{0};
 
     unsigned char bits{0};
 
-    bool entryStartsWithLine{false};
-
-    unsigned long offset{0};
-
-    unsigned long startingLineInEntry{0};
-
-    IndexEntryV1(unsigned int entryNumber,
-                 unsigned long offset,
-                 unsigned char bits,
-                 unsigned long startingLineInEntry,
-                 bool entryStartsWithLine) :
-            entryNumber(entryNumber),
+    IndexEntryV1(unsigned char bits,
+                 ushort offsetOfFirstValidLine,
+                 ushort offsetInRawFile,
+                 ushort startingLineInEntry) :
             bits(bits),
-            entryStartsWithLine(entryStartsWithLine),
-            offset(offset),
+            offsetOfFirstValidLine(offsetOfFirstValidLine),
+            relativeBlockOffsetInRawFile(offsetInRawFile),
             startingLineInEntry(startingLineInEntry) {}
 
     IndexEntryV1() = default;

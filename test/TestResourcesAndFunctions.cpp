@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2018 DKFZ - ODCF
  *
- * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqInDex/blob/master/LICENSE.txt).
+ * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
 #include <cstdio>
@@ -37,7 +37,7 @@ path TestResourcesAndFunctions::getTestPath() {
     if (testPath.empty()) {
         path tempPath = temp_directory_path();
         string namePattern =
-                tempPath.string() + "/FastqInDexTest_" + testSuite + "_" + testName + "_%%%%-%%%%-%%%%-%%%%";
+                tempPath.string() + "/FastqIndExTest_" + testSuite + "_" + testName + "_%%%%-%%%%-%%%%-%%%%";
         testPath = unique_path(namePattern);
         testPathCreationWasSuccessful = create_directories(testPath);
     }
@@ -62,7 +62,13 @@ path TestResourcesAndFunctions::filePath(string filename) {
 }
 
 path TestResourcesAndFunctions::getResource(string filename) {
-    return path(current_path().string() + string("/resources/") + filename);
+    // Utilizing current_path() will result in the path of current test-binary, which will be e.g.:
+    //   ~/Projects/FastqIndEx/cmake-build-debug/test/testapp
+    // As we do want resources to be loaded from:
+    //   ~/Projects/FastqIndEx/cmake-build-debug/test/testapp
+    // instead, we will have to walk a bit in the paths to get the right file.
+    path applicationBasePath = current_path().parent_path().parent_path();
+    return path(applicationBasePath.string() + string("/test/resources/") + filename);
 }
 
 path TestResourcesAndFunctions::createEmptyFile(string filename) {

@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2019 DKFZ - ODCF
  *
- * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqInDex/blob/master/LICENSE.txt).
+ * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
 #include "../src/IndexWriter.h"
@@ -77,7 +77,7 @@ SUITE (SUITE_INDEXWRITER_TESTS) {
         path index = res.filePath(INDEX_FILENAME);
         auto iw = make_shared<IndexWriter>(index);
                 CHECK(iw->tryOpen());
-        auto entry = boost::make_shared<IndexEntryV1>(0, 0, 0, 0, 0);
+        auto entry = boost::make_shared<IndexEntryV1>(0, 0, 0, 0);
                 CHECK(!iw->writeIndexEntry(entry));
     }
 
@@ -88,7 +88,7 @@ SUITE (SUITE_INDEXWRITER_TESTS) {
                 CHECK(iw->tryOpen());
         auto header = boost::make_shared<IndexHeader>(1, sizeof(IndexEntryV1));
         bool writeOk = iw->writeIndexHeader(header);
-        auto entry = boost::make_shared<IndexEntryV1>(0, 0, 0, 0, 0);
+        auto entry = boost::make_shared<IndexEntryV1>(0, 0, 0, 0);
         bool writeOk1 = iw->writeIndexEntry(entry);
         bool writeOk2 = iw->writeIndexEntry(entry);
         iw->flush();

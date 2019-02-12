@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2018 DKFZ - ODCF
  *
- * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqInDex/blob/master/LICENSE.txt).
+ * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
 #include "TestResourcesAndFunctions.h"
@@ -45,8 +45,14 @@ SUITE (TestResourcesAndFunctionsTest) {
 
     TEST (testGetResource) {
         TestResourcesAndFunctions res("testGetResource");
-        path expectedPath(current_path().string() + string("/resources/test2.fastq.gz"));
+        // Utilizing current_path() will result in the path of current test-binary, which will be e.g.:
+        //   ~/Projects/FastqIndEx/cmake-build-debug/test/testapp
+        // As we do want resources to be loaded from:
+        //   ~/Projects/FastqIndEx/cmake-build-debug/test/testapp
+        // instead, we will have to walk a bit in the paths to get the right file.
+        path expectedPath(current_path().parent_path().parent_path().string() + string("/test/resources/test2.fastq.gz"));
         path resourcePath = res.getResource("test2.fastq.gz");
+                CHECK(exists(resourcePath));
                 CHECK(expectedPath == resourcePath);
     }
 

@@ -8,9 +8,10 @@
 
 cmake_minimum_required(VERSION 3.5)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 
-project(FASTQInDex)
+project(FASTQIndEx)
+
 add_subdirectory(src)
 
 enable_testing()

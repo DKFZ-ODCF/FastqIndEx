@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2019 DKFZ - ODCF
  *
- * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqInDex/blob/master/LICENSE.txt).
+ * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
 #include "CommonStructsAndConstants.h"
@@ -23,9 +23,8 @@ bool IndexHeader::operator==(const IndexHeader &rhs) const {
  */
 bool IndexEntryV1::operator==(const IndexEntryV1 &rhs) const {
 //    return static_cast<const VirtualIndexEntry &>(*this) == static_cast<const VirtualIndexEntry &>(rhs) &&
-    return entryNumber == rhs.entryNumber &&
-           bits == rhs.bits &&
-           entryStartsWithLine == rhs.entryStartsWithLine &&
-           offset == rhs.offset &&
+    return bits == rhs.bits &&
+           offsetOfFirstValidLine == rhs.offsetOfFirstValidLine &&
+           relativeBlockOffsetInRawFile == rhs.relativeBlockOffsetInRawFile &&
            startingLineInEntry == rhs.startingLineInEntry;
 }

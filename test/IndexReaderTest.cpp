@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2019 DKFZ - ODCF
  *
- * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqInDex/blob/master/LICENSE.txt).
+ * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
 #include "../src/IndexReader.h"
@@ -127,11 +127,10 @@ SUITE (SUITE_INDEXREADER_TESTS) {
                 CHECK(header);
         auto entry = ir->readIndexEntry();
                 CHECK(entry);
-                CHECK_EQUAL(entry->entryStartsWithLine, false);
-                CHECK_EQUAL(entry->startingLineInEntry, 0);
                 CHECK_EQUAL(entry->bits, 0);
-                CHECK_EQUAL(entry->offset, 0);
-                CHECK_EQUAL(entry->entryNumber, 0);
+                CHECK_EQUAL(entry->offsetOfFirstValidLine, 0);
+                CHECK_EQUAL(entry->relativeBlockOffsetInRawFile, 0);
+                CHECK_EQUAL(entry->startingLineInEntry, 0);
     }
 
     TEST (TEST_READ_SEVERAL_ENTRIES_FROM_FILE) {
@@ -147,11 +146,10 @@ SUITE (SUITE_INDEXREADER_TESTS) {
                 CHECK(ir->readIndexEntry());
         auto entry = ir->readIndexEntry();
                 CHECK(entry);
-                CHECK_EQUAL(entry->entryStartsWithLine, false);
-                CHECK_EQUAL(entry->startingLineInEntry, 0);
                 CHECK_EQUAL(entry->bits, 0);
-                CHECK_EQUAL(entry->offset, 0);
-                CHECK_EQUAL(entry->entryNumber, 0);
+                CHECK_EQUAL(entry->offsetOfFirstValidLine, 0);
+                CHECK_EQUAL(entry->relativeBlockOffsetInRawFile, 0);
+                CHECK_EQUAL(entry->startingLineInEntry, 0);
     }
 
     TEST (TEST_READ_INDEX_FROM_END_OF_FILE) {
@@ -174,10 +172,10 @@ SUITE (SUITE_INDEXREADER_TESTS) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_END_OF_FILE);
         path idx = res.filePath(INDEX_FILENAME);
         auto header = boost::make_shared<IndexHeader>(1, sizeof(IndexEntryV1));
-        auto entry0 = boost::make_shared<IndexEntryV1>(0, 10, 0, 0, 1);
-        auto entry1 = boost::make_shared<IndexEntryV1>(0, 10, 0, 0, 0);
-        auto entry2 = boost::make_shared<IndexEntryV1>(0, 10, 0, 0, 1);
-        auto entry3 = boost::make_shared<IndexEntryV1>(0, 10, 0, 0, 0);
+        auto entry0 = boost::make_shared<IndexEntryV1>(10, 0, 0, 1);
+        auto entry1 = boost::make_shared<IndexEntryV1>(10, 0, 0, 0);
+        auto entry2 = boost::make_shared<IndexEntryV1>(10, 0, 0, 1);
+        auto entry3 = boost::make_shared<IndexEntryV1>(10, 0, 0, 0);
 
         auto writer = new IndexWriter(idx);
         bool open = writer->tryOpen();

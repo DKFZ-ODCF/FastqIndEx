@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/FastqInDex.iml" filepath="$PROJECT_DIR$/.idea/FastqInDex.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/FastqIndEx.iml" filepath="$PROJECT_DIR$/.idea/FastqIndEx.iml" />
     </modules>
   </component>
 </project>

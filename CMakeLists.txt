@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.13)
 #
 # Copyright (c) 2018 DKFZ - ODCF
 #
@@ -5,8 +6,6 @@
 #
 
 # See https://stackoverflow.com/questions/14446495/cmake-project-structure-with-unit-tests
-
-cmake_minimum_required(VERSION 3.13)
 
 #set(BOOST_ROOT "/data/michael/Projekte/boost_1_69_0") # either set it here or from the command line
 # Need to figure out, how to do this in a portable way.

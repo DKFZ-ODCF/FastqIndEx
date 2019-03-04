@@ -1,8 +1,11 @@
+cmake_minimum_required(VERSION 3.13)
 #
 # Copyright (c) 2018 DKFZ - ODCF
 #
 # Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqInDex/blob/master/LICENSE.txt).
 #
+set(CMAKE_CXX_STANDARD 14)
+find_package(Boost 1.54.0 COMPONENTS filesystem program_options system REQUIRED)
 find_package(Threads)
 find_package(ZLIB REQUIRED)
 #if (ZLIB_FOUND)

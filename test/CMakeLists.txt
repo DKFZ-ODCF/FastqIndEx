@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.13)
 #
 # Copyright (c) 2018 DKFZ - ODCF
 #
@@ -7,6 +8,7 @@
 # See: https://github.com/unittest-cpp/unittest-cpp/wiki
 # Could not get Boost tests to run properly. Either only the first added test file was executed or there were
 # build errors like multiple main methods or no methods or no test tree. The list is long.
+set(CMAKE_CXX_STANDARD 14)
 find_package(UnitTest++ REQUIRED)
 
 include_directories(

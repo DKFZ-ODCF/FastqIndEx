@@ -26,14 +26,14 @@ SUITE (SUITE_INDEXWRITER_TESTS) {
     TEST (TEST_CREATION_WITH_MISSING_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXWRITER_TESTS, TEST_CREATION_WITH_EXISTING_FILE);
         path index = res.filePath(INDEX_FILENAME);
-        auto iw = make_shared<IndexWriter>(index);
+        auto iw = boost::make_shared<IndexWriter>(index);
                 CHECK(iw);
     }
 
     TEST (TEST_CREATION_WITH_EXISTING_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXWRITER_TESTS, TEST_CREATION_WITH_EXISTING_FILE);
         path index = res.createEmptyFile(INDEX_FILENAME);
-        auto iw = make_shared<IndexWriter>(index);
+        auto iw = boost::make_shared<IndexWriter>(index);
                 CHECK(!iw->tryOpen());
                 CHECK(!iw->hasLock());
     }
@@ -42,7 +42,7 @@ SUITE (SUITE_INDEXWRITER_TESTS) {
         TestResourcesAndFunctions res(SUITE_INDEXWRITER_TESTS, TEST_CREATION_WITHOUT_WRITE_ACCESS);
         path index = res.filePath(INDEX_FILENAME);
         boost::filesystem::permissions(res.getTestPath(), owner_read | owner_exe);
-        auto iw = make_shared<IndexWriter>(index);
+        auto iw = boost::make_shared<IndexWriter>(index);
                 CHECK(!iw->tryOpen());
                 CHECK(!iw->hasLock());
         boost::filesystem::permissions(res.getTestPath(), owner_all);
@@ -51,9 +51,9 @@ SUITE (SUITE_INDEXWRITER_TESTS) {
     TEST (TEST_WRITE_HEADER_TO_NEWLY_OPENED_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXWRITER_TESTS, TEST_CREATION_WITH_EXISTING_FILE);
         path index = res.filePath(INDEX_FILENAME);
-        auto iw = make_shared<IndexWriter>(index);
+        auto iw = boost::make_shared<IndexWriter>(index);
                 CHECK(iw->tryOpen());
-        auto header = boost::make_shared<IndexHeader>(1, sizeof(IndexEntryV1));
+        auto header = boost::make_shared<IndexHeader>(1, sizeof(IndexEntryV1), 1);
         bool writeOk = iw->writeIndexHeader(header);
                 CHECK(writeOk);
                 CHECK(exists(index));
@@ -64,10 +64,10 @@ SUITE (SUITE_INDEXWRITER_TESTS) {
     TEST (TEST_WRITE_HEADER_TWICE) {
         TestResourcesAndFunctions res(SUITE_INDEXWRITER_TESTS, TEST_WRITE_HEADER_TWICE);
         path index = res.filePath(INDEX_FILENAME);
-        auto iw = make_shared<IndexWriter>(index);
+        auto iw = boost::make_shared<IndexWriter>(index);
                 CHECK(iw->tryOpen());
 
-        auto header = boost::make_shared<IndexHeader>(1, sizeof(IndexEntryV1));
+        auto header = boost::make_shared<IndexHeader>(1, sizeof(IndexEntryV1), 1);
                 CHECK(iw->writeIndexHeader(header));
                 CHECK(!iw->writeIndexHeader(header));
     }
@@ -75,20 +75,20 @@ SUITE (SUITE_INDEXWRITER_TESTS) {
     TEST (TEST_WRITE_INDEX_TO_NEWLY_OPENED_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXWRITER_TESTS, TEST_WRITE_INDEX_TO_NEWLY_OPENED_FILE);
         path index = res.filePath(INDEX_FILENAME);
-        auto iw = make_shared<IndexWriter>(index);
+        auto iw = boost::make_shared<IndexWriter>(index);
                 CHECK(iw->tryOpen());
-        auto entry = boost::make_shared<IndexEntryV1>(0, 0, 0, 0);
+        auto entry = boost::make_shared<IndexEntryV1>(0, 0, 0, 0, 0);
                 CHECK(!iw->writeIndexEntry(entry));
     }
 
     TEST (TEST_WRITE_INDEX_TO_END_OF_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXWRITER_TESTS, TEST_WRITE_INDEX_TO_NEWLY_OPENED_FILE);
         path index = res.filePath(INDEX_FILENAME);
-        auto iw = make_shared<IndexWriter>(index);
+        auto iw = boost::make_shared<IndexWriter>(index);
                 CHECK(iw->tryOpen());
-        auto header = boost::make_shared<IndexHeader>(1, sizeof(IndexEntryV1));
+        auto header = boost::make_shared<IndexHeader>(1, sizeof(IndexEntryV1), 1);
         bool writeOk = iw->writeIndexHeader(header);
-        auto entry = boost::make_shared<IndexEntryV1>(0, 0, 0, 0);
+        auto entry = boost::make_shared<IndexEntryV1>(0, 0, 0, 0, 0);
         bool writeOk1 = iw->writeIndexEntry(entry);
         bool writeOk2 = iw->writeIndexEntry(entry);
         iw->flush();

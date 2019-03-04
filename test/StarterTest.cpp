@@ -110,10 +110,16 @@ SUITE (StarterTests) {
         const char *argv[] = {
                 TEST_BINARY,
                 "--extract",
-                "test2.fastq.gz"
+                "test2.fastq.gz",
+                "--startline",
+                "0",
+                "--noofreads",
+                "10"
         };
 
-        auto runner = starter.createRunner(3, argv);
+        // TODO Check with wrong parameters.
+
+        auto runner = starter.createRunner(7, argv);
 
                 CHECK (runner && runner->isExtractor());
 

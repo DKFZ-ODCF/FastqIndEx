@@ -24,11 +24,13 @@ class IndexerRunner : public ActualRunner {
 
 private:
 
-    boost::shared_ptr<Indexer> indexer = boost::shared_ptr<Indexer>(nullptr);
+    Indexer* indexer = nullptr;
 
 public:
 
     IndexerRunner(path fastqfile, path indexfile, bool enableDebugging = false);
+
+    virtual ~IndexerRunner();
 
     bool isIndexer() override { return true; }
 

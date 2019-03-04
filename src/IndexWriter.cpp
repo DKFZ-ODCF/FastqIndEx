@@ -30,7 +30,7 @@ bool IndexWriter::tryOpen() {
         unlock();
         return false;
     }
-    this->outputStream = make_shared<boost::filesystem::ofstream>(indexFile);
+    this->outputStream = boost::make_shared<boost::filesystem::ofstream>(indexFile);
     *this->outputStream << "";
 
     if (!exists(indexFile)) {

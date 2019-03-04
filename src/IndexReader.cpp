@@ -11,58 +11,7 @@
 
 using namespace boost;
 
-boost::shared_ptr<IndexReader> IndexReader::create(const path &indexFile) {
-    auto indexReader = new IndexReader(indexFile);
-    auto ir = boost::shared_ptr<IndexReader>(indexReader);
-    bool result = indexReader->open();
-
-    if (!result)
-        return boost::shared_ptr<IndexReader>(nullptr);
-    return ir;
-}
-
-IndexReader::IndexReader(const path &indexFile) : IndexProcessor(indexFile) {
-    this->inputStream = nullptr;
-    this->indicesLeft = 0;
-}
-
-bool IndexReader::open() {
-    if (!exists(indexFile))
-        return false;
-    if (!lockForReading())
-        return false;
-    uintmax_t fileSize = file_size(indexFile);
-    if (sizeof(IndexHeader) + sizeof(IndexEntryV1) > fileSize)
-        return false;
-    if (0 != (fileSize - sizeof(IndexHeader)) % sizeof(IndexEntryV1))
-        return false;
-
-    this->indicesLeft = (fileSize - sizeof(IndexHeader)) / sizeof(IndexEntryV1);
-    
-    this->inputStream = new boost::filesystem::ifstream(indexFile);
-    return this->inputStream->good();
-}
-
-boost::shared_ptr<IndexHeader> IndexReader::readIndexHeader() {
-    if (headerWasRead)
-        return boost::shared_ptr<IndexHeader>(nullptr);
-
-    auto header = make_shared<IndexHeader>(IndexWriter::INDEX_WRITER_VERSION, sizeof(IndexEntryV1));
-    inputStream->read((char *) header.get(), sizeof(IndexHeader));
-
-    headerWasRead = true;
-    return header;
-}
-
-boost::shared_ptr<IndexEntryV1> IndexReader::readIndexEntry() {
-    //Whyever, eof does not seem to work reliably, so use indicesLeft.
-    if (!headerWasRead || inputStream->eof() || indicesLeft <= 0)
-        return boost::shared_ptr<IndexEntryV1>(nullptr);
-
-    auto entry = make_shared<IndexEntryV1>();
-    inputStream->read((char *) entry.get(), sizeof(IndexEntryV1));
-    indicesLeft--;
-    return entry;
+IndexReader::IndexReader(const path &indexFile) : IndexProcessor(indexFile), inputStream(nullptr) {
 }
 
 IndexReader::~IndexReader() {
@@ -72,4 +21,142 @@ IndexReader::~IndexReader() {
         delete inputStream;
     }
 }
+
+bool IndexReader::tryOpenAndReadHeader() {
+
+    if (readerIsOpen)
+        return true;
+
+    if (!exists(indexFile)) {
+        addErrorMessage("The index file does not exist.");
+        return false;
+    }
+
+    if (!lockForReading()) {
+        addErrorMessage("Could not get a lock for the index file.");
+        return false;
+    }
+
+    uintmax_t fileSize = file_size(indexFile);
+
+    size_t headerSize = sizeof(IndexHeader);
+    if (headerSize > fileSize) {
+        addErrorMessage("The index file is too small and cannot be read.");
+        this->unlock();
+        return false;
+    }
+
+    /**
+     * Open the stream and see if it is good.
+     */
+    this->inputStream = new boost::filesystem::ifstream(indexFile);
+    if (!this->inputStream->good()) {
+        addErrorMessage("There was an error while opening input stream for index file.");
+        this->inputStream->close();
+        this->unlock();
+        return false;
+    }
+
+    this->readIndexHeader();
+
+    /**
+     * Which IndexReader / IndexEntry version must be used. Extract this from the header and go on.
+     */
+    uint sizeOfIndexEntry;
+    if (this->readHeader.indexWriterVersion == 1) {
+        sizeOfIndexEntry = sizeof(IndexEntryV1);
+    } else {
+        addErrorMessage("Index version is not readable with this version of FastqIndEx.");
+        this->inputStream->close();
+        this->unlock();
+        return false;
+    }
+
+    if (headerSize + sizeOfIndexEntry > fileSize) {
+        addErrorMessage("Cannot read index file, it is too small.");
+        this->inputStream->close();
+        this->unlock();
+        return false;
+    }
+
+    if (0 != (fileSize - headerSize) % sizeOfIndexEntry) {
+        addErrorMessage("Cannot read index file, there is a mismatch between stored index version and content size.");
+        this->inputStream->close();
+        this->unlock();
+        return false;
+    }
+
+    this->indicesLeft = (fileSize - headerSize) / sizeOfIndexEntry;
+
+    this->readerIsOpen = true;
+
+    return readerIsOpen;
+}
+
+IndexHeader IndexReader::readIndexHeader() {
+
+    IndexHeader header;
+    inputStream->read((char *) &header, sizeof(IndexHeader));
+
+    this->readHeader = header;
+    headerWasRead = true;
+    return header;
+}
+
+vector<IndexLine> IndexReader::readIndexFile() {
+    vector<IndexLine> convertedLines;
+    if (!tryOpenAndReadHeader()) {
+        addErrorMessage("Could not read index file due to one or more errors during file open.");
+        return convertedLines;
+    }
+
+    // Read in and convert a specific header version to an IndexLine vector
+    if (this->readHeader.indexWriterVersion == 1) {
+        convertedLines = readIndexFileV1();
+    }
+
+    return convertedLines;
+}
+
+vector<IndexLine> IndexReader::readIndexFileV1() {
+    vector<IndexLine> convertedLines;
+    // Initialize an empty index entry to make following steps a bit easier.
+    auto previousLine = IndexLine(0, 0, 0, 0, 0);
+    while (indicesLeft > 0) {
+        auto entry = readIndexEntryV1();
+        if (!entry) return vector<IndexLine>(); // In this case we have an error (message was stored).
+        ulong id = previousLine.id + 1;
+        IndexLine indexLine(
+                id,
+                entry->bits,
+                entry->offsetOfFirstValidLine,
+                entry->blockOffsetInRawFile,
+                entry->startingLineInEntry
+        );
+        memcpy(indexLine.window, entry->dictionary, sizeof(entry->dictionary));
+        convertedLines.emplace_back(indexLine);
+        previousLine = indexLine;
+    }
+    return convertedLines;
+}
+
+
+boost::shared_ptr<IndexEntryV1> IndexReader::readIndexEntryV1() {
+    if (!readerIsOpen) {
+        addErrorMessage("You have to open the IndexReader instance first with tryOpenAndReadHeader()");
+        return boost::shared_ptr<IndexEntryV1>(nullptr);
+    }
+
+    //Whyever, eof does not seem to work reliably, so use indicesLeft.
+    if (inputStream->eof() || indicesLeft <= 0) {
+        addErrorMessage("The stream is finished and no entries are left to read. Can't read a new entry.");
+        return boost::shared_ptr<IndexEntryV1>(nullptr);
+    }
+
+    auto entry = boost::make_shared<IndexEntryV1>();
+    inputStream->read((char *) entry.get(), sizeof(IndexEntryV1));
+    indicesLeft--;
+    return entry;
+}
+
 

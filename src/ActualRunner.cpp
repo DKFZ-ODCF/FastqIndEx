@@ -22,14 +22,27 @@ bool ActualRunner::checkPremises() {
     // TODO Will need to be extended for pipe i/o
 
     // Fastq needs to be an ((existing file OR symlink with a file) AND readable)
+    path fastqFile = path(this->fastqFile);
+    path indexFile = path(this->indexFile);
 
-    if (is_symlink(fastqFile))
-        fastqFile = read_symlink(fastqFile);
+    // NOTE I wanted to upgrade Boost from 1.54 to 1.69/1.64 because of the child process features.
+    // However, as soon as I switched, nearly all tests failed and e.g. here the following happened:
+    // - After the call of the first exists / is_symlink, the passed variable got corrupted!
+    // - If we took the original class field, the whole class instance was corrupted!
+    // - I am not sure yet, how we can report this.
+    bool fastqIsValid = false;
+    if (!exists(fastqFile)) {
+        addErrorMessage("The selected FASTQ file does not exist.");
+    } else {
 
-    bool fastqIsValid = is_regular_file(fastqFile);
+        if (is_symlink(symlink_status(fastqFile)))
+            fastqFile = read_symlink(fastqFile);
 
-    if (!fastqIsValid)
-        addErrorMessage(ERR_MESSAGE_FASTQ_INVALID);
+        fastqIsValid = is_regular_file(fastqFile);
+
+        if (!fastqIsValid)
+            addErrorMessage(ERR_MESSAGE_FASTQ_INVALID);
+    }
 
     // Index files are automatically overwrite but need to have write access!
     bool indexIsValid = true;

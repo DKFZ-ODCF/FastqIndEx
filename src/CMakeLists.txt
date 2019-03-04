@@ -3,8 +3,6 @@
 #
 # Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqInDex/blob/master/LICENSE.txt).
 #
-
-find_package(Boost COMPONENTS system filesystem program_options REQUIRED)
 find_package(Threads)
 find_package(ZLIB REQUIRED)
 #if (ZLIB_FOUND)
@@ -31,7 +29,7 @@ add_library(
         IndexReader.cpp IndexReader.h
         IndexWriter.cpp IndexWriter.h
         IndexProcessor.cpp IndexProcessor.h
-        ErrorAccumulator.cpp ErrorAccumulator.h)
+        ErrorAccumulator.cpp ErrorAccumulator.h Extractor.cpp Extractor.h BaseExtractor.h)
 
 target_link_libraries(
         fastqindexlib

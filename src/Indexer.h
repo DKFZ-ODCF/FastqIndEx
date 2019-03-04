@@ -10,11 +10,11 @@
 #include "CommonStructsAndConstants.h"
 #include "ErrorAccumulator.h"
 #include "IndexWriter.h"
-#include <string>
 #include <boost/filesystem.hpp>
-#include <boost/ptr_container/ptr_list.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/ptr_container/ptr_list.hpp>
 #include <zlib.h>
+#include <string>
 
 using namespace std;
 using namespace boost;
@@ -31,10 +31,6 @@ using namespace boost::ptr_container;
 class Indexer : public ErrorAccumulator {
 public:
 
-    static const unsigned int CHUNK_SIZE;
-
-    static const unsigned int WINDOW_SIZE;
-
     /**
      * This is the version of the current Indexer implementation. In contrary to the Extractor, there is always only one
      * Indexer version available.
@@ -42,6 +38,8 @@ public:
      * Extractor class when an index is read!
      */
     static const unsigned int INDEXER_VERSION;
+
+    static uint calculateIndexBlockInterval(ulong fileSize);
 
 private:
 
@@ -82,28 +80,28 @@ private:
 
 
     // Variables used in createIndex() and subsequent methods.
+    uint totalBytesIn{0};        /* our own total counters to avoid 4GB limit, as taken from zran example */
 
-
-    uint totalBytesIn{0};        /* our own total counters to avoid 4GB limit */
     uint totalBytesOut{0};
+
     uint lastBytesIn{0};
+
+    int curBits{0};
+
     long offset{0};
 
     // Marks, if the last inflated block ended with the newline character.
-    // If true, the relativeBlockOffsetInRawFile for the first line in the new block will be 0.
-    // If false, we have to look for the byte relativeBlockOffsetInRawFile.
+    // If true, the blockOffsetInRawFile for the first line in the new block will be 0.
+    // If false, we have to look for the byte blockOffsetInRawFile.
     bool lastBlockEndedWithNewline = true;
 
-    ulong lastBlockOffset{0};
-    ulong startingLineOfLastBlock{0};
+    bool firstBlock = true;             // Ignore the first block! Does not contain any data.
 
-    bool firstBlock = true;         // Ignore the first block! Does not contain any data.
-    ulong totalLineCount{0};             // The compression block we are in.
+    ulong totalLineCount{0};            // The compression block we are in.
 
-    z_stream zStream;
+    long blockID{-1};                   // Number of the currently processed block.
 
-    ulong indexCounter{0};          // Identifier for the new IndexEntry
-
+    int blockInterval;                  // Only store every n'th index entry.
 
 public:
 
@@ -115,7 +113,9 @@ public:
      * @param index The index for the FASTQ.
      * @param enableDebugging Store debug information or not.
      */
-    Indexer(const path &fastq, const path &index, bool enableDebugging = false);
+    Indexer(const path &fastq, const path &index, int blockInterval, bool enableDebugging = false);
+
+    virtual ~Indexer();
 
     bool checkPremises();
 
@@ -143,14 +143,14 @@ public:
      *
      * @return true, if the strm initialize was successful, otherwise false.
      */
-    bool initializeZStream(z_stream *const strm);
+    bool initializeZStream(z_stream *strm);
 
     /**
      * Read a chunk of data from the z_strm strm and check for errors. If errors pop up, they are stored.
      * @param strm to read to
      * @return true, if everything went fine, otherwise false.
      */
-    bool readCompressedDataFromStream(FILE *const inputFile, z_stream *const strm, Byte *const buffer);
+    bool readCompressedDataFromStream(FILE *const inputFile, z_stream *strm, Byte *const buffer);
 
     /**
      * Start the index creation,
@@ -158,9 +158,9 @@ public:
      */
     bool createIndex();
 
-    bool checkStreamForBlockEnd(const z_stream &strm) const;
+    bool checkStreamForBlockEnd(z_stream *strm) const;
 
-    void finalizeProcessingForCurrentBlock(stringstream &currentDecompressedBlock);
+    void finalizeProcessingForCurrentBlock(stringstream &currentDecompressedBlock, z_stream *strm);
 
     void storeLinesOfCurrentBlockForDebugMode(std::stringstream &currentDecompressedBlock);
 

@@ -8,6 +8,7 @@
 #define FASTQINDEX_EXTRACTORRUNNER_H
 
 #include "ActualRunner.h"
+#include "Extractor.h"
 #include <boost/filesystem.hpp>
 
 using namespace boost::filesystem;
@@ -20,14 +21,22 @@ using namespace boost::filesystem;
 class ExtractorRunner : public ActualRunner {
 protected:
 
-    long startLine;
+    ulong startLine;
 
-    long lineCount;
+    ulong lineCount;
+
+    bool enableDebugging;
+
+    boost::shared_ptr<Extractor> extractor;
 
 public:
-    ExtractorRunner(path fastqfile, path indexfile, long startLine, long lineCount);
+    ExtractorRunner(path fastqfile, path indexfile, ulong startLine, ulong lineCount, bool enableDebugging = false);
 
     bool isExtractor() override { return true; };
+
+    bool checkPremises() override;
+
+    unsigned char run() override;
 };
 
 

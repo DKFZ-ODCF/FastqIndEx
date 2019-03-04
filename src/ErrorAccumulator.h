@@ -26,7 +26,9 @@ public:
 
     virtual vector<string> getErrorMessages() { return errorMessages; }
 
-    const void addErrorMessage(const string &message) { errorMessages.emplace_back(message); }
+    const void addErrorMessage(const string &message) {
+        errorMessages.emplace_back(message);
+    }
 
     /**
      * This method can be used, if two vectors should be merged. Note, that we always copy the content of the two source

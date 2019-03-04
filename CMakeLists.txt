@@ -6,11 +6,16 @@
 
 # See https://stackoverflow.com/questions/14446495/cmake-project-structure-with-unit-tests
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.13)
 
+#set(BOOST_ROOT "/data/michael/Projekte/boost_1_69_0") # either set it here or from the command line
+# Need to figure out, how to do this in a portable way.
+#set(BOOST_ROOT "/data/michael/Projekte/boost_1_64_0") # either set it here or from the command line
 set(CMAKE_CXX_STANDARD 14)
 
 project(FASTQIndEx)
+
+find_package(Boost 1.54.0 COMPONENTS filesystem program_options system REQUIRED)
 
 add_subdirectory(src)
 

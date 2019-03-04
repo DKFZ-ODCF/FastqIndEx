@@ -12,14 +12,19 @@ using namespace std;
 
 IndexerRunner::IndexerRunner(path fastqfile, path indexfile, bool enableDebugging) :
         ActualRunner(fastqfile, indexfile) {
+    this->indexer = new Indexer(this->fastqFile, this->indexFile, -1, enableDebugging);
+}
 
-    this->indexer.reset(new Indexer(this->fastqFile, this->indexFile, enableDebugging));
+IndexerRunner::~IndexerRunner() {
+    delete indexer;
 }
 
 bool IndexerRunner::checkPremises() {
-    // indexer->checkPremises() will call tryOpen on the indexer.
+    // indexer->checkPremises() will call tryOpenAndReadHeader on the indexer.
     // Errors will be collected.
-    return ActualRunner::checkPremises() && indexer->checkPremises();
+    bool myPremises = ActualRunner::checkPremises();
+    bool indexerPremises = indexer->checkPremises();
+    return myPremises && indexerPremises;
 }
 
 unsigned char IndexerRunner::run() {
@@ -27,5 +32,7 @@ unsigned char IndexerRunner::run() {
 }
 
 vector<string> IndexerRunner::getErrorMessages() {
-    return mergeToNewVector(ErrorAccumulator::getErrorMessages(), indexer->getErrorMessages());
+    vector<string> l = ErrorAccumulator::getErrorMessages();
+    vector<string> r = indexer->getErrorMessages();
+    return mergeToNewVector(l, r);
 }

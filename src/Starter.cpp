@@ -43,8 +43,8 @@ void Starter::assembleCLIOptions() {
     extract.add_options()
             (EXTRACTION_MODE, "Extract lines from an indexed fastq file")
 //            (INDEXFILE_PARAMETER, value<string>(), "The index file which shall be used.")
-            (STARTLINE_PARAMETER, value<ulong>(), "The starting line.")
-            (NOOFREADS_PARAMETER, value<ulong>(), "The number of reads which shall be extracted.");
+            (STARTLINE_PARAMETER, value<u_int64_t>(), "The starting line.")
+            (NOOFREADS_PARAMETER, value<u_int64_t>(), "The number of reads which shall be extracted.");
 
 //    options_description hidden("Hidden options which should not be printed.");
     hidden.add_options()
@@ -77,10 +77,10 @@ boost::shared_ptr<Runner> Starter::createRunner(int argc, const char *argv[]) {
             // Check everything and return a IndexerRunner object
             return boost::shared_ptr<Runner>(new IndexerRunner(fastqfile, indexfile));
         } else if (vm.count(EXTRACTION_MODE) == 1) {
-            ulong startingRead;
-            ulong readCount;
-            startingRead = vm[STARTLINE_PARAMETER].as<ulong>();
-            readCount = vm[NOOFREADS_PARAMETER].as<ulong>();
+            u_int64_t startingRead;
+            u_int64_t readCount;
+            startingRead = vm[STARTLINE_PARAMETER].as<u_int64_t>();
+            readCount = vm[NOOFREADS_PARAMETER].as<u_int64_t>();
             return boost::shared_ptr<Runner>(new ExtractorRunner(fastqfile, indexfile, startingRead, readCount));
         }
     }

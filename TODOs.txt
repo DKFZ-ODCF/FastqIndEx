@@ -1,4 +1,0 @@
-/data/michael/Projekte/FastqIndEx/cmake-build-debug/src/fastqindex /data/michael/Projekte/FastqIndEx/test/resources/test.fastq.gz /data/michael/Projekte/FastqIndEx/test/resources/test.fastq.gz.idx
-terminate called after throwing an instance of 'boost::exception_detail::clone_impl<boost::exception_detail::error_info_injector<boost::program_options::too_many_positional_options_error> >'
-  what():  too many positional options have been specified on the command line
-

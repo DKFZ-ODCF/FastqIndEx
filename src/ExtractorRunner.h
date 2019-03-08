@@ -21,16 +21,16 @@ using namespace boost::filesystem;
 class ExtractorRunner : public ActualRunner {
 protected:
 
-    ulong startLine;
+    u_int64_t startLine;
 
-    ulong lineCount;
+    u_int64_t lineCount;
 
     bool enableDebugging;
 
     boost::shared_ptr<Extractor> extractor;
 
 public:
-    ExtractorRunner(path fastqfile, path indexfile, ulong startLine, ulong lineCount, bool enableDebugging = false);
+    ExtractorRunner(const path &fastqfile, const path &indexfile, u_int64_t startLine, u_int64_t lineCount, bool enableDebugging = false);
 
     bool isExtractor() override { return true; };
 

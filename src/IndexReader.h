@@ -46,7 +46,7 @@ private:
      * Count of indices which can still be read from the index file. The number is calculated by utilizing the
      * IndexEntryV[n] size.
      */
-    ulong indicesLeft{0};
+    u_int64_t indicesLeft{0};
 
     /**
      * Putting this into a smart pointer always raised: "Assertion `px != 0' failed" during object construction. I do
@@ -78,17 +78,23 @@ public:
      * Call this method to read in the whole index file and convert it to a usable form.
      * @return A vector of IndexLine instances.
      */
-    vector<IndexLine> readIndexFile();
+    vector<boost::shared_ptr<IndexEntry>> readIndexFile();
 
     /**
      * Specialized version for readIndexFile for V1. Will be called by readIndexFile(), don't call directly.
      * @return A vector of IndexLine instances.
      */
-    vector<IndexLine> readIndexFileV1();
+    vector<boost::shared_ptr<IndexEntryV1>> readIndexFileV1();
+
+    /**
+     * Reads one processed index entry from the file. Effectively calls readIndexEntryV[n].
+     * @return
+     */
+    boost::shared_ptr<IndexEntry> readIndexEntry();
 
     // Example for further versions.
-    // vector<IndexLine> readIndexFileV2();
-    // vector<IndexLine> readIndexFileV3();
+    // vector<IndexEntry> readIndexFileV2();
+    // vector<IndexEntry> readIndexFileV3();
 
     /**
      * In Java programs, I'd go for more generics or polymorphism. But this is a bit trickier in C++, so for now, we'll
@@ -104,7 +110,8 @@ public:
 
     IndexHeader getIndexHeader() { return readHeader; }
 
-    ulong getIndicesLeft() { return indicesLeft; }
+    u_int64_t getIndicesLeft() { return indicesLeft; }
+
 };
 
 

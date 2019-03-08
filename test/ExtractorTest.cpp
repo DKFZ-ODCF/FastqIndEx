@@ -24,11 +24,10 @@ const char *const TEST_RANDOM_ZLIB_EXTRACTION_BEVHAVIOUR = "Some extended test t
 void runRangedExtractionTest(const path &fastq,
                              const path &index,
                              const vector<string> &decompressedSourceContent,
-                             const ulong firstLine,
-                             const ulong lineCount,
-                             const ulong expectedLineCount) {
-//    cout << "RETest: " << firstLine << " " << lineCount << "\n";
-    Extractor *extractor = new Extractor(fastq, index, firstLine, lineCount, true);
+                             const u_int64_t firstLine,
+                             const u_int64_t lineCount,
+                             const u_int64_t expectedLineCount) {
+    auto *extractor = new Extractor(fastq, index, firstLine, lineCount, true);
     bool ok = extractor->extractReadsToCout();
             CHECK(ok);
     if (!ok) {
@@ -46,7 +45,7 @@ void runRangedExtractionTest(const path &fastq,
     if (expectedLineCount > lines.size())
         return;
 
-    ulong differences = 0;
+    u_int64_t differences = 0;
     for (int i = 0; i < min(decompressedSourceContent.size() - firstLine, lines.size()); i++) {
         if (decompressedSourceContent[i + firstLine] != lines[i]) {
             differences++;
@@ -59,27 +58,30 @@ void runComplexDecompressionTest(const path &fastq,
                                  const path &index,
                                  const path &extractedFastq,
                                  const int blockInterval,
-                                 ulong decompressedLineCount) {
+                                 u_int64_t decompressedLineCount) {
 
     /**
      * Create the index fresh from the FASTQ, so we do not need to store the index file in our resources, also makes
      * debugging the indexer easier.
      */
-    Indexer *indexer = new Indexer(fastq, index, blockInterval, true);
+    auto *indexer = new Indexer(fastq, index, blockInterval, true);
             CHECK(indexer->checkPremises());
     indexer->createIndex();
-
+    bool success = indexer->wasSuccessful();
+            CHECK(success);
     delete indexer;
+    if (!success) {
+        return;
+    }
 
     /**
      * Check premises first. As we are going to run more than one test, we'll delete this instantly and use new
      * instances everytime.
      */
-    Extractor *extractor = new Extractor(fastq, index, 0, 10, true);
+    auto *extractor = new Extractor(fastq, index, 0, 10, true);
     bool premisesMet = extractor->checkPremises();
             CHECK(premisesMet);
-    delete
-            extractor;
+    delete extractor;
 
     if (premisesMet) {
         /**
@@ -113,7 +115,7 @@ void runComplexDecompressionTest(const path &fastq,
         } else if (decompressedLineCount > 1000000) { // Only in rare cases
             runRangedExtractionTest(fastq, index, decompressedSourceContent, 0, 2740, 2740);
             runRangedExtractionTest(fastq, index, decompressedSourceContent, 2740, 160000, 160000);
-            for (ulong i = 0, j = 0; i < 1500000; i += 200000, j++) {
+            for (u_int64_t i = 0, j = 0; i < 1500000; i += 200000, j++) {
                 runRangedExtractionTest(fastq, index, decompressedSourceContent, 3150 + i, 4000 + j, 4000 + j);
             }
             runRangedExtractionTest(fastq, index, decompressedSourceContent, 80000, 100000, 100000);
@@ -123,7 +125,7 @@ void runComplexDecompressionTest(const path &fastq,
 
             runRangedExtractionTest(fastq, index, decompressedSourceContent, 2740, 160000, 157260);
             runRangedExtractionTest(fastq, index, decompressedSourceContent, 14740, 4000, 4000);
-            for (ulong i = 0, j = 0; i < 150000; i += 17500, j++) {
+            for (u_int64_t i = 0, j = 0; i < 150000; i += 17500, j++) {
                 runRangedExtractionTest(fastq, index, decompressedSourceContent, 2740 + i, 4000 + j, 4000 + j);
             }
             runRangedExtractionTest(fastq, index, decompressedSourceContent, 80000, 100000, 80000);
@@ -139,7 +141,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         path fastq = res.getResource("test.fastq.gz");
         path index = res.getResource("test.fastq.gz.idx_v1");
 
-        Extractor *extractor = new Extractor(fastq, index, 0, 10, true);
+        auto *extractor = new Extractor(fastq, index, 0, 10, true);
                 CHECK(extractor->checkPremises());
         delete extractor;
     }
@@ -155,7 +157,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         path fastq = res.getResource("test.fastq.gz");
         path index = res.filePath("test.fastq.gz.idx_v1");
         path extractedFastq = res.filePath("test.fastq");
-        ulong linesInFastq = 4000;
+        u_int64_t linesInFastq = 4000;
 
         runComplexDecompressionTest(fastq, index, extractedFastq, -1, linesInFastq);
 

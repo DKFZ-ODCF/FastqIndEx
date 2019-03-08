@@ -8,7 +8,8 @@
 #include <string>
 #include <vector>
 
-using namespace std;
+using std::vector;
+using std::string;
 
 /**
  * The class is used to provide basic error storage methods.
@@ -39,7 +40,7 @@ public:
      * @return A new vector<string> with both vectors merged. The messages of l will be placed before the messages of r.
      */
     static vector<string> mergeToNewVector(const vector<string> &l, const vector<string> &r) {
-        vector<string> merged;
+        std::vector<string> merged;
         merged.reserve(l.size() + r.size());
         merged.insert(merged.end(), l.begin(), l.end());
         merged.insert(merged.end(), r.begin(), r.end());

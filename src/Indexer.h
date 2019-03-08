@@ -10,6 +10,7 @@
 #include "CommonStructsAndConstants.h"
 #include "ErrorAccumulator.h"
 #include "IndexWriter.h"
+#include "ZLibBasedFASTQProcessorBaseClass.h"
 #include <boost/filesystem.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/ptr_container/ptr_list.hpp>
@@ -28,7 +29,7 @@ using namespace boost::ptr_container;
  * all other methods are not. However, createIndex() will call tryOpen() and fail, if a write lock is already active.
  * It is also not allowed to rerun createIndex().
  */
-class Indexer : public ErrorAccumulator {
+class Indexer : public ZLibBasedFASTQProcessorBaseClass {
 public:
 
     /**
@@ -39,24 +40,11 @@ public:
      */
     static const unsigned int INDEXER_VERSION;
 
-    static uint calculateIndexBlockInterval(ulong fileSize);
+    static uint calculateIndexBlockInterval(u_int64_t fileSize);
 
 private:
 
-    path fastq;
-
-    path index;
-
-    bool finishedSuccessful = false;
-
     long numberOfFoundEntries = 0;
-
-    bool debuggingEnabled = false;
-
-    /**
-     * Set to true, as soon as createIndex() was started.
-     */
-    bool wasStarted = false;
 
     boost::shared_ptr<IndexWriter> indexWriter;
 
@@ -73,37 +61,36 @@ private:
     vector<boost::shared_ptr<IndexEntryV1>> storedEntries;
 
     /**
-     * For debug and test purposes, used when debuggingEnabled is true
-     * Keeps all lines read from the fastq file.
+     * Current bits for the next index entry.
      */
-    vector<string> storedLines;
-
-
-    // Variables used in createIndex() and subsequent methods.
-    uint totalBytesIn{0};        /* our own total counters to avoid 4GB limit, as taken from zran example */
-
-    uint totalBytesOut{0};
-
-    uint lastBytesIn{0};
-
     int curBits{0};
 
+    /**
+     * Current offset in file.
+     */
     long offset{0};
 
-    // Marks, if the last inflated block ended with the newline character.
-    // If true, the blockOffsetInRawFile for the first line in the new block will be 0.
-    // If false, we have to look for the byte blockOffsetInRawFile.
+    /**
+     * Marks, if the last inflated block ended with the newline character.
+     * If true, the blockOffsetInRawFile for the first line in the new block will be 0.
+     * If false, we have to look for the byte blockOffsetInRawFile.
+     */
     bool lastBlockEndedWithNewline = true;
 
-    bool firstBlock = true;             // Ignore the first block! Does not contain any data.
-
-    ulong totalLineCount{0};            // The compression block we are in.
+    u_int64_t totalLineCount{0};            // The compression block we are in.
 
     long blockID{-1};                   // Number of the currently processed block.
 
     int blockInterval;                  // Only store every n'th index entry.
 
+    /**
+     * When we write out a new index entry, we need a dictionary. This is taken from the block of data before the block
+     * to which the new entry references.
+     */
+    Bytef dictionaryForNextBlock[WINDOW_SIZE]{0};
+
 public:
+
 
     /**
      * Be careful, when you enableDebugging. This will tell the Indexer to store information about the process, which can
@@ -115,22 +102,9 @@ public:
      */
     Indexer(const path &fastq, const path &index, int blockInterval, bool enableDebugging = false);
 
-    virtual ~Indexer();
+    virtual ~Indexer() = default;
 
     bool checkPremises();
-
-    /**
-     * Overriden to also pass through (copywise, safe but slow but also only with a few entries and in error cases)
-     * error messages from the used IndexWriter instance.
-     * @return Merged vector of the objects error messages + the index writers error messages.
-     */
-    vector<string> getErrorMessages() override;
-
-    bool isDebuggingEnabled() { return debuggingEnabled; }
-
-    path getFastq() { return fastq; }
-
-    path getIndex() { return index; }
 
     /**
      * This will create an IndexHeader instance with INDEXER_VERSION and the size of the used IndexEntry struct.
@@ -138,34 +112,21 @@ public:
     boost::shared_ptr<IndexHeader> createHeader();
 
     /**
-     * Will create a struct instance of type z_stream, initialise some fields like to be seen in
-     * https://github.com/madler/zlib/blob/master/examples/zran.c
-     *
-     * @return true, if the strm initialize was successful, otherwise false.
-     */
-    bool initializeZStream(z_stream *strm);
-
-    /**
-     * Read a chunk of data from the z_strm strm and check for errors. If errors pop up, they are stored.
-     * @param strm to read to
-     * @return true, if everything went fine, otherwise false.
-     */
-    bool readCompressedDataFromStream(FILE *const inputFile, z_stream *strm, Byte *const buffer);
-
-    /**
      * Start the index creation,
      * @return true, if everything went fine.
      */
     bool createIndex();
 
-    bool checkStreamForBlockEnd(z_stream *strm) const;
-
     void finalizeProcessingForCurrentBlock(stringstream &currentDecompressedBlock, z_stream *strm);
 
     void storeLinesOfCurrentBlockForDebugMode(std::stringstream &currentDecompressedBlock);
 
-
-    bool wasSuccessful() { return finishedSuccessful; };
+    /**
+     * Overriden to also pass through (copywise, safe but slow but also only with a few entries and in error cases)
+     * error messages from the used IndexWriter and ZLibHelper instance.
+     * @return Merged vector of the objects error messages + the index writers error messages.
+     */
+    vector<string> getErrorMessages() override;
 
     long getFoundEntries() { return numberOfFoundEntries; };
 
@@ -181,11 +142,8 @@ public:
      */
     const vector<boost::shared_ptr<IndexEntryV1>> &getStoredEntries() { return storedEntries; }
 
-    /**
-     * For debugging, works only, when enableDebugging was true on object construction.
-     * Be sure what you do, before you turn on enableDebugging! This will return ALL lines found in the FASTQ file!
-     */
-    const vector<string> &getStoredLines() { return storedLines; }
+
+
 };
 
 

@@ -31,7 +31,7 @@ SUITE (SUITE_COMMONSTRUCTS_TESTS) {
                 CHECK_EQUAL(sizeof(IndexEntryV1), indexHeader.sizeOfIndexEntry);
 
         bool allZeroed = true;
-        int count = sizeof(indexHeader.reserved) / sizeof(ulong);
+        int count = sizeof(indexHeader.reserved) / sizeof(u_int64_t);
         for (int i = 0; i < count; i++) {
             allZeroed = allZeroed & (indexHeader.reserved[i] == 0);
         }
@@ -43,15 +43,15 @@ SUITE (SUITE_COMMONSTRUCTS_TESTS) {
         // Perform some sanity checks first to make sure, that the format did not change
         // by accident. Be aware, that the struct V1 will have a padding of 2Byte applied.
         // Its size is 2Byte higher than the accumulated size of the single elements.
-                CHECK_EQUAL(32808, sizeof(IndexEntryV1));
+                CHECK_EQUAL(32800, sizeof(IndexEntryV1));
                 CHECK_EQUAL(8, sizeof(indexEntry.blockID));
                 CHECK_EQUAL(8, sizeof(indexEntry.blockOffsetInRawFile));
                 CHECK_EQUAL(8, sizeof(indexEntry.startingLineInEntry));
                 CHECK_EQUAL(1, sizeof(indexEntry.bits));
-                CHECK_EQUAL(2, sizeof(indexEntry.offsetOfFirstValidLine));
-                CHECK_EQUAL(32768, sizeof(indexEntry.dictionary));
+                CHECK_EQUAL(4, sizeof(indexEntry.offsetOfFirstValidLine));
+                CHECK_EQUAL(WINDOW_SIZE, sizeof(indexEntry.dictionary));
 
-        Bytef dictionaryCheck[32768]{0};
+        Bytef dictionaryCheck[WINDOW_SIZE]{0};
 
         // Now initial values
                 CHECK_EQUAL(0, indexEntry.blockID);

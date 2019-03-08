@@ -22,7 +22,7 @@ const char *const TEST_CREATE_INDEX_LARGE = "Test create index with more fastq t
 SUITE (INDEXER_SUITE_TESTS) {
 
     TEST (TEST_CALCULATE_BLOCK_INTERVAL) {
-        const ulong GB = 1024 * 1024 * 1024;
+        const u_int64_t GB = 1024 * 1024 * 1024;
                 CHECK_EQUAL(16, Indexer::calculateIndexBlockInterval(1 * GB));
                 CHECK_EQUAL(32, Indexer::calculateIndexBlockInterval(2 * GB));
                 CHECK_EQUAL(64, Indexer::calculateIndexBlockInterval(4 * GB));
@@ -46,17 +46,19 @@ SUITE (INDEXER_SUITE_TESTS) {
         path fastq = res.getResource(string("test2.fastq.gz"));
         path index = res.filePath("test2.fastq.gz.idx");
 
-        Indexer indexer(fastq, index, -1);
+        auto *indexer = new Indexer(fastq, index, -1);
 
-                CHECK_EQUAL(fastq, indexer.getFastq());
-                CHECK_EQUAL(index, indexer.getIndex());
-                CHECK_EQUAL(false, indexer.isDebuggingEnabled());
-                CHECK_EQUAL(false, indexer.wasSuccessful());
-                CHECK_EQUAL(0, indexer.getFoundEntries());
-                CHECK(!indexer.getStoredHeader());
+                CHECK_EQUAL(fastq, indexer->getFastq());
+                CHECK_EQUAL(index, indexer->getIndex());
+                CHECK_EQUAL(false, indexer->isDebuggingEnabled());
+                CHECK_EQUAL(false, indexer->wasSuccessful());
+                CHECK_EQUAL(0, indexer->getFoundEntries());
+                CHECK(!indexer->getStoredHeader());
 
-        indexer = Indexer(fastq, index, -1, true);
-                CHECK_EQUAL(true, indexer.isDebuggingEnabled());
+        delete indexer;
+        indexer = new Indexer(fastq, index, -1, true);
+                CHECK_EQUAL(true, indexer->isDebuggingEnabled());
+        delete indexer;
     }
 
     TEST (TEST_CREATE_HEADER) {
@@ -72,23 +74,6 @@ SUITE (INDEXER_SUITE_TESTS) {
                 CHECK_EQUAL(Indexer::INDEXER_VERSION, header->indexWriterVersion);
     }
 
-    TEST (TEST_INITIALIZE_ZSTREAM_WITH_ZEROES) {
-        TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_INITIALIZE_ZSTREAM_WITH_ZEROES);
-
-        path fastq = res.getResource(string("test2.fastq.gz"));
-        path index = res.filePath("test2.fastq.gz.idx");
-
-        Indexer indexer(fastq, index, -1, true);
-        z_stream zStream;
-        bool ok = indexer.initializeZStream(&zStream);
-                CHECK(ok);
-                CHECK(zStream.zalloc != nullptr);
-                CHECK(zStream.zfree != nullptr);    // Will be filled by inflateInit2
-                CHECK(zStream.opaque == nullptr);   // Will be filled by inflateInit2
-                CHECK(zStream.next_in == nullptr);
-                CHECK(zStream.avail_in == 0);
-    }
-
     // TEST ("readCompressedDataFromStream")  <-- How to write a test? Currently its covered in the larger tests.
 
     // TEST ("call createIndex() twice")
@@ -99,7 +84,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         path fastq = res.getResource(string("test.fastq.gz"));
         path index = res.filePath("test.fastq.gz.idx");
 
-        Indexer *indexer = new Indexer(fastq, index, -1, true);
+        auto *indexer = new Indexer(fastq, index, -1, true);
                 CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.
 
         bool result = indexer->createIndex();
@@ -135,7 +120,7 @@ SUITE (INDEXER_SUITE_TESTS) {
 
         uint blockSize = 4;
 
-        Indexer *indexer = new Indexer(
+        auto *indexer = new Indexer(
                 fastq,
                 index,
                 blockSize,
@@ -228,10 +213,8 @@ SUITE (INDEXER_SUITE_TESTS) {
         //    [ bits, offset ] : [ 0 , 2637003 ]
         //    [ bits, offset ] : [ 5 , 2692023 ]
 
-        /**
- * Here we're going to prepare the test data for our line-by-line test. But only, if the preceding tests were
- * successful.
- */
+        // Here we're going to prepare the test data for our line-by-line test. But only, if the preceding tests were
+        // successful.
         path extractedFastq = res.filePath("test.fastq");
         string command = (
                 string("gunzip -c \"") + fastq.string() + "\"" +
@@ -249,10 +232,10 @@ SUITE (INDEXER_SUITE_TESTS) {
         }
                 CHECK_EQUAL(160000, decompressedSourceContent.size());
 
-        for(int i=0;i<160000;i++) {
+        for (int i = 0; i < 160000; i++) {
             auto equal = decompressedSourceContent[i] == storedLines[i];
-            if(!equal)
-                CHECK_EQUAL(true, equal);
+            if (!equal)
+                        CHECK_EQUAL (true, equal);
         }
 
         // Now check the index file in a very simple way (extractor tests come later). We know, that there is one header
@@ -261,12 +244,12 @@ SUITE (INDEXER_SUITE_TESTS) {
         delete indexer;  // <-- Force flush and close file stream!
 
         // Read back and check contents.
-        IndexReader *ir = new IndexReader(index);
+        auto *ir = new IndexReader(index);
                 CHECK(ir->tryOpenAndReadHeader());
 
-        for (int i = 0; i < storedEntries.size(); i++) {
+        for (auto &storedEntry : storedEntries) {
             auto entry = ir->readIndexEntryV1();
-            auto l = *storedEntries[i];
+            auto l = *storedEntry;
             auto r = *entry;
                     CHECK(l == r);
         }

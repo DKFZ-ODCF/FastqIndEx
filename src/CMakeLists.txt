@@ -1,16 +1,15 @@
-cmake_minimum_required(VERSION 3.13)
 #
 # Copyright (c) 2018 DKFZ - ODCF
 #
 # Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqInDex/blob/master/LICENSE.txt).
 #
+cmake_minimum_required(VERSION 3.13)
+
 set(CMAKE_CXX_STANDARD 14)
+
 find_package(Boost 1.54.0 COMPONENTS filesystem program_options system REQUIRED)
 find_package(Threads)
 find_package(ZLIB REQUIRED)
-#if (ZLIB_FOUND)
-#    include_directories(${ZLIB_INCLUDE_DIRS})
-#endif ()
 
 include_directories(
         ${TEST_SOURCE_DIR}/src
@@ -32,7 +31,7 @@ add_library(
         IndexReader.cpp IndexReader.h
         IndexWriter.cpp IndexWriter.h
         IndexProcessor.cpp IndexProcessor.h
-        ErrorAccumulator.cpp ErrorAccumulator.h Extractor.cpp Extractor.h BaseExtractor.h)
+        ErrorAccumulator.cpp ErrorAccumulator.h Extractor.cpp Extractor.h ZLibBasedFASTQProcessorBaseClass.cpp ZLibBasedFASTQProcessorBaseClass.h)
 
 target_link_libraries(
         fastqindexlib

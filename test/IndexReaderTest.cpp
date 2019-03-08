@@ -96,7 +96,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 
         auto header = ir->getIndexHeader(); // Will effectively return the already read header.
 
-        ulong test[62] = {0};
+        u_int64_t test[62] = {0};
 
                 CHECK(header);
                 CHECK_EQUAL(1, header.indexWriterVersion);
@@ -126,7 +126,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 
                 CHECK(header);
 
-        Bytef emptyWindow[32768]{0};
+        Bytef emptyWindow[WINDOW_SIZE]{0};
 
         auto entry = ir->readIndexEntryV1();
                 CHECK(entry);
@@ -140,10 +140,8 @@ SUITE (SUITE_INDEXREADER_TESTS) {
                 CHECK(entry);
                 CHECK_EQUAL(6, entry->bits);
                 CHECK_EQUAL(219567, entry->blockOffsetInRawFile);
-//                CHECK_EQUAL(0, entry->offsetOfFirstValidLine);
-//                CHECK_EQUAL(0, entry->startingLineInEntry);
         for (int i = 0; i < sizeof(emptyWindow); i++) {
-                    CHECK(entry->dictionary != 0);
+                    CHECK(entry->dictionary != nullptr);
         }
     }
 
@@ -218,7 +216,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
         auto readEntry2 = ir->readIndexEntryV1();
         auto readEntry3 = ir->readIndexEntryV1();
 
-                CHECK(*header.get() == readHeader);
+                CHECK(*header == readHeader);
                 CHECK(*entry0 == *readEntry0);
                 CHECK(*entry1 == *readEntry1);
                 CHECK(*entry2 == *readEntry2);

@@ -9,10 +9,10 @@
 #include "IndexReader.h"
 #include "Extractor.h"
 
-ExtractorRunner::ExtractorRunner(path fastqfile,
-                                 path indexfile,
-                                 ulong startLine,
-                                 ulong lineCount,
+ExtractorRunner::ExtractorRunner(const path &fastqfile,
+                                 const path &indexfile,
+                                 u_int64_t startLine,
+                                 u_int64_t lineCount,
                                  bool enableDebugging) :
         ActualRunner(fastqfile, indexfile) {
 

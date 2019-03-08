@@ -94,7 +94,6 @@ bool IndexReader::tryOpenAndReadHeader() {
 }
 
 IndexHeader IndexReader::readIndexHeader() {
-
     IndexHeader header;
     inputStream->read((char *) &header, sizeof(IndexHeader));
 
@@ -103,43 +102,47 @@ IndexHeader IndexReader::readIndexHeader() {
     return header;
 }
 
-vector<IndexLine> IndexReader::readIndexFile() {
-    vector<IndexLine> convertedLines;
+vector<boost::shared_ptr<IndexEntry>> IndexReader::readIndexFile() {
+    vector<boost::shared_ptr<IndexEntry>> convertedLines;
     if (!tryOpenAndReadHeader()) {
         addErrorMessage("Could not read index file due to one or more errors during file open.");
         return convertedLines;
     }
 
-    // Read in and convert a specific header version to an IndexLine vector
+    // Read in and convert a specific header version to an IndexEntry vector
     if (this->readHeader.indexWriterVersion == 1) {
-        convertedLines = readIndexFileV1();
-    }
+        auto entries = readIndexFileV1();
+        for (auto const &entry : entries) {
+            convertedLines.emplace_back(entry->toIndexEntry());
+        }
+    } // We do not need an else branch, a version range check is applied earlier.
 
     return convertedLines;
 }
 
-vector<IndexLine> IndexReader::readIndexFileV1() {
-    vector<IndexLine> convertedLines;
+vector<boost::shared_ptr<IndexEntryV1>> IndexReader::readIndexFileV1() {
+    vector<boost::shared_ptr<IndexEntryV1>> convertedLines;
     // Initialize an empty index entry to make following steps a bit easier.
-    auto previousLine = IndexLine(0, 0, 0, 0, 0);
     while (indicesLeft > 0) {
-        auto entry = readIndexEntryV1();
-        if (!entry) return vector<IndexLine>(); // In this case we have an error (message was stored).
-        ulong id = previousLine.id + 1;
-        IndexLine indexLine(
-                id,
-                entry->bits,
-                entry->offsetOfFirstValidLine,
-                entry->blockOffsetInRawFile,
-                entry->startingLineInEntry
-        );
-        memcpy(indexLine.window, entry->dictionary, sizeof(entry->dictionary));
-        convertedLines.emplace_back(indexLine);
-        previousLine = indexLine;
+        auto indexEntry = readIndexEntryV1();
+        if (indexEntry) {
+            convertedLines.emplace_back(indexEntry);
+        }
     }
     return convertedLines;
 }
 
+boost::shared_ptr<IndexEntry> IndexReader::readIndexEntry() {
+    if (!tryOpenAndReadHeader()) {
+        addErrorMessage("Could not read index file due to one or more errors during file open.");
+        return boost::shared_ptr<IndexEntry>(nullptr);
+    }
+
+    // Read in and convert a specific header version to an IndexEntry vector
+    if (this->readHeader.indexWriterVersion == 1) {
+        return readIndexEntryV1()->toIndexEntry();
+    } // We do not need an else branch, a version range check is applied earlier.
+}
 
 boost::shared_ptr<IndexEntryV1> IndexReader::readIndexEntryV1() {
     if (!readerIsOpen) {
@@ -156,6 +159,7 @@ boost::shared_ptr<IndexEntryV1> IndexReader::readIndexEntryV1() {
     auto entry = boost::make_shared<IndexEntryV1>();
     inputStream->read((char *) entry.get(), sizeof(IndexEntryV1));
     indicesLeft--;
+
     return entry;
 }
 

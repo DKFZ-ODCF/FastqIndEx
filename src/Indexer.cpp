@@ -5,11 +5,13 @@
  */
 
 #include "Indexer.h"
-#include <boost/algorithm/string.hpp>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <zlib.h>
+#include <experimental/filesystem>
+
+using std::experimental::filesystem::path;
 
 const unsigned int Indexer::INDEXER_VERSION = 1;
 
@@ -41,15 +43,15 @@ u_int32_t Indexer::calculateIndexBlockInterval(u_int64_t fileSize) {
 Indexer::Indexer(const path &fastq, const path &index, int blockInterval, bool enableDebugging) :
         ZLibBasedFASTQProcessorBaseClass(fastq, index, enableDebugging),
         blockInterval(blockInterval) {
-    indexWriter = boost::shared_ptr<IndexWriter>(new IndexWriter(index));
+    indexWriter = make_shared<IndexWriter>(index);
 }
 
 bool Indexer::checkPremises() {
     return indexWriter->tryOpen();
 }
 
-boost::shared_ptr<IndexHeader> Indexer::createHeader() {
-    auto header = boost::make_shared<IndexHeader>(Indexer::INDEXER_VERSION, sizeof(IndexEntryV1), blockInterval);
+shared_ptr<IndexHeader> Indexer::createHeader() {
+    auto header = make_shared<IndexHeader>(Indexer::INDEXER_VERSION, sizeof(IndexEntryV1), blockInterval);
     return header;
 }
 
@@ -184,7 +186,10 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
         // figure this out.
         std::vector<string> lines;
         string currentBlockString = currentDecompressedBlock.str();
-        boost::split(lines, currentBlockString, boost::is_any_of("\n"));
+
+        lines = splitStr(currentBlockString);
+
+//        boost::split(lines, currentBlockString, boost::is_any_of("\n"));
 
         u_int32_t sizeOfCurrentBlock = currentBlockString.size();
         u_int32_t numberOfLinesInBlock = lines.size();
@@ -194,13 +199,10 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
         bool currentBlockEndedWithNewLine =
                 sizeOfCurrentBlock == 0 ? true : currentBlockString[sizeOfCurrentBlock - 1] == '\n';
 
-        string firstLine = lines[0];
-
         // Find the first newline character to get the blockOffsetInRawFile of the line inside
         ushort offsetOfFirstLine{0};
         if (!lastBlockEndedWithNewline) {
             numberOfLinesInBlock--;  // If the last block ended with an incomplete line (and not '\n'), reduce this.
-            firstLine = lines[1];
             offsetOfFirstLine = lines[0].size() +1;
         } else if (totalLineCount > 0) {
             totalLineCount--;
@@ -208,7 +210,7 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
 
         // Only store every n'th block.
         // Create the index entry
-        auto entry = boost::make_shared<IndexEntryV1>(
+        auto entry = make_shared<IndexEntryV1>(
                 curBits,
                 blockID,
                 offsetOfFirstLine,
@@ -253,9 +255,9 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
 }
 
 void Indexer::storeLinesOfCurrentBlockForDebugMode(std::stringstream &currentDecompressedBlock) {
-    std::vector<string> lines;
     string str = currentDecompressedBlock.str();
-    boost::split(lines, str, boost::is_any_of("\n"));
+    std::vector<string> lines = splitStr(str);
+//    boost::split(lines, str, boost::is_any_of("\n"));
 
     if (lines.empty()) return;
 

@@ -10,8 +10,8 @@
 
 using namespace std;
 
-unsigned char PrintCLIOptionsRunner::run() {
-    cerr << *Starter::getInstance()->getCLIOptions();
+unsigned char DoNothingRunner::run() {
+//    cerr << *Starter::getInstance()->getCLIOptions();
 }
 
 

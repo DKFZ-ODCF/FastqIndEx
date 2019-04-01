@@ -5,17 +5,18 @@
 #
 cmake_minimum_required(VERSION 3.13)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
+
+#set(CMAKE_EXE_LINKER_FLAGS -static)
 
 # See: https://github.com/unittest-cpp/unittest-cpp/wiki
-# Could not get Boost tests to run properly. Either only the first added test file was executed or there were
-# build errors like multiple main methods or no methods or no test tree. The list is long.
 find_package(UnitTest++ REQUIRED)
+
+include_directories( BEFORE ../tclap-1.2.2/include )
 
 include_directories(
         ${TEST_SOURCE_DIR}/src
         ${CTEST_SOURCE_DIR}/src
-        ${Boost_INCLUDE_DIRS}
         ${UTPP_INCLUDE_DIRS}
 )
 
@@ -41,9 +42,6 @@ target_link_libraries(
         testapp
         LINK_PUBLIC
         fastqindexlib
-        ${Boost_FILESYSTEM_LIBRARY}
-        ${Boost_SYSTEM_LIBRARY}
-        ${Boost_LIBRARIES}
         UnitTest++
 )
 

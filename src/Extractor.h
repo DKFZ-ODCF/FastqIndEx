@@ -11,10 +11,11 @@
 #include "ErrorAccumulator.h"
 #include "IndexReader.h"
 #include "ZLibBasedFASTQProcessorBaseClass.h"
-#include <boost/shared_ptr.hpp>
+#include <experimental/filesystem>
 #include <zlib.h>
 
-using boost::shared_ptr;
+using namespace std;
+using experimental::filesystem::path;
 
 class Extractor : public ZLibBasedFASTQProcessorBaseClass {
 
@@ -23,7 +24,7 @@ private:
     /**
      * Reader instance which will be used to read in the index.
      */
-    boost::shared_ptr<IndexReader> indexReader = boost::shared_ptr<IndexReader>(nullptr);
+    shared_ptr<IndexReader> indexReader = shared_ptr<IndexReader>(nullptr);
 
     u_int64_t startingLine;
 

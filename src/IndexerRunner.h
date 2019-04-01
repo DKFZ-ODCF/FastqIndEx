@@ -10,9 +10,6 @@
 
 #include "ActualRunner.h"
 #include "Indexer.h"
-#include <boost/filesystem.hpp>
-
-using namespace boost::filesystem;
 
 /**
  * The IndexRunner will, once started, create an index for the  FASTQ file by utilizing the Indexer class. As of now,
@@ -28,7 +25,7 @@ private:
 
 public:
 
-    IndexerRunner(path fastqfile, path indexfile, bool enableDebugging = false);
+    IndexerRunner(const path &fastqfile, const path &indexfile, int blockInterval = -1, bool enableDebugging = false);
 
     virtual ~IndexerRunner();
 

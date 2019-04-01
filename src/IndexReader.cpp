@@ -4,12 +4,14 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include <boost/make_shared.hpp>
-#include <boost/filesystem/fstream.hpp>
 #include "IndexReader.h"
 #include "IndexWriter.h"
+#include <experimental/filesystem>
+#include <fstream>
 
-using namespace boost;
+using namespace std;
+using std::experimental::filesystem::path;
+
 
 IndexReader::IndexReader(const path &indexFile) : IndexProcessor(indexFile), inputStream(nullptr) {
 }
@@ -31,8 +33,8 @@ bool IndexReader::tryOpenAndReadHeader() {
         addErrorMessage("The index file does not exist.");
         return false;
     }
-
-    if (!lockForReading()) {
+    bool gotLock = openWithReadLock();
+    if (!gotLock) {
         addErrorMessage("Could not get a lock for the index file.");
         return false;
     }
@@ -49,7 +51,7 @@ bool IndexReader::tryOpenAndReadHeader() {
     /**
      * Open the stream and see if it is good.
      */
-    this->inputStream = new boost::filesystem::ifstream(indexFile);
+    this->inputStream = new ifstream(indexFile);
     if (!this->inputStream->good()) {
         addErrorMessage("There was an error while opening input stream for index file.");
         this->inputStream->close();
@@ -102,8 +104,8 @@ IndexHeader IndexReader::readIndexHeader() {
     return header;
 }
 
-vector<boost::shared_ptr<IndexEntry>> IndexReader::readIndexFile() {
-    vector<boost::shared_ptr<IndexEntry>> convertedLines;
+vector<shared_ptr<IndexEntry>> IndexReader::readIndexFile() {
+    vector<shared_ptr<IndexEntry>> convertedLines;
     if (!tryOpenAndReadHeader()) {
         addErrorMessage("Could not read index file due to one or more errors during file open.");
         return convertedLines;
@@ -120,8 +122,8 @@ vector<boost::shared_ptr<IndexEntry>> IndexReader::readIndexFile() {
     return convertedLines;
 }
 
-vector<boost::shared_ptr<IndexEntryV1>> IndexReader::readIndexFileV1() {
-    vector<boost::shared_ptr<IndexEntryV1>> convertedLines;
+vector<shared_ptr<IndexEntryV1>> IndexReader::readIndexFileV1() {
+    vector<shared_ptr<IndexEntryV1>> convertedLines;
     // Initialize an empty index entry to make following steps a bit easier.
     while (indicesLeft > 0) {
         auto indexEntry = readIndexEntryV1();
@@ -132,10 +134,10 @@ vector<boost::shared_ptr<IndexEntryV1>> IndexReader::readIndexFileV1() {
     return convertedLines;
 }
 
-boost::shared_ptr<IndexEntry> IndexReader::readIndexEntry() {
+shared_ptr<IndexEntry> IndexReader::readIndexEntry() {
     if (!tryOpenAndReadHeader()) {
         addErrorMessage("Could not read index file due to one or more errors during file open.");
-        return boost::shared_ptr<IndexEntry>(nullptr);
+        return shared_ptr<IndexEntry>(nullptr);
     }
 
     // Read in and convert a specific header version to an IndexEntry vector
@@ -144,19 +146,19 @@ boost::shared_ptr<IndexEntry> IndexReader::readIndexEntry() {
     } // We do not need an else branch, a version range check is applied earlier.
 }
 
-boost::shared_ptr<IndexEntryV1> IndexReader::readIndexEntryV1() {
+shared_ptr<IndexEntryV1> IndexReader::readIndexEntryV1() {
     if (!readerIsOpen) {
         addErrorMessage("You have to open the IndexReader instance first with tryOpenAndReadHeader()");
-        return boost::shared_ptr<IndexEntryV1>(nullptr);
+        return shared_ptr<IndexEntryV1>(nullptr);
     }
 
     //Whyever, eof does not seem to work reliably, so use indicesLeft.
     if (inputStream->eof() || indicesLeft <= 0) {
         addErrorMessage("The stream is finished and no entries are left to read. Can't read a new entry.");
-        return boost::shared_ptr<IndexEntryV1>(nullptr);
+        return shared_ptr<IndexEntryV1>(nullptr);
     }
 
-    auto entry = boost::make_shared<IndexEntryV1>();
+    auto entry = make_shared<IndexEntryV1>();
     inputStream->read((char *) entry.get(), sizeof(IndexEntryV1));
     indicesLeft--;
 

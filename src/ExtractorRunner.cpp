@@ -36,3 +36,9 @@ bool ExtractorRunner::checkPremises() {
 unsigned char ExtractorRunner::run() {
     extractor->extractReadsToCout();
 }
+
+vector<string> ExtractorRunner::getErrorMessages() {
+    vector<string> l = ErrorAccumulator::getErrorMessages();
+    vector<string> r = extractor->getErrorMessages();
+    return mergeToNewVector(l, r);
+}

@@ -9,9 +9,6 @@
 
 #include "ActualRunner.h"
 #include "Extractor.h"
-#include <boost/filesystem.hpp>
-
-using namespace boost::filesystem;
 
 /**
  * The ExtractorRunner will, once started, read in the IndexHeader of an FASTQ index file and, based on the encoded
@@ -27,7 +24,7 @@ protected:
 
     bool enableDebugging;
 
-    boost::shared_ptr<Extractor> extractor;
+    shared_ptr<Extractor> extractor;
 
 public:
     ExtractorRunner(const path &fastqfile, const path &indexfile, u_int64_t startLine, u_int64_t lineCount, bool enableDebugging = false);
@@ -37,6 +34,8 @@ public:
     bool checkPremises() override;
 
     unsigned char run() override;
+
+    vector<string> getErrorMessages() override;
 };
 
 

@@ -11,6 +11,7 @@
 
 const char *const TEST_ZLIBBASE_SUITE = "Test suite for ZLibBasedFASTQProcessorBaseClass tests.";
 const char *const TEST_ZLIBBASE_CREATION = "Test creation of ZLibBasedFASTQProcessorBaseClass with a mock class.";
+const char *const TEST_SPLIT_STR = "Test splitStr()";
 
 class ZLibBasedFASTQProcessorBaseTestClass : public ZLibBasedFASTQProcessorBaseClass {
 public:
@@ -40,5 +41,15 @@ SUITE (TEST_ZLIBBASE_SUITE) {
                 CHECK(zStream->opaque == nullptr);   // Will be filled by inflateInit2
                 CHECK(zStream->next_in == nullptr);
                 CHECK(zStream->avail_in == 0);
+    }
+
+    TEST (TEST_SPLIT_STR) {
+        auto text = string("one\ntwo\nthree\nfour\n5\n6\n7\n\n");
+        vector<string> expectedVector{
+                "one", "two", "three", "four", "5", "6", "7", "", ""
+        };
+        vector<string> res = ZLibBasedFASTQProcessorBaseClass::splitStr(text);
+                CHECK_EQUAL(expectedVector.size(), res.size());
+                CHECK_ARRAY_EQUAL(expectedVector, res, res.size());
     }
 }

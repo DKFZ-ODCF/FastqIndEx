@@ -9,12 +9,9 @@
 
 #include "CommonStructsAndConstants.h"
 #include "IndexProcessor.h"
-#include <boost/shared_ptr.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
+#include <experimental/filesystem>
+#include <fstream>
 
-using namespace boost::filesystem;
-using namespace boost::interprocess;
 
 /**
  * Class for reading an index file. The current class concept will not feature templating or subclasses, see the comment
@@ -40,7 +37,7 @@ private:
      * Weird behaviour, but I could not get this running with a shared_ptr.
      * This threw boost assertion errors for null pointers.
      */
-    boost::filesystem::ifstream *inputStream;
+    std::ifstream *inputStream;
 
     /**
      * Count of indices which can still be read from the index file. The number is calculated by utilizing the
@@ -78,19 +75,19 @@ public:
      * Call this method to read in the whole index file and convert it to a usable form.
      * @return A vector of IndexLine instances.
      */
-    vector<boost::shared_ptr<IndexEntry>> readIndexFile();
+    vector<shared_ptr<IndexEntry>> readIndexFile();
 
     /**
      * Specialized version for readIndexFile for V1. Will be called by readIndexFile(), don't call directly.
      * @return A vector of IndexLine instances.
      */
-    vector<boost::shared_ptr<IndexEntryV1>> readIndexFileV1();
+    vector<shared_ptr<IndexEntryV1>> readIndexFileV1();
 
     /**
      * Reads one processed index entry from the file. Effectively calls readIndexEntryV[n].
      * @return
      */
-    boost::shared_ptr<IndexEntry> readIndexEntry();
+    shared_ptr<IndexEntry> readIndexEntry();
 
     // Example for further versions.
     // vector<IndexEntry> readIndexFileV2();
@@ -102,11 +99,11 @@ public:
      * we could also implement subclasses of IndexReader later.
      * @return
      */
-    boost::shared_ptr<IndexEntryV1> readIndexEntryV1();
+    shared_ptr<IndexEntryV1> readIndexEntryV1();
 
     // Example for further versions.
-    // boost::shared_ptr<IndexEntryV1> readIndexEntryV2();
-    // boost::shared_ptr<IndexEntryV1> readIndexEntryV3();
+    // shared_ptr<IndexEntryV1> readIndexEntryV2();
+    // shared_ptr<IndexEntryV1> readIndexEntryV3();
 
     IndexHeader getIndexHeader() { return readHeader; }
 

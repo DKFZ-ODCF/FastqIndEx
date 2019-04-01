@@ -7,17 +7,15 @@
 #ifndef FASTQINDEX_ZLIBHELPER_H
 #define FASTQINDEX_ZLIBHELPER_H
 
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem.hpp>
 #include <cstdio>
 #include <zlib.h>
-#include <boost/shared_ptr.hpp>
 #include "ErrorAccumulator.h"
 #include "CommonStructsAndConstants.h"
 #include "IndexReader.h"
+#include <experimental/filesystem>
 
+using std::experimental::filesystem::path;
 using std::stringstream;
-using boost::filesystem::path;
 
 /**
  * Helper class for zlib stuff.
@@ -98,9 +96,23 @@ protected:
      */
     stringstream currentDecompressedBlock;
 
-    ZLibBasedFASTQProcessorBaseClass(const path &fastq, const path &index, bool enableDebugging);
+    ZLibBasedFASTQProcessorBaseClass(path fastq, path index, bool enableDebugging);
 
 public:
+
+    static vector<string> splitStr(const string &str, char delimiter = '\n') {
+        std::stringstream ss(str);
+        std::string item;
+        std::vector<std::string> splittedStrings;
+        while (std::getline(ss, item, delimiter))
+        {
+            splittedStrings.push_back(item);
+        }
+        if(str.c_str()[str.size() - 1] == delimiter)
+            splittedStrings.emplace_back("");
+
+        return splittedStrings;
+    }
 
     path getFastq() { return fastqfile; }
 

@@ -7,12 +7,13 @@
 #ifndef FASTQINDEX_TESTRESOURCESANDFUNCTIONS_H
 #define FASTQINDEX_TESTRESOURCESANDFUNCTIONS_H
 
+#include <experimental/filesystem>
+#include <mutex>
 #include <string>
-#include <boost/filesystem.hpp>
-#include <boost/thread/mutex.hpp>
 
 using namespace std;
-using namespace boost::filesystem;
+using std::experimental::filesystem::path;
+
 
 class TestResourcesAndFunctions {
 
@@ -22,11 +23,11 @@ private:
 
     string testName;
 
-    path testPath;
+    path testPath = path("");
 
-    bool testPathCreationWasSuccessful;
+    bool testPathCreationWasSuccessful = false;
 
-    boost::mutex lock;
+    mutex lock;
 
 public:
 
@@ -36,6 +37,12 @@ public:
 
     virtual ~TestResourcesAndFunctions();
 
+    /**
+     * Initially I had this tested with a pointer to TestRes...Functions. Unfortunately, this raised a sigabort
+     * That is, why I implemented the finalize() method, which will be called by the destructor.
+     */
+    void finalize();
+
     string getTestSuite();
 
     string getTestName();
@@ -44,13 +51,13 @@ public:
 
     bool getTestPathCreationWasSuccessful();
 
-    path filePath(string filename);
+    path filePath(const string &filename);
 
-    path getResource(string filename);
+    path getResource(const string &filename);
 
-    path createEmptyFile(string filename);
+    path createEmptyFile(const string &filename);
 
-    static void CreateEmptyFile(path _path);
+    static void CreateEmptyFile(const path &_path);
 };
 
 

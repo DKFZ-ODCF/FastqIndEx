@@ -7,10 +7,12 @@
 #ifndef FASTQINDEX_COMMONSTRUCTS_H
 #define FASTQINDEX_COMMONSTRUCTS_H
 
-#include <boost/shared_ptr.hpp>
 #include <cstring>
+#include <memory>
 #include <string>
 #include <zconf.h>
+
+using std::shared_ptr;
 
 // Forward declaration of IndexEntryV[n]
 struct IndexEntryV1;
@@ -194,7 +196,7 @@ struct IndexEntryV1 : public VirtualIndexEntry {
     }
 
 
-    boost::shared_ptr<IndexEntry> toIndexEntry();
+    shared_ptr<IndexEntry> toIndexEntry();
 };
 
 

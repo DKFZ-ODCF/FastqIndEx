@@ -9,15 +9,17 @@
 #include "../src/IndexerRunner.h"
 #include "../src/IndexReader.h"
 #include "TestResourcesAndFunctions.h"
+#include <memory>
 #include <UnitTest++/UnitTest++.h>
 #include <zlib.h>
+#include <fstream>
 
 const char *const INDEXER_SUITE_TESTS = "IndexerTests";
 const char *const TEST_INDEXER_CREATION = "IndexerCreation";
 const char *const TEST_CREATE_INDEX = "testCreateIndex";
-const char *const TEST_INITIALIZE_ZSTREAM_WITH_ZEROES = "Initialize z_stream struct with some zeroes";
 const char *const TEST_CREATE_INDEX_SMALL = "Test create index with small fastq test data.";
 const char *const TEST_CREATE_INDEX_LARGE = "Test create index with more fastq test data.";
+const char *const TEST_CREATE_INDEX_CONCAT = "Test create index with the small fastq concatenated two times.";
 
 SUITE (INDEXER_SUITE_TESTS) {
 
@@ -64,12 +66,12 @@ SUITE (INDEXER_SUITE_TESTS) {
     TEST (TEST_CREATE_HEADER) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_INDEX);
 
-        path fastq = res.getResource(string("test2.fastq.gz"));
+        path fastq = res.getResource("test2.fastq.gz");
         path index = res.filePath("test2.fastq.gz.idx");
 
         Indexer indexer(fastq, index, -1,
                         true); // Tell the indexer to store entries. This is solely a debug feature but it
-        boost::shared_ptr<IndexHeader> header = indexer.createHeader();
+        shared_ptr<IndexHeader> header = indexer.createHeader();
                 CHECK(header.get());
                 CHECK_EQUAL(Indexer::INDEXER_VERSION, header->indexWriterVersion);
     }
@@ -77,7 +79,41 @@ SUITE (INDEXER_SUITE_TESTS) {
     // TEST ("readCompressedDataFromStream")  <-- How to write a test? Currently its covered in the larger tests.
 
     // TEST ("call createIndex() twice")
+    
+    TEST (TEST_CREATE_INDEX_CONCAT) {
+        TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_INDEX_SMALL);
 
+        path fastq = res.getResource("test_concat.fastq.gz");
+        path index = res.filePath("test_concat.fastq.gz.idx");
+
+        auto *indexer = new Indexer(fastq, index, -1, true);
+                CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.
+
+        bool result = indexer->createIndex();
+
+        auto storedHeader = indexer->getStoredHeader();
+        auto storedEntries = indexer->getStoredEntries();
+        auto storedLines = indexer->getStoredLines();
+
+        int numberOfLinesInTestFASTQ = 12000;
+
+                CHECK(result);
+                CHECK(exists(index));
+                CHECK(indexer->wasSuccessful());
+
+                CHECK(storedHeader);
+                CHECK_EQUAL(Indexer::INDEXER_VERSION, storedHeader->indexWriterVersion);
+
+                CHECK_EQUAL(1, storedEntries.size());
+                CHECK_EQUAL(numberOfLinesInTestFASTQ, storedLines.size());
+
+        // Why is this a pointer? Just to get access to the file on the command line. It is written if the
+        // Indexer is delete OR enough data was written. If we do not have the pointer, the file gets written after the
+        // test is finished.
+        delete indexer;
+                CHECK(exists(index));
+    }
+    
     TEST (TEST_CREATE_INDEX_SMALL) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_INDEX_SMALL);
 
@@ -224,7 +260,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         int success = std::system(command.c_str());
                 CHECK_EQUAL(0, success);
 
-        boost::filesystem::ifstream strm(extractedFastq);
+        ifstream strm(extractedFastq);
         vector<string> decompressedSourceContent;
         string line;
         while (std::getline(strm, line)) {

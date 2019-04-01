@@ -11,16 +11,10 @@
 #include "ErrorAccumulator.h"
 #include "IndexWriter.h"
 #include "ZLibBasedFASTQProcessorBaseClass.h"
-#include <boost/filesystem.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/ptr_container/ptr_list.hpp>
 #include <zlib.h>
 #include <string>
 
 using namespace std;
-using namespace boost;
-using namespace boost::filesystem;
-using namespace boost::ptr_container;
 
 /**
  * The Indexer class is used to walk through a gz compressed FASTQ file and to write an index for this file.
@@ -46,19 +40,19 @@ private:
 
     long numberOfFoundEntries = 0;
 
-    boost::shared_ptr<IndexWriter> indexWriter;
+    shared_ptr<IndexWriter> indexWriter;
 
     /**
      * For debug and test purposes, used when debuggingEnabled is true
      * keeps the index header
      */
-    boost::shared_ptr<IndexHeader> storedHeader = boost::shared_ptr<IndexHeader>(nullptr);
+    shared_ptr<IndexHeader> storedHeader = shared_ptr<IndexHeader>(nullptr);
 
     /**
      * For debug and test purposes, used when debuggingEnabled is true
      * Keeps all generated index entries
      */
-    vector<boost::shared_ptr<IndexEntryV1>> storedEntries;
+    vector<shared_ptr<IndexEntryV1>> storedEntries;
 
     /**
      * Current bits for the next index entry.
@@ -109,7 +103,7 @@ public:
     /**
      * This will create an IndexHeader instance with INDEXER_VERSION and the size of the used IndexEntry struct.
      */
-    boost::shared_ptr<IndexHeader> createHeader();
+    shared_ptr<IndexHeader> createHeader();
 
     /**
      * Start the index creation,
@@ -134,13 +128,13 @@ public:
      * For debugging, works only, when enableDebugging was true on object construction.
      * @return The IndexHeader, which was created during createIndex()
      */
-    boost::shared_ptr<IndexHeader> getStoredHeader() { return storedHeader; };
+    shared_ptr<IndexHeader> getStoredHeader() { return storedHeader; };
 
     /**
      * For debugging, works only, when enableDebugging was true on object construction.
      * @return The index entries, which were created during the index run.
      */
-    const vector<boost::shared_ptr<IndexEntryV1>> &getStoredEntries() { return storedEntries; }
+    const vector<shared_ptr<IndexEntryV1>> &getStoredEntries() { return storedEntries; }
 
 
 

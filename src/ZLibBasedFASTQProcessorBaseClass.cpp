@@ -4,23 +4,20 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/classification.hpp>
 #include <zlib.h>
 #include <cstdio>
-#include <boost/range/adaptor/reversed.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/algorithm/string/split.hpp>
 #include "Extractor.h"
 #include "ZLibBasedFASTQProcessorBaseClass.h"
 
 ZLibBasedFASTQProcessorBaseClass::ZLibBasedFASTQProcessorBaseClass(
-        const boost::filesystem::path &fastq,
-        const boost::filesystem::path &index,
-        const bool enableDebugging) : fastqfile(fastq),
-                                      indexfile(index),
-                                      enableDebugging(enableDebugging) {
+        path fastq,
+        path index,
+        const bool enableDebugging) :
+        enableDebugging(enableDebugging) {
     // clang-tidy will complain, that zStream is not initialized by this constructor. This is done in another step.
+
+    fastqfile = move(fastq);
+    indexfile = move(index);
 }
 
 bool ZLibBasedFASTQProcessorBaseClass::initializeZStream(int mode) {
@@ -40,7 +37,7 @@ bool ZLibBasedFASTQProcessorBaseClass::initializeZStream(int mode) {
     return true;
 }
 
-bool ZLibBasedFASTQProcessorBaseClass::readCompressedDataFromStream(FILE * inputFile) {
+bool ZLibBasedFASTQProcessorBaseClass::readCompressedDataFromStream(FILE *inputFile) {
     /* get some compressed data from input file */
     zStream.avail_in = std::fread((void *) input, 1, CHUNK_SIZE, inputFile);
     if (std::ferror(inputFile)) {
@@ -113,6 +110,7 @@ bool ZLibBasedFASTQProcessorBaseClass::decompressNextChunkOfData(bool checkForSt
         errorWasRaised = true;
         return false;
     }
+//    && totalBytesIn == file_size(fastqfile)
     if (checkForStreamEnd && zlibResult == Z_STREAM_END) {
         return false;
     }

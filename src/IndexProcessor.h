@@ -8,13 +8,15 @@
 #define FASTQINDEX_INDEXPROCESSOR_H
 
 #include "ErrorAccumulator.h"
-#include <boost/filesystem.hpp>
-#include <boost/interprocess/sync/interprocess_sharable_mutex.hpp>
-#include <boost/thread/mutex.hpp>
+#include <mutex>
+#include <shared_mutex>
+#include <experimental/filesystem>
 
-using namespace boost;
-using namespace boost::filesystem;
-using namespace boost::interprocess;
+using namespace std;
+using std::experimental::filesystem::path;
+using std::lock_guard;
+using std::mutex;
+
 
 /**
  * Base class for IndexReader and IndexWriter.
@@ -29,30 +31,28 @@ class IndexProcessor : public ErrorAccumulator {
 private:
 
     /**
-     * Interprocess lock which grants shared reader and exclusive writer access to the index file.
-     * The lock stays open as long as either close() was called OR the IndexProcessor instance is destroyed.
-     */
-    boost::interprocess::interprocess_sharable_mutex interprocessSharableMutex;
-
-    /**
      * Better play safe in methods handling the above mutex.
      * Testing this would be cumbersome, we assume that the boost developers did their job and that it works as
      * expected.
      */
-    boost::mutex methodMutex;
+    mutex methodMutex;
 
     bool readLockActive = false;
 
     bool writeLockActive = false;
 
+    FILE* indexFileHandle = nullptr;
 
 protected:
 
+    /**
+     * The original path of the index file.
+     */
     path indexFile;
 
 public:
 
-    explicit IndexProcessor(const path &indexFile);
+    explicit IndexProcessor(path indexFile);
 
     ~IndexProcessor();
 
@@ -63,14 +63,14 @@ public:
      * This will use an interprocess mutex to ensure, that file operations on the index file are safe!
      * @return
      */
-    bool lockForReading();
+    bool openWithReadLock();
 
     /**
      * Use this to open the output file.
      * This will use an interprocess mutex to ensure, that file operations on the index file are safe!
      * @return
      */
-    bool lockForWriting();
+    bool openWithWriteLock();
 
     /**
      * @return true, if the object has a read or write lock otherwise false.

@@ -6,17 +6,13 @@
 
 #include "Extractor.h"
 #include "ZLibBasedFASTQProcessorBaseClass.h"
-#include <boost/algorithm/string/split.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/range/adaptor/reversed.hpp>
 #include <cstdio>
 #include <zlib.h>
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string.hpp>
+#include <experimental/filesystem>
+#include <iostream>
 
 using namespace std;
-using namespace boost;
-using namespace boost::filesystem;
+using experimental::filesystem::path;
 
 Extractor::Extractor(const path &fastqfile,
                      const path &indexfile,
@@ -26,7 +22,7 @@ Extractor::Extractor(const path &fastqfile,
         : ZLibBasedFASTQProcessorBaseClass(fastqfile, indexfile, enableDebugging),
           startingLine(startingLine),
           lineCount(lineCount) {
-    this->indexReader = boost::make_shared<IndexReader>(indexfile);
+    this->indexReader = make_shared<IndexReader>(indexfile);
 }
 
 bool Extractor::checkPremises() {
@@ -38,8 +34,8 @@ bool Extractor::checkPremises() {
 }
 
 bool Extractor::extractReadsToCout() {
-    boost::shared_ptr<IndexEntry> previousEntry = indexReader->readIndexEntry();
-    boost::shared_ptr<IndexEntry> startingIndexLine = previousEntry;
+    shared_ptr<IndexEntry> previousEntry = indexReader->readIndexEntry();
+    shared_ptr<IndexEntry> startingIndexLine = previousEntry;
     while (indexReader->getIndicesLeft() > 0) {
         auto entry = indexReader->readIndexEntry();
         if (entry->startingLineInEntry > startingLine) {
@@ -110,19 +106,19 @@ bool Extractor::extractReadsToCout() {
             currentDecompressedBlock.str("");
             currentDecompressedBlock.clear();
 
-            if(!decompressNextChunkOfData(checkForStreamEnd, Z_NO_FLUSH))
+            if (!decompressNextChunkOfData(checkForStreamEnd, Z_NO_FLUSH))
                 break;
 
             std::vector<string> splitLines;
             string str = currentDecompressedBlock.str();
-            boost::split(splitLines, str, boost::is_any_of("\n"));
-
+            splitLines = splitStr(str);
             totalSplitCount += splitLines.size();
 
             string curIncompleteLastLine;
             // Strip away incomplete line, store this line for the next block.
             string lastSplitLine = splitLines[splitLines.size() - 1];
-            if (!boost::ends_with(lastSplitLine, "\n")) {
+            char lastChar = lastSplitLine.c_str()[lastSplitLine.size() - 1];
+            if (lastChar != '\n') {
                 curIncompleteLastLine = lastSplitLine;
                 splitLines.pop_back();
                 totalSplitCount--;

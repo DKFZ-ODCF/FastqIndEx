@@ -3,11 +3,16 @@
  *
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
-
-#include <boost/thread/mutex.hpp>
 #include "IndexProcessor.h"
+#include <mutex>
+#include <sys/file.h>
+#include <iostream>
 
-IndexProcessor::IndexProcessor(const path &indexFile) : indexFile(indexFile) {
+using std::lock_guard;
+using std::mutex;
+
+IndexProcessor::IndexProcessor(path indexFile)  {
+    this->indexFile = indexFile;
 }
 
 const path &IndexProcessor::getIndexFile() const {
@@ -19,28 +24,44 @@ IndexProcessor::~IndexProcessor() {
 }
 
 /**
- * The methods look a bit complicated at first glance, but we need some second form of locking
+ * The methods looks a bit complicated at first glance, but we need some second form of locking
  * when it comes to intra-process locks. It happened in the tests, that the sharable mutex was closed but
  * the write lock could not be established. Using the slightly more complicated syntax below, it works in
  * the tests.
  */
-bool IndexProcessor::lockForReading() {
-    boost::mutex::scoped_lock sl(methodMutex);
-    if (this->writeLockActive) return false;
-    bool result = this->interprocessSharableMutex.try_lock_sharable();
-    if (result) this->readLockActive = true;
+bool IndexProcessor::openWithReadLock() {
+    lock_guard<mutex> lock(methodMutex);
+    if (this->readLockActive)
+        return true;
+    indexFileHandle = fopen(indexFile.c_str(), "rb");
+    bool result = flock(fileno(indexFileHandle), LOCK_SH | LOCK_NB) == 0;
+    if (result)
+        this->readLockActive = true;
+    else {
+        fclose(indexFileHandle);
+        indexFileHandle == nullptr;
+    }
     return result;
 }
 
 /**
  * Note the comment for openRead!
  */
-bool IndexProcessor::lockForWriting() {
-    boost::mutex::scoped_lock sl(methodMutex);
+bool IndexProcessor::openWithWriteLock() {
+    lock_guard<mutex> lock(methodMutex);
     if (this->readLockActive || this->writeLockActive) return false;
-    bool result = this->interprocessSharableMutex.try_lock();
+
+    indexFileHandle = fopen(indexFile.c_str(), "wb");
+    if(indexFileHandle == nullptr)
+        return false;
+
+    bool result = flock(fileno(indexFileHandle), LOCK_EX | LOCK_NB) == 0;
     if (result)
         this->writeLockActive = result;
+    else {
+        fclose(indexFileHandle);
+        indexFileHandle == nullptr;
+    }
     return result;
 }
 
@@ -52,11 +73,15 @@ bool IndexProcessor::hasLock() {
  * Note the comment for openRead!
  */
 void IndexProcessor::unlock() {
-    boost::mutex::scoped_lock sl(methodMutex);
-    if (readLockActive)
-        this->interprocessSharableMutex.unlock_sharable();
-    if (writeLockActive)
-        this->interprocessSharableMutex.unlock();
+    lock_guard<mutex> lock(methodMutex);
     readLockActive = false;
     writeLockActive = false;
+    if (this->indexFileHandle != nullptr) {
+//        try {
+//            fclose(indexFileHandle);
+//        } catch(...) {
+//            std::cout << "";
+//        }
+        flock(fileno(indexFileHandle), LOCK_UN);
+    }
 }

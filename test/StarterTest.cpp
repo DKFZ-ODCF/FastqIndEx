@@ -9,13 +9,12 @@
 #include "../src/ExtractorRunner.h"
 #include "TestConstants.h"
 
-#include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <cstring>
 #include <UnitTest++/UnitTest++.h>
+#include <experimental/filesystem>
 
-using namespace boost::program_options;
-using namespace boost::filesystem;
+using std::experimental::filesystem::path;
+
 using namespace std;
 
 SUITE (StarterTests) {
@@ -48,7 +47,7 @@ SUITE (StarterTests) {
         // Strings in the array cannot be deleted, but delete the array itself immediately.
         CHECK(runner && runner->isCLIOptionsPrinter());
 
-        auto explicitRunner = boost::static_pointer_cast<PrintCLIOptionsRunner>(runner);
+        auto explicitRunner = static_pointer_cast<DoNothingRunner>(runner);
 
     }
 
@@ -71,7 +70,7 @@ SUITE (StarterTests) {
 
                 CHECK (runner && runner->isIndexer());
 
-        auto explicitRunner = boost::static_pointer_cast<IndexerRunner>(runner);
+        auto explicitRunner = static_pointer_cast<IndexerRunner>(runner);
     }
 
     TEST (testCreateRunnerWithValidIndexParametersWithIndex) {
@@ -93,7 +92,7 @@ SUITE (StarterTests) {
 
                 CHECK (runner && runner->isIndexer());
 
-        auto explicitRunner = boost::static_pointer_cast<IndexerRunner>(runner);
+        auto explicitRunner = static_pointer_cast<IndexerRunner>(runner);
     }
 
     TEST (testCreateRunnerWithValidExtractParameters) {
@@ -123,6 +122,6 @@ SUITE (StarterTests) {
 
                 CHECK (runner && runner->isExtractor());
 
-        auto explicitRunner = boost::static_pointer_cast<ExtractorRunner>(runner);
+        auto explicitRunner = static_pointer_cast<ExtractorRunner>(runner);
     }
 }

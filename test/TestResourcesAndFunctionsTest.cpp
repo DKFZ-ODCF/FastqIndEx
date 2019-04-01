@@ -6,9 +6,9 @@
 
 #include "TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
-#include <boost/filesystem.hpp>
+#include <experimental/filesystem>
 
-using namespace boost::filesystem;
+using namespace std::experimental::filesystem;
 
 SUITE (TestResourcesAndFunctionsTest) {
 
@@ -23,18 +23,22 @@ SUITE (TestResourcesAndFunctionsTest) {
     }
 
     TEST (testCreationAndDestructionWithTestPath) {
-        TestResourcesAndFunctions *res = new TestResourcesAndFunctions("ASimpleTest");
+        TestResourcesAndFunctions res("ASimpleTest");
 
-        path testPath = res->getTestPath();
+        path testPath = res.getTestPath();
+        bool creationWasSuccessful = res.getTestPathCreationWasSuccessful();
                 CHECK(!testPath.empty());
-                CHECK(res->getTestPathCreationWasSuccessful());
+                CHECK(creationWasSuccessful);
                 CHECK(exists(testPath));
 
         const string &fullPath = testPath.string();
-                CHECK(fullPath.find(res->getTestSuite()) != std::string::npos);
-                CHECK(fullPath.find(res->getTestName()) != std::string::npos);
+                CHECK(fullPath.find(res.getTestSuite()) != std::string::npos);
+                CHECK(fullPath.find(res.getTestName()) != std::string::npos);
 
-        delete res;
+        // Initially I had this test with a pointer to TestRes...Functions. Unfortunately, this raised a sigabort
+        // That is, why I implemented the finalize() method, which will be called by the destructor.
+        // delete res;
+        res.finalize();
                 CHECK(!exists(testPath));
     }
 
@@ -50,7 +54,8 @@ SUITE (TestResourcesAndFunctionsTest) {
         // As we do want resources to be loaded from:
         //   ~/Projects/FastqIndEx/cmake-build-debug/test/testapp
         // instead, we will have to walk a bit in the paths to get the right file.
-        path expectedPath(current_path().parent_path().parent_path().string() + string("/test/resources/test2.fastq.gz"));
+        path expectedPath(
+                current_path().parent_path().parent_path().string() + string("/test/resources/test2.fastq.gz"));
         path resourcePath = res.getResource("test2.fastq.gz");
                 CHECK(exists(resourcePath));
                 CHECK(expectedPath == resourcePath);

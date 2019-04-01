@@ -9,12 +9,11 @@
 
 #include "CommonStructsAndConstants.h"
 #include "IndexProcessor.h"
-#include <boost/shared_ptr.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
+#include <experimental/filesystem>
 
-using namespace boost::filesystem;
-using namespace boost::interprocess;
+using namespace std;
+using std::experimental::filesystem::path;
+
 
 class IndexWriter : public IndexProcessor {
 private:
@@ -27,7 +26,7 @@ private:
 
     bool writerIsOpen = false;
 
-    boost::shared_ptr<boost::filesystem::ofstream> outputStream;
+    shared_ptr<std::ofstream> outputStream;
 
 public:
 
@@ -39,9 +38,9 @@ public:
 
     bool tryOpen();
 
-    bool writeIndexHeader(boost::shared_ptr<IndexHeader> header);
+    bool writeIndexHeader(const shared_ptr<IndexHeader> &header);
 
-    bool writeIndexEntry(boost::shared_ptr<IndexEntryV1> entry);
+    bool writeIndexEntry(const shared_ptr<IndexEntryV1> &entry);
 
     void flush();
 

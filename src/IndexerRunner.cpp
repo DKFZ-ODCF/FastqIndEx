@@ -10,9 +10,9 @@
 
 using namespace std;
 
-IndexerRunner::IndexerRunner(path fastqfile, path indexfile, bool enableDebugging) :
+IndexerRunner::IndexerRunner(const path &fastqfile, const path &indexfile, int blockInterval, bool enableDebugging) :
         ActualRunner(fastqfile, indexfile) {
-    this->indexer = new Indexer(this->fastqFile, this->indexFile, -1, enableDebugging);
+    this->indexer = new Indexer(this->fastqFile, this->indexFile, blockInterval, enableDebugging);
 }
 
 IndexerRunner::~IndexerRunner() {
@@ -28,7 +28,8 @@ bool IndexerRunner::checkPremises() {
 }
 
 unsigned char IndexerRunner::run() {
-    indexer->createIndex();
+    if (indexer->createIndex()) return 0;
+    else return 1;
 }
 
 vector<string> IndexerRunner::getErrorMessages() {

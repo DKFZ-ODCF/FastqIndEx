@@ -24,7 +24,7 @@ SUITE (SUITE_EXTRACTORRUNNER_TESTS) {
                 CHECK(!r.isCLIOptionsPrinter());
                 CHECK(r.isExtractor());
                 CHECK(!r.isIndexer());
-                CHECK(r.getErrorMessages().empty());
+                CHECK(!r.getErrorMessages().empty());
     }
 
     TEST (TEST_EXTRACTORRUNNER_CREATION_VALID_FILES) {
@@ -34,7 +34,8 @@ SUITE (SUITE_EXTRACTORRUNNER_TESTS) {
         path index = res.getResource("test.fastq.gz.idx_v1");
 
         ExtractorRunner r(fastq, index, 0, 100);
-                CHECK(r.checkPremises()); // Index is empty. Won't work!
+        bool premisesMet = r.checkPremises();
+                CHECK(premisesMet);
                 CHECK(!r.isCLIOptionsPrinter());
                 CHECK(r.isExtractor());
                 CHECK(!r.isIndexer());

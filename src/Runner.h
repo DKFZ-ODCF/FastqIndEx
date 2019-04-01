@@ -57,9 +57,9 @@ public:
  * afterwards be used to create a Runner (Extractor, Indexer). If the options are somehow wrong and no valid mode could
  * be determined, a PrintCLIOptionsRunner will be created instead and this will then print out the command line options.
  */
-class PrintCLIOptionsRunner : public Runner {
+class DoNothingRunner : public Runner {
 public :
-    PrintCLIOptionsRunner() = default;
+    DoNothingRunner() = default;
 
     /**
      * Print CLI options to cerr

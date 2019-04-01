@@ -7,6 +7,16 @@
 #ifndef FASTQINDEX_STARTER_H
 #define FASTQINDEX_STARTER_H
 
+#include "Runner.h"
+#include "IndexerRunner.h"
+#include "ExtractorRunner.h"
+#include "../tclap-1.2.2/include/tclap/CmdLine.h"
+#include <cstring>
+#include <memory>
+
+using namespace std;
+using namespace TCLAP;
+
 static const char *const FASTQFILE_PARAMETER = "fastqFile";
 
 static const char *const INDEXFILE_PARAMETER = "indexFile";
@@ -14,13 +24,6 @@ static const char *const INDEXFILE_PARAMETER = "indexFile";
 static const char *const STARTLINE_PARAMETER = "startline";
 
 static const char *const NOOFREADS_PARAMETER = "noofreads";
-
-#include <boost/program_options.hpp>
-#include <cstring>
-#include "Runner.h"
-
-using namespace boost::program_options;
-using namespace std;
 
 /**
  * The starter is the entrypoint for our application. It will take the command line arguments and try to transform them
@@ -30,27 +33,27 @@ using namespace std;
  */
 class Starter {
 private:
-    options_description cliOptions;
-    options_description hidden;
-    positional_options_description posCliOptions;
 
-    static Starter* instance;
+    static Starter *instance;
 
 public:
 
-    static Starter* getInstance();
+    static Starter *getInstance();
 
-    Starter();
+    Starter() = default;
 
-    static constexpr const char* INDEX_MODE = "index";
+    path argumentToPath(ValueArg<string> &cliArg) const;
 
-    static constexpr const char* EXTRACTION_MODE = "extract";
+    DoNothingRunner* assembleSmallCmdLineParserAndParseOpts(int argc, const char **argv);
 
-    void assembleCLIOptions();
+    IndexerRunner* assembleCmdLineParserForIndexAndParseOpts(int argc, const char **argv);
 
-    options_description* getCLIOptions();
+    ExtractorRunner* assembleCmdLineParserForExtractAndParseOpts(int argc, const char **argv);
 
-    boost::shared_ptr<Runner> createRunner(int argc, const char *argv[]);
+    Runner* assembleCLIOptions(int argc, const char *argv[]);
+
+    shared_ptr<Runner> createRunner(int argc, const char *argv[]);
+
 };
 
 

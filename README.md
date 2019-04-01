@@ -24,28 +24,34 @@ choice and run it.
 
 ### Download + Compile
 
-
 #### Downloads and install dependencies, if necessary (before trying to make the binary)
 
 FastqIndEx has the following dependencies, which should be met before building it:
 
 | Dependency    | Version  / Git Hash                       | Remarks                                 |
 | ---           |---                                        | ---                                     |
-| Boost         | 1.54                                      | Could not get higher version running.   |
 | CMake         | 3.13.x                                    |                                         |
-| gcc           | 4.8 / 7.3                                 | Build was tested with both versions.    |
+| gcc           | 7.3                                       |                                         |
+| tclap         | 1.2.2                                     |                                         |
 | zlib          | 1.2.8 / 1.2.11                            | Build was tested with both versions.    |
 | UnitTest++    | bc5d87f484cac2959b0a0eafbde228e69e828d74  |                                         |
 
-##### Boost, CMake, zlib...
+##### g++/gcc
+
+Before you run cmake, you might need to set
+
+``` Bash
+export CC=/usr/local/bin/gcc
+export CXX=/usr/local/bin/g++
+```
+
+to the proper locations of your gcc/g++ binaries. 
+
+##### CMake, zlib...
 
 ``` Bash
 wget https://github.com/Kitware/CMake/releases/download/v3.13.4/cmake-3.13.4.tar.gz
 tar -xvzf cmake-3.13.4.tar.gz
-# Configure and build afterwards
-
-wget https://sourceforge.net/projects/boost/files/boost/1.54.0/boost_1_54_0.tar.gz/download && mv download boost_1_54_0.tar.gz
-tar -xvzf boost_1_54_0.tar.gz
 # Configure and build afterwards
 
 wget https://www.zlib.net/zlib-1.2.11.tar.gz
@@ -67,7 +73,6 @@ cmake --build . --target install
 
 #### FastqIndEx
 
-
 To compile it, create a CMake build directory and run CMake afterwards:
 
 ``` Bash
@@ -75,9 +80,8 @@ cd FastqIndEx
 mkdir release                                                             # Or also debug, in case you want to develop
 cd release
 cmake -G "Unix Makefiles" \
-    -D BOOST_ROOT:PATH=/path/to/boost_1_54_0 \                            # If necessary
     -D "UnitTest++_DIR":PATH=/path/to/unittest-cpp/lib/cmake/UnitTest++ \ # If necessary
-    -D ZLIB_LIBRARARY=/path/to/zlib-1.2.11/libz.a \                       # If necessary
+    -D ZLIB_LIBRARY=/path/to/zlib-1.2.11/libz.a \                         # If necessary
     -D ZLIB_INCLUDE_DIR=/path/to/zlib-1.2.11 \                            # If necessary
     -DCMAKE_BUILD_TYPE=Release                                            # Or =Debug, if you plan to develop 
     ..
@@ -99,14 +103,12 @@ To run the tests, run the test binary like:
 
 The tests take around 10sec on my machine.
 
-
-
 ## General Usage
 
 ### Index
 
 ``` Bash
-
+/home/heinold/Projekte/FastqIndEx/release/src/fastqindex index -f=test4.fastq.gz -i=test4.fastq.gz.idx2
 ```
 
 ### Extract
@@ -115,13 +117,66 @@ The tests take around 10sec on my machine.
 
 ```
 
+## Code stability and safety
+
+There are several things we consider and do to make usage of FastqIndEx
+as safe as possible.
+
+   
+**<span style="color:orange;">=>  We will not get the application a 100%
+  safe, but we try to minimize the risk of data corruption.</span>**
+
+### Code validation with clang-tidy
+
+We use CLion to develop FastqIndEx. CLion has clang-tidy support built 
+in, which we use to eliminate well known issues and problems.
+
+### Runtime checks with Valgrind
+
+We use [Valgrind](http://valgrind.org/) to check for memory leaks which 
+e.g. lead to SIGSEV or SIGABRT.
+
+### Index file access considerations
+
+When it comes to safely accessing the index file, we want to have it so
+that:
+- Writing to the index is exclusive. No other reader or writer is 
+  allowed at the same time.
+- It is allowed to read multiple times from an index file, if no writer 
+  is active. 
+
+As we work with network file systems, we need to deal with several 
+problems:
+- flock only works correct with NFS on newer Linux kernels, which is ok.
+- However, we cannot guarantee, that a file which was not locked, will
+  be overriden during our read.
+
+To overcome these problems:
+- We can use flock for our writer. So writing will be safe, as long as
+  no other process starts writing to the file. 
+  <br><span style="color:green;">=> Implemented</span>
+- We can write out a md5sum file for the index after it was created. 
+  <br><span style="color:red;">Not implemented</span>
+- We can check for an existing lockfile before we read from a file and 
+  abort early. 
+  <br><span style="color:green;">Implemented</span>
+- We can read in the md5sum file and calculate our md5sum during our 
+  read. 
+  <br><span style="color:red;">Not implemented</span> 
+- We can also constantly perform sanity check for changes in timestamp,
+  file size or file existence. 
+  <br><span style="color:red;">Not implemented</span>
+- We can store md5sums for IndexEntries, e.g. for the first valid 
+  line(s) in each compressed block. 
+  <br><span style="color:red;">Not implemented</span>
+
 ## Further links
 
-* [Boost](https://www.boost.org/)
 * [CMake](https://cmake.org/)
 * [CMake Tutorial 1](https://preshing.com/20170511/how-to-build-a-cmake-based-project/)
 * [CMake Tutorial 2](http://wiki.ogre3d.org/Getting+Started+With+CMake)
 * [UnitTest++](https://github.com/unittest-cpp/unittest-cpp)
+* [Valgrind](http://valgrind.org/)
 * [zindex](https://mattgodbolt.github.io/zindex/#/)
 * [zran.c](https://github.com/madler/zlib/blob/master/examples/zran.c) 
   random gz file access example.

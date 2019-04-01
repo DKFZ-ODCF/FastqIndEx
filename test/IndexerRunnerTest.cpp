@@ -13,14 +13,14 @@ const char *INDEXERRUNNER_SUITE_TESTS = "IndexerRunnerTests";
 const char *TEST_INDEXERRUNNER_CREATION = "IndexerRunnerCreation";
 const char *TEST_INDEXERRUNNER_ERRORMESSAGE_PASSTHROUGH = "IndexerRunnerWithErrorMessagPassthrough";
 
-boost::shared_ptr<IndexerRunner> createRunner(const char *const testID, bool createIndex) {
+shared_ptr<IndexerRunner> createRunner(const char *const testID, bool createIndex) {
     TestResourcesAndFunctions res(INDEXERRUNNER_SUITE_TESTS, testID);
 
     path fastq = res.createEmptyFile("fastq.fastq");
     if (createIndex)
-        return boost::make_shared<IndexerRunner>(fastq, res.createEmptyFile("fastq.fastq.idx"));
+        return make_shared<IndexerRunner>(fastq, res.createEmptyFile("fastq.fastq.idx"));
     else
-        return boost::make_shared<IndexerRunner>(fastq, res.filePath("fastq.fastq.idx"));
+        return make_shared<IndexerRunner>(fastq, res.filePath("fastq.fastq.idx"));
 }
 
 SUITE (INDEXERRUNNER_SUITE_TESTS) {
@@ -29,7 +29,7 @@ SUITE (INDEXERRUNNER_SUITE_TESTS) {
         path fastq = res.createEmptyFile("fastq.fastq");
         path index = res.filePath("fastq.fastq.idx");
 
-        auto r = boost::make_shared<IndexerRunner>(fastq, index);
+        auto r = make_shared<IndexerRunner>(fastq, index);
                 CHECK(r->checkPremises()); // Index file missing.
                 CHECK(!r->isCLIOptionsPrinter());
                 CHECK(!r->isExtractor());
@@ -42,7 +42,7 @@ SUITE (INDEXERRUNNER_SUITE_TESTS) {
         path fastq = res.createEmptyFile("fastq.fastq");
         path index = res.createEmptyFile("fastq.fastq.idx");
 
-        auto r = boost::make_shared<IndexerRunner>(fastq, index);
+        auto r = make_shared<IndexerRunner>(fastq, index);
                 CHECK(!r->checkPremises()); // Index exists. Not indexable!
                 CHECK(!r->isCLIOptionsPrinter());
                 CHECK(!r->isExtractor());

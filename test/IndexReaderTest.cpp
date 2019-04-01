@@ -9,7 +9,10 @@
 #include "TestResourcesAndFunctions.h"
 #include "TestConstants.h"
 #include <UnitTest++/UnitTest++.h>
-#include <boost/make_shared.hpp>
+#include <memory>
+#include <fstream>
+
+using std::experimental::filesystem::perms;
 
 const char *SUITE_INDEXREADER_TESTS = "IndexReaderTestSuite";
 const char *TEST_READER_CREATION_WITH_EXISTING_FILE = "Creation with existing file";
@@ -26,7 +29,7 @@ const char *TEST_READ_INDEX_FROM_END_OF_FILE = "Read index entry at end of file"
 const size_t BASE_FILE_SIZE = sizeof(IndexEntryV1) + sizeof(IndexHeader);
 
 auto createCharArray(int size) {
-    boost::shared_ptr<char> arr(new char[size]);
+    shared_ptr<char> arr(new char[size]);
     memset(arr.get(), 0, size);
     return arr;
 }
@@ -34,7 +37,7 @@ auto createCharArray(int size) {
 path writeTestFile(TestResourcesAndFunctions *res, size_t size) {
     path idx = res->createEmptyFile(INDEX_FILENAME);
 
-    boost::filesystem::ofstream out(idx);
+    ofstream out(idx);
 
     auto chars = createCharArray(size);
 
@@ -51,7 +54,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
     TEST (TEST_READER_CREATION_WITH_EXISTING_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READER_CREATION_WITH_EXISTING_FILE);
         path idx = res.getResource("test.fastq.gz.idx_v1");
-        auto ir = boost::make_shared<IndexReader>(idx);
+        auto ir = make_shared<IndexReader>(idx);
                 CHECK(ir->tryOpenAndReadHeader());
                 CHECK(ir->getIndexHeader());
                 CHECK_EQUAL(ir->getIndicesLeft(), 1);
@@ -60,29 +63,30 @@ SUITE (SUITE_INDEXREADER_TESTS) {
     TEST (TEST_READER_CREATION_WITH_UNREADABLE_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READER_CREATION_WITH_UNREADABLE_FILE);
         path idx = res.createEmptyFile(INDEX_FILENAME);
-        boost::filesystem::permissions(idx, owner_write | owner_exe);
-        auto ir = boost::make_shared<IndexReader>(idx);
+
+//        permissions(idx, perms::owner_write | perms::owner_exec);
+        auto ir = make_shared<IndexReader>(idx);
                 CHECK(!ir->tryOpenAndReadHeader());
     }
 
     TEST (TEST_READER_CREATION_WITH_MISSING_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READER_CREATION_WITH_MISSING_FILE);
         path idx = res.filePath(INDEX_FILENAME);
-        auto ir = boost::make_shared<IndexReader>(idx);
+        auto ir = make_shared<IndexReader>(idx);
                 CHECK(!ir->tryOpenAndReadHeader());
     }
 
     TEST (TEST_READER_CREATION_WITH_SIZE_MISMATCH) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READER_CREATION_WITH_SIZE_MISMATCH);
         path idx = writeTestFile(&res, BASE_FILE_SIZE + 3);
-        auto ir = boost::make_shared<IndexReader>(idx);
+        auto ir = make_shared<IndexReader>(idx);
                 CHECK(!ir->tryOpenAndReadHeader());
     }
 
     TEST (TEST_READER_CREATION_WITH_TOO_FEW_ENTRIES) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READER_CREATION_WITH_TOO_FEW_ENTRIES);
         path idx = writeTestFile(&res, sizeof(IndexHeader));
-        auto ir = boost::make_shared<IndexReader>(idx);
+        auto ir = make_shared<IndexReader>(idx);
                 CHECK(!ir->tryOpenAndReadHeader());
     }
 
@@ -91,7 +95,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
     TEST (TEST_READ_HEADER_FROM_NEWLY_OPENED_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_HEADER_FROM_NEWLY_OPENED_FILE);
         path idx = res.getResource("test.fastq.gz.idx_v1");
-        auto ir = boost::make_shared<IndexReader>(idx);
+        auto ir = make_shared<IndexReader>(idx);
                 CHECK(ir->tryOpenAndReadHeader());
 
         auto header = ir->getIndexHeader(); // Will effectively return the already read header.
@@ -108,7 +112,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_NEWLY_OPENED_FILE);
         path idx = res.getResource("test.fastq.gz.idx_v1");
 
-        auto ir = boost::make_shared<IndexReader>(idx);
+        auto ir = make_shared<IndexReader>(idx);
                 CHECK(ir->tryOpenAndReadHeader());
 
         auto entry = ir->readIndexEntryV1();
@@ -119,7 +123,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_FILE);
         path idx = res.getResource("test2.fastq.gz.idx_v1");
 
-        auto ir = boost::make_shared<IndexReader>(idx);
+        auto ir = make_shared<IndexReader>(idx);
                 CHECK(ir->tryOpenAndReadHeader());
 
         auto header = ir->getIndexHeader();
@@ -148,7 +152,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
     TEST (TEST_READ_SEVERAL_ENTRIES_FROM_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_SEVERAL_ENTRIES_FROM_FILE);
         path idx = res.getResource("test2.fastq.gz.idx_v1");
-        auto ir = boost::make_shared<IndexReader>(idx);
+        auto ir = make_shared<IndexReader>(idx);
                 CHECK(ir->tryOpenAndReadHeader());
 
         auto header = ir->getIndexHeader();
@@ -171,7 +175,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
     TEST (TEST_READ_INDEX_FROM_END_OF_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_END_OF_FILE);
         path idx = res.getResource("test.fastq.gz.idx_v1");
-        auto ir = boost::make_shared<IndexReader>(idx);
+        auto ir = make_shared<IndexReader>(idx);
                 CHECK(ir->tryOpenAndReadHeader());
 
         auto header = ir->getIndexHeader();
@@ -189,11 +193,11 @@ SUITE (SUITE_INDEXREADER_TESTS) {
     TEST (TEST_COMBINED_READ_AND_WRITE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_END_OF_FILE);
         path idx = res.filePath(INDEX_FILENAME);
-        auto header = boost::make_shared<IndexHeader>(1, sizeof(IndexEntryV1), 2);
-        auto entry0 = boost::make_shared<IndexEntryV1>(10, 1, 0, 0, 1);
-        auto entry1 = boost::make_shared<IndexEntryV1>(10, 3, 0, 0, 0);
-        auto entry2 = boost::make_shared<IndexEntryV1>(10, 5, 0, 0, 1);
-        auto entry3 = boost::make_shared<IndexEntryV1>(10, 7, 0, 0, 0);
+        auto header = make_shared<IndexHeader>(1, sizeof(IndexEntryV1), 2);
+        auto entry0 = make_shared<IndexEntryV1>(10, 1, 0, 0, 1);
+        auto entry1 = make_shared<IndexEntryV1>(10, 3, 0, 0, 0);
+        auto entry2 = make_shared<IndexEntryV1>(10, 5, 0, 0, 1);
+        auto entry3 = make_shared<IndexEntryV1>(10, 7, 0, 0, 0);
 
         auto writer = new IndexWriter(idx);
         bool open = writer->tryOpen();
@@ -206,7 +210,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 
         delete writer;
 
-        auto ir = boost::make_shared<IndexReader>(idx);
+        auto ir = make_shared<IndexReader>(idx);
                 CHECK(ir->tryOpenAndReadHeader());
                 CHECK_EQUAL(ir->getIndicesLeft(), 4);
 

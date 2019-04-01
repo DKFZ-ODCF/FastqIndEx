@@ -4,12 +4,9 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include <boost/make_shared.hpp>
-#include <boost/filesystem/fstream.hpp>
+#include <fstream>
 #include "IndexWriter.h"
 #include "ErrorAccumulator.h"
-
-using namespace boost;
 
 const unsigned int IndexWriter::INDEX_WRITER_VERSION = 1;
 
@@ -21,17 +18,18 @@ bool IndexWriter::tryOpen() {
     if (writerIsOpen)
         return true;
 
-    if (!lockForWriting()) {
-        addErrorMessage("Could not get a lock for index file: " + indexFile.string());
-        return false;
-    }
     if (exists(indexFile)) {
         addErrorMessage("The index file cannot be overwritten: " + indexFile.string());
         unlock();
         return false;
     }
-    this->outputStream = boost::make_shared<boost::filesystem::ofstream>(indexFile);
-    *this->outputStream << "";
+    if (!openWithWriteLock()) {
+        addErrorMessage("Could not get a lock for index file: " + indexFile.string());
+        return false;
+    }
+    this->outputStream = make_shared<ofstream>(indexFile);
+    (*this->outputStream).write("", 0);
+//    oSream-><< "";
 
     if (!exists(indexFile)) {
         addErrorMessage("Could not create index file: " + indexFile.string());
@@ -44,7 +42,7 @@ bool IndexWriter::tryOpen() {
     return true;
 }
 
-bool IndexWriter::writeIndexHeader(boost::shared_ptr<IndexHeader> header) {
+bool IndexWriter::writeIndexHeader(const shared_ptr<IndexHeader> &header) {
     if (!this->writerIsOpen) {
         // Throw assertion errors? Would actually be better right?
         addErrorMessage("Could not write header to index file, writer is not open.");
@@ -64,7 +62,7 @@ bool IndexWriter::writeIndexHeader(boost::shared_ptr<IndexHeader> header) {
     return true;
 }
 
-bool IndexWriter::writeIndexEntry(boost::shared_ptr<IndexEntryV1> entry) {
+bool IndexWriter::writeIndexEntry(const shared_ptr<IndexEntryV1> &entry) {
     if (!this->writerIsOpen) {
         // Throw assertion errors? Would actually be better right?
         addErrorMessage("Could not write index entry to index file, writer is not open.");

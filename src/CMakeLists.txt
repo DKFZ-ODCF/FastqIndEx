@@ -5,16 +5,16 @@
 #
 cmake_minimum_required(VERSION 3.13)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
-find_package(Boost 1.54.0 COMPONENTS filesystem program_options system REQUIRED)
-find_package(Threads)
-find_package(ZLIB REQUIRED)
+#set(CMAKE_EXE_LINKER_FLAGS -static)
 
-include_directories(
-        ${TEST_SOURCE_DIR}/src
-        ${Boost_INCLUDE_DIRS}
-)
+#find_package(ZLIB 1.2.11 REQUIRED)
+
+# See https://stackoverflow.com/questions/25213659/how-to-use-tclap-in-cmake-project
+# As you can see, we use tclap-1.2.2, download this version and extract to the project root directory.
+include_directories(BEFORE ../tclap-1.2.2/include)
+include_directories(BEFORE ${ZLIB_INCLUDE_DIR})
 
 add_executable(fastqindex main.cpp main.h)
 
@@ -36,9 +36,9 @@ add_library(
 target_link_libraries(
         fastqindexlib
         LINK_PUBLIC
-        ${Boost_LIBRARIES}
+        stdc++fs
         ${CMAKE_THREAD_LIBS_INIT}
-        ${ZLIB_LIBRARIES}
+        ${ZLIB_LIBRARY}
 )
 
 target_link_libraries(

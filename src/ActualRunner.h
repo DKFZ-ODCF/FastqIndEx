@@ -7,12 +7,12 @@
 #ifndef FASTQINDEX_ACTUALRUNNER_H
 #define FASTQINDEX_ACTUALRUNNER_H
 
-#include <string>
 #include "Runner.h"
-#include <boost/filesystem.hpp>
+#include <experimental/filesystem>
+#include <string>
 
 using namespace std;
-using namespace boost::filesystem;
+using experimental::filesystem::path;
 
 /**
  * ActualRunner is a base class for Runners which will (actually) perform operations on FASTQ files (index / extract)
@@ -31,7 +31,7 @@ protected:
      */
     path indexFile;
 
-    ActualRunner(path fastqfile, path indexfile);
+    ActualRunner(const path &fastqfile, const path &indexfile);
 
 public:
 

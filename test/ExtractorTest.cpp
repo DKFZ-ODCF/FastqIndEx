@@ -12,6 +12,8 @@
 //#include <boost/process.hpp>
 #include <UnitTest++/UnitTest++.h>
 #include <zlib.h>
+#include <fstream>
+#include <iostream>
 
 //using namespace boost::process;
 
@@ -42,8 +44,8 @@ void runRangedExtractionTest(const path &fastq,
             CHECK_EQUAL(expectedLineCount, lines.size());
 
     // Don't do further tests, if the previous condition failed, the tests are obsolete then.
-    if (expectedLineCount > lines.size())
-        return;
+//    if (expectedLineCount > lines.size())
+//        return;
 
     u_int64_t differences = 0;
     for (int i = 0; i < min(decompressedSourceContent.size() - firstLine, lines.size()); i++) {
@@ -96,7 +98,7 @@ void runComplexDecompressionTest(const path &fastq,
         int success = std::system(command.c_str());
                 CHECK_EQUAL(0, success);
 
-        boost::filesystem::ifstream strm(extractedFastq);
+        ifstream strm(extractedFastq);
         vector<string> decompressedSourceContent;
         string line;
         while (std::getline(strm, line)) {

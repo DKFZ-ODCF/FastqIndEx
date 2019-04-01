@@ -35,11 +35,11 @@ SUITE (SUITE_INDEXPROCESSOR_TESTS) {
         TestResourcesAndFunctions res(SUITE_INDEXPROCESSOR_TESTS, TEST_IP_OPEN_CLOSE_OPEN);
         auto idx = res.createEmptyFile("someTest.idx");
         IndexProcessor ip1(idx);
-                CHECK(ip1.lockForReading());
+                CHECK(ip1.openWithReadLock());
                 CHECK(ip1.hasLock());
         ip1.unlock();
                 CHECK(!ip1.hasLock());
-                CHECK(ip1.lockForWriting());
+                CHECK(ip1.openWithWriteLock());
                 CHECK(ip1.hasLock());
         ip1.unlock();
     }
@@ -48,33 +48,33 @@ SUITE (SUITE_INDEXPROCESSOR_TESTS) {
         TestResourcesAndFunctions res(SUITE_INDEXPROCESSOR_TESTS, TEST_IP_OPEN_READ_TWICE);
         auto idx = res.createEmptyFile("someTest.idx");
         IndexProcessor ip1(idx);
-                CHECK(ip1.lockForReading());
-                CHECK(ip1.lockForReading());
+                CHECK(ip1.openWithReadLock());
+                CHECK(ip1.openWithReadLock());
     }
 
     TEST (TEST_IP_OPEN_READ_WRITE) {
         TestResourcesAndFunctions res(SUITE_INDEXPROCESSOR_TESTS, TEST_IP_OPEN_READ_WRITE);
         auto idx = res.createEmptyFile("someTest.idx");
         IndexProcessor ip1(idx);
-                CHECK(ip1.lockForReading());
+                CHECK(ip1.openWithReadLock());
                 CHECK(ip1.hasLock());
-                CHECK(!ip1.lockForWriting());
+                CHECK(!ip1.openWithWriteLock());
     }
 
     TEST (TEST_IP_OPEN_WRITE_READ) {
         TestResourcesAndFunctions res(SUITE_INDEXPROCESSOR_TESTS, TEST_IP_OPEN_READ_WRITE);
         auto idx = res.createEmptyFile("someTest.idx");
         IndexProcessor ip1(idx);
-                CHECK(ip1.lockForWriting());
-                CHECK(!ip1.lockForReading());
+                CHECK(ip1.openWithWriteLock());
+                CHECK(!ip1.openWithReadLock());
     }
 
     TEST (TEST_IP_OPEN_WRITE_WRITE) {
         TestResourcesAndFunctions res(SUITE_INDEXPROCESSOR_TESTS, TEST_IP_OPEN_READ_WRITE);
         auto idx = res.createEmptyFile("someTest.idx");
         IndexProcessor ip1(idx);
-                CHECK(ip1.lockForWriting());
-                CHECK(!ip1.lockForWriting());
+                CHECK(ip1.openWithWriteLock());
+                CHECK(!ip1.openWithWriteLock());
         ip1.unlock();
                 CHECK(!ip1.hasLock());
     }

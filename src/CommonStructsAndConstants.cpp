@@ -4,9 +4,9 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
 #include "CommonStructsAndConstants.h"
+
+using namespace std;
 
 const u_char MAGIC_NUMBER_RAW[4] = {1, 2, 3, 4};
 
@@ -67,8 +67,8 @@ bool IndexEntryV1::operator==(const IndexEntryV1 &rhs) const {
            startingLineInEntry == rhs.startingLineInEntry;
 }
 
-boost::shared_ptr<IndexEntry> IndexEntryV1::toIndexEntry() {
-    auto indexLine = boost::make_shared<IndexEntry>(
+shared_ptr<IndexEntry> IndexEntryV1::toIndexEntry() {
+    auto indexLine = make_shared<IndexEntry>(
             this->blockID,
             this->bits,
             this->offsetOfFirstValidLine,

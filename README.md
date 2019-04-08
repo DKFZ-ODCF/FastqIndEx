@@ -24,17 +24,17 @@ choice and run it.
 
 ### Download + Compile
 
-#### Manual download and installation of dependencies
-
 FastqIndEx has the following dependencies, which should be met before building it:
 
-| Dependency    | Version  / Git Hash                       | Remarks                                        |
-| ---           |---                                        | ---                                            |
-| CMake         | 3.13.x                                    | Conda                                          |
-| gcc           | 7.2                                       | Conda                                          |
-| tclap         | 1.2.2                                     | Conda                                          |
-| zlib          | 1.2.8 / 1.2.11                            | Conda, Build was tested with both versions.    |
-| UnitTest++    | bc5d87f484cac2959b0a0eafbde228e69e828d74  |                                                |
+| Dependency    | Version  / Git Hash | Conda | Remarks |
+| ---           |---                  | ---   | ---     |
+| CMake         | 3.13.x              | yes   |         |
+| gcc           | 7.2                 | yes   |         |
+| tclap         | 1.2.1               | yes   |         |
+| zlib          | 1.2.11              | yes   |         |
+| UnitTest++    | bc5d87f             | no    |         |
+
+#### Compilation with manual download and installation of dependencies
 
 ##### g++/gcc
 
@@ -103,6 +103,13 @@ cmake -G "Unix Makefiles" \
 cd ..
 cmake --build release --target all -- -j 2                                # Or --build debug
 ```
+
+**<span style="color:ffffa0;">
+Note, that the -D flags for the includes are only necessary, if you
+manually installed the libraries. If they are already installed on your 
+system or (e.g. for UnitTest++) you installed them to the system folders
+or if you use the Conda environment, you can omit these flags.
+</span>**
 
 To clean the build directory use:
 

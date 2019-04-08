@@ -10,7 +10,7 @@
 #include "Runner.h"
 #include "IndexerRunner.h"
 #include "ExtractorRunner.h"
-#include "../tclap-1.2.2/include/tclap/CmdLine.h"
+#include <tclap/CmdLine.h>
 #include <cstring>
 #include <memory>
 

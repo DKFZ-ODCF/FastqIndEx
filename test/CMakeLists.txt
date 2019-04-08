@@ -7,12 +7,10 @@ cmake_minimum_required(VERSION 3.13)
 
 set(CMAKE_CXX_STANDARD 17)
 
-#set(CMAKE_EXE_LINKER_FLAGS -static)
+set(CMAKE_EXE_LINKER_FLAGS -static)
 
 # See: https://github.com/unittest-cpp/unittest-cpp/wiki
 find_package(UnitTest++ REQUIRED)
-
-include_directories( BEFORE ../tclap-1.2.2/include )
 
 include_directories(
         ${TEST_SOURCE_DIR}/src

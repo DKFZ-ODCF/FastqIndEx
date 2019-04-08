@@ -7,14 +7,7 @@ cmake_minimum_required(VERSION 3.13)
 
 set(CMAKE_CXX_STANDARD 17)
 
-#set(CMAKE_EXE_LINKER_FLAGS -static)
-
-#find_package(ZLIB 1.2.11 REQUIRED)
-
-# See https://stackoverflow.com/questions/25213659/how-to-use-tclap-in-cmake-project
-# As you can see, we use tclap-1.2.2, download this version and extract to the project root directory.
-include_directories(BEFORE ../tclap-1.2.2/include)
-include_directories(BEFORE ${ZLIB_INCLUDE_DIR})
+set(CMAKE_EXE_LINKER_FLAGS -static)
 
 add_executable(fastqindex main.cpp main.h)
 

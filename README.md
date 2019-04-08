@@ -24,17 +24,17 @@ choice and run it.
 
 ### Download + Compile
 
-#### Downloads and install dependencies, if necessary (before trying to make the binary)
+#### Manual download and installation of dependencies
 
 FastqIndEx has the following dependencies, which should be met before building it:
 
-| Dependency    | Version  / Git Hash                       | Remarks                                 |
-| ---           |---                                        | ---                                     |
-| CMake         | 3.13.x                                    |                                         |
-| gcc           | 7.3                                       |                                         |
-| tclap         | 1.2.2                                     |                                         |
-| zlib          | 1.2.8 / 1.2.11                            | Build was tested with both versions.    |
-| UnitTest++    | bc5d87f484cac2959b0a0eafbde228e69e828d74  |                                         |
+| Dependency    | Version  / Git Hash                       | Remarks                                        |
+| ---           |---                                        | ---                                            |
+| CMake         | 3.13.x                                    | Conda                                          |
+| gcc           | 7.2                                       | Conda                                          |
+| tclap         | 1.2.2                                     | Conda                                          |
+| zlib          | 1.2.8 / 1.2.11                            | Conda, Build was tested with both versions.    |
+| UnitTest++    | bc5d87f484cac2959b0a0eafbde228e69e828d74  |                                                |
 
 ##### g++/gcc
 
@@ -70,6 +70,21 @@ cmake -G "Unix Makefiles" -D CMAKE_INSTALL_PREFIX=/custom/lib/path ..
 cmake --build . --target all
 cmake --build . --target install
 ```
+
+#### Use Conda to manage your dependencies
+
+* Install Miniconda / Anaconda
+* The conda recipe is contained in env/environmenty.yml, use conda-env 
+  to import it.
+* Download and install UnitTest++ like above, it is not available in 
+  Conda.
+
+**<span style="color:ffffa0;">If you use an IDE like CLion, make sure to 
+activate the environment before running the IDE.</span>**
+
+**<span style="color:ffffa0;">Also make sure to use the right compilers
+and tools. They are named a bit differently in Conda. CLion recognizes
+them, if you use the environment like mentioned.</span>**
 
 #### FastqIndEx
 

@@ -4,7 +4,6 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include <zlib.h>
 #include <cstdio>
 #include "Extractor.h"
 #include "ZLibBasedFASTQProcessorBaseClass.h"

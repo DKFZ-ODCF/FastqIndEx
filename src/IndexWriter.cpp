@@ -29,7 +29,6 @@ bool IndexWriter::tryOpen() {
     }
     this->outputStream = make_shared<ofstream>(indexFile);
     (*this->outputStream).write("", 0);
-//    oSream-><< "";
 
     if (!exists(indexFile)) {
         addErrorMessage("Could not create index file: " + indexFile.string());

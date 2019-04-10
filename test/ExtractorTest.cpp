@@ -141,7 +141,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_EXTRACTOR_CREATION);
 
         path fastq = res.getResource("test.fastq.gz");
-        path index = res.getResource("test.fastq.gz.idx_v1");
+        path index = res.getResource("test.fastq.gz.fqi_v1");
 
         auto *extractor = new Extractor(fastq, index, 0, 10, true);
                 CHECK(extractor->checkPremises());
@@ -157,14 +157,14 @@ SUITE (INDEXER_SUITE_TESTS) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_EXTRACTOR_AND_EXTRACT_SMALL_TO_COUT);
 
         path fastq = res.getResource("test.fastq.gz");
-        path index = res.filePath("test.fastq.gz.idx_v1");
+        path index = res.filePath("test.fastq.gz.fqi_v1");
         path extractedFastq = res.filePath("test.fastq");
         u_int64_t linesInFastq = 4000;
 
         runComplexDecompressionTest(fastq, index, extractedFastq, -1, linesInFastq);
 
         fastq = res.getResource("test2.fastq.gz");
-        index = res.filePath("test2.fastq.gz.idx_v1");
+        index = res.filePath("test2.fastq.gz.fqi_v1");
         extractedFastq = res.filePath("test2.fastq");
         linesInFastq = 160000;
 
@@ -172,7 +172,7 @@ SUITE (INDEXER_SUITE_TESTS) {
 
 // Test this, if a bigger fastq test file is there.
 //        fastq = res.getResource("test3.fastq.gz");
-//        index = res.filePath("test3.fastq.gz.idx_v1");
+//        index = res.filePath("test3.fastq.gz.fqi_v1");
 //        extractedFastq = res.filePath("test3.fastq");
 //        linesInFastq = 1600000;
 //

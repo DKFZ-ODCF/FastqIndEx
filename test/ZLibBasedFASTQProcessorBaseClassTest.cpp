@@ -30,7 +30,7 @@ SUITE (TEST_ZLIBBASE_SUITE) {
         TestResourcesAndFunctions res(TEST_ZLIBBASE_SUITE, TEST_ZLIBBASE_CREATION);
 
         path fastq = res.getResource(string("test2.fastq.gz"));
-        path index = res.filePath("test2.fastq.gz.idx");
+        path index = res.filePath("test2.fastq.gz.fqi");
 
         ZLibBasedFASTQProcessorBaseTestClass mock(fastq, index);
         z_stream *zStream = mock.getZStream();

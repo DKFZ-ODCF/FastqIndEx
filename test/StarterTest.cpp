@@ -20,7 +20,7 @@ using namespace std;
 SUITE (StarterTests) {
     TEST (testCreateNewRunners) {
         path fastqFile("/tmp/abc");
-        path indexFile("/tmp/abc.idx");
+        path indexFile("/tmp/abc.fqi");
         IndexerRunner runner(fastqFile, indexFile);
                 CHECK_EQUAL(runner.getFastqFile(), fastqFile);
                 CHECK_EQUAL(runner.getIndexFile(), indexFile);
@@ -77,7 +77,7 @@ SUITE (StarterTests) {
                 CHECK (runner && runner->isIndexer());
 
         auto explicitRunner = static_pointer_cast<IndexerRunner>(runner);
-                CHECK(explicitRunner->getIndexFile().filename() == "afastq.gz.idx");
+                CHECK(explicitRunner->getIndexFile().filename() == "afastq.gz.fqi");
     }
 
     TEST (testCreateRunnerWithValidIndexParametersWithIndex) {
@@ -93,7 +93,7 @@ SUITE (StarterTests) {
                 TEST_BINARY,
                 "index",
                 "-f=afastq.gz",
-                "-i=afastq.idx"
+                "-i=afastq.fqi"
         };
 
         auto runner = starter.createRunner(3, argv);
@@ -101,7 +101,7 @@ SUITE (StarterTests) {
                 CHECK (runner && runner->isIndexer());
 
         auto explicitRunner = static_pointer_cast<IndexerRunner>(runner);
-                CHECK(explicitRunner->getIndexFile().filename() == "afastq.idx");
+                CHECK(explicitRunner->getIndexFile().filename() == "afastq.fqi");
     }
 
     TEST (testCreateRunnerWithValidExtractParameters) {
@@ -119,7 +119,7 @@ SUITE (StarterTests) {
                 TEST_BINARY,
                 "extract",
                 "-f=test2.fastq.gz",
-                "-i=test2.fastq.gz.idx",
+                "-i=test2.fastq.gz.fqi",
                 "-o=-",
                 "-s=0",
                 "-n=10"

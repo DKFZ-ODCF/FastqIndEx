@@ -30,6 +30,7 @@ add_executable(
         IndexProcessorTest.cpp
         IndexReaderTest.cpp
         IndexWriterTest.cpp
+        IntegrationTests.cpp
         ShowStopperRunnerTest.cpp
         StarterTest.cpp
         TestResourcesAndFunctions.cpp TestResourcesAndFunctions.h

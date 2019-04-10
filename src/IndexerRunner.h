@@ -25,7 +25,7 @@ private:
 
 public:
 
-    IndexerRunner(const path &fastqfile, const path &indexfile, int blockInterval = -1, bool enableDebugging = false);
+    IndexerRunner(const path &fastqfile, const path &indexfile, int blockInterval = -1, bool enableDebugging = false, bool forceOverwrite = false);
 
     virtual ~IndexerRunner();
 

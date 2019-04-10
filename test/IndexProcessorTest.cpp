@@ -25,15 +25,15 @@ const char *TEST_IP_OPEN_WRITE_WRITE = "Test tryOpenAndReadHeader of write twice
 SUITE (SUITE_INDEXPROCESSOR_TESTS) {
     TEST (TEST_GET_CREATION) {
         TestResourcesAndFunctions res(SUITE_INDEXPROCESSOR_TESTS, TEST_GET_CREATION);
-        auto idx = res.createEmptyFile("someTest.idx");
-        auto lock = res.createEmptyFile("someTest.idx~");
+        auto idx = res.createEmptyFile("someTest.fqi");
+        auto lock = res.createEmptyFile("someTest.fqi~");
         IndexProcessor indexProcessor(idx);
                 CHECK_EQUAL(indexProcessor.getIndexFile(), idx);
     }
 
     TEST (TEST_IP_OPEN_CLOSE_OPEN) {
         TestResourcesAndFunctions res(SUITE_INDEXPROCESSOR_TESTS, TEST_IP_OPEN_CLOSE_OPEN);
-        auto idx = res.createEmptyFile("someTest.idx");
+        auto idx = res.createEmptyFile("someTest.fqi");
         IndexProcessor ip1(idx);
                 CHECK(ip1.openWithReadLock());
                 CHECK(ip1.hasLock());
@@ -46,7 +46,7 @@ SUITE (SUITE_INDEXPROCESSOR_TESTS) {
 
     TEST (TEST_IP_OPEN_READ_TWICE) {
         TestResourcesAndFunctions res(SUITE_INDEXPROCESSOR_TESTS, TEST_IP_OPEN_READ_TWICE);
-        auto idx = res.createEmptyFile("someTest.idx");
+        auto idx = res.createEmptyFile("someTest.fqi");
         IndexProcessor ip1(idx);
                 CHECK(ip1.openWithReadLock());
                 CHECK(ip1.openWithReadLock());
@@ -54,7 +54,7 @@ SUITE (SUITE_INDEXPROCESSOR_TESTS) {
 
     TEST (TEST_IP_OPEN_READ_WRITE) {
         TestResourcesAndFunctions res(SUITE_INDEXPROCESSOR_TESTS, TEST_IP_OPEN_READ_WRITE);
-        auto idx = res.createEmptyFile("someTest.idx");
+        auto idx = res.createEmptyFile("someTest.fqi");
         IndexProcessor ip1(idx);
                 CHECK(ip1.openWithReadLock());
                 CHECK(ip1.hasLock());
@@ -63,7 +63,7 @@ SUITE (SUITE_INDEXPROCESSOR_TESTS) {
 
     TEST (TEST_IP_OPEN_WRITE_READ) {
         TestResourcesAndFunctions res(SUITE_INDEXPROCESSOR_TESTS, TEST_IP_OPEN_READ_WRITE);
-        auto idx = res.createEmptyFile("someTest.idx");
+        auto idx = res.createEmptyFile("someTest.fqi");
         IndexProcessor ip1(idx);
                 CHECK(ip1.openWithWriteLock());
                 CHECK(!ip1.openWithReadLock());
@@ -71,7 +71,7 @@ SUITE (SUITE_INDEXPROCESSOR_TESTS) {
 
     TEST (TEST_IP_OPEN_WRITE_WRITE) {
         TestResourcesAndFunctions res(SUITE_INDEXPROCESSOR_TESTS, TEST_IP_OPEN_READ_WRITE);
-        auto idx = res.createEmptyFile("someTest.idx");
+        auto idx = res.createEmptyFile("someTest.fqi");
         IndexProcessor ip1(idx);
                 CHECK(ip1.openWithWriteLock());
                 CHECK(!ip1.openWithWriteLock());

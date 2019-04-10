@@ -94,7 +94,7 @@ public:
      * @param index The index for the FASTQ.
      * @param enableDebugging Store debug information or not.
      */
-    Indexer(const path &fastq, const path &index, int blockInterval, bool enableDebugging = false);
+    Indexer(const path &fastq, const path &index, int blockInterval, bool enableDebugging = false, bool forceOverwrite = false);
 
     virtual ~Indexer() = default;
 

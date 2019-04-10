@@ -40,10 +40,10 @@ u_int32_t Indexer::calculateIndexBlockInterval(u_int64_t fileSize) {
     return 8192;
 }
 
-Indexer::Indexer(const path &fastq, const path &index, int blockInterval, bool enableDebugging) :
+Indexer::Indexer(const path &fastq, const path &index, int blockInterval, bool enableDebugging, bool forceOverwrite) :
         ZLibBasedFASTQProcessorBaseClass(fastq, index, enableDebugging),
         blockInterval(blockInterval) {
-    indexWriter = make_shared<IndexWriter>(index);
+    indexWriter = make_shared<IndexWriter>(index, forceOverwrite);
 }
 
 bool Indexer::checkPremises() {
@@ -110,7 +110,7 @@ bool Indexer::createIndex() {
 
             bool checkForStreamEnd = true;
 
-            if(!decompressNextChunkOfData(checkForStreamEnd, Z_BLOCK))
+            if (!decompressNextChunkOfData(checkForStreamEnd, Z_BLOCK))
                 break;
 
             if (checkStreamForBlockEnd()) {
@@ -181,15 +181,13 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
     offset = totalBytesIn;          // Set new blockOffsetInRawFile.
     if (!firstPass) {
         blockID++;
-
+//        cout << blockID << "\n";
         // String representation of currentDecompressedBlock. Might or might not start with a fresh line, we need to
         // figure this out.
         std::vector<string> lines;
         string currentBlockString = currentDecompressedBlock.str();
 
         lines = splitStr(currentBlockString);
-
-//        boost::split(lines, currentBlockString, boost::is_any_of("\n"));
 
         u_int32_t sizeOfCurrentBlock = currentBlockString.size();
         u_int32_t numberOfLinesInBlock = lines.size();
@@ -201,9 +199,11 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
 
         // Find the first newline character to get the blockOffsetInRawFile of the line inside
         ushort offsetOfFirstLine{0};
-        if (!lastBlockEndedWithNewline) {
+        if (currentBlockString.empty()) {
+//            cout << "Block " << blockID << " is empty\n";
+        } else if (!lastBlockEndedWithNewline) {
             numberOfLinesInBlock--;  // If the last block ended with an incomplete line (and not '\n'), reduce this.
-            offsetOfFirstLine = lines[0].size() +1;
+            offsetOfFirstLine = lines[0].size() + 1;
         } else if (totalLineCount > 0) {
             totalLineCount--;
         }
@@ -220,9 +220,9 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
         // Compared to the original zran example, which uses two memcpy operations to retrieve the dictionary, we
         // use zlibs inflateGetDictionaryMethod. This looks more clean and works, whereas I could not get the
         // original memcpy operations to work.
-            Bytef dictTest[WINDOW_SIZE];              // Build in later, around 60% decrease in size.
-            u_int64_t compressedBytes = WINDOW_SIZE;
-            compress2(dictTest, &compressedBytes, dictionaryForNextBlock, WINDOW_SIZE, 9);
+        Bytef dictTest[WINDOW_SIZE];              // Build in later, around 60% decrease in size.
+        u_int64_t compressedBytes = WINDOW_SIZE;
+        compress2(dictTest, &compressedBytes, dictionaryForNextBlock, WINDOW_SIZE, 9);
 
         u_int32_t copiedBytes = 0;
         memcpy(entry->dictionary, dictionaryForNextBlock, WINDOW_SIZE);
@@ -257,7 +257,6 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
 void Indexer::storeLinesOfCurrentBlockForDebugMode(std::stringstream &currentDecompressedBlock) {
     string str = currentDecompressedBlock.str();
     std::vector<string> lines = splitStr(str);
-//    boost::split(lines, str, boost::is_any_of("\n"));
 
     if (lines.empty()) return;
 

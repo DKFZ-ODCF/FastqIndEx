@@ -46,7 +46,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_INDEXER_CREATION);
 
         path fastq = res.getResource(string("test2.fastq.gz"));
-        path index = res.filePath("test2.fastq.gz.idx");
+        path index = res.filePath("test2.fastq.gz.fqi");
 
         auto *indexer = new Indexer(fastq, index, -1);
 
@@ -67,7 +67,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_INDEX);
 
         path fastq = res.getResource("test2.fastq.gz");
-        path index = res.filePath("test2.fastq.gz.idx");
+        path index = res.filePath("test2.fastq.gz.fqi");
 
         Indexer indexer(fastq, index, -1,
                         true); // Tell the indexer to store entries. This is solely a debug feature but it
@@ -84,7 +84,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_INDEX_SMALL);
 
         path fastq = res.getResource("test_concat.fastq.gz");
-        path index = res.filePath("test_concat.fastq.gz.idx");
+        path index = res.filePath("test_concat.fastq.gz.fqi");
 
         auto *indexer = new Indexer(fastq, index, -1, true);
                 CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.
@@ -118,7 +118,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_INDEX_SMALL);
 
         path fastq = res.getResource(string("test.fastq.gz"));
-        path index = res.filePath("test.fastq.gz.idx");
+        path index = res.filePath("test.fastq.gz.fqi");
 
         auto *indexer = new Indexer(fastq, index, -1, true);
                 CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.
@@ -152,7 +152,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_INDEX_LARGE);
 
         path fastq = res.getResource(string("test2.fastq.gz"));
-        path index = res.filePath("test2.fastq.gz.idx");
+        path index = res.filePath("test2.fastq.gz.fqi");
 
         uint blockSize = 4;
 

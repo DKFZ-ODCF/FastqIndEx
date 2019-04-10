@@ -17,7 +17,7 @@ SUITE (SUITE_EXTRACTORRUNNER_TESTS) {
         TestResourcesAndFunctions res(SUITE_EXTRACTORRUNNER_TESTS, TEST_EXTRACTORRUNNER_CREATION);
 
         path fastq = res.createEmptyFile("fastq.fastq");
-        path index = res.createEmptyFile("fastq.fastq.idx");
+        path index = res.createEmptyFile("fastq.fastq.fqi");
 
         ExtractorRunner r(fastq, index, 0, 100);
                 CHECK(!r.checkPremises()); // Index is empty. Won't work!
@@ -31,7 +31,7 @@ SUITE (SUITE_EXTRACTORRUNNER_TESTS) {
         TestResourcesAndFunctions res(SUITE_EXTRACTORRUNNER_TESTS, TEST_EXTRACTORRUNNER_CREATION_VALID_FILES);
 
         path fastq = res.getResource("test.fastq.gz");
-        path index = res.getResource("test.fastq.gz.idx_v1");
+        path index = res.getResource("test.fastq.gz.fqi_v1");
 
         ExtractorRunner r(fastq, index, 0, 100);
         bool premisesMet = r.checkPremises();

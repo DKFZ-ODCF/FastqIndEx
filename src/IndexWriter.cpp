@@ -5,20 +5,22 @@
  */
 
 #include <fstream>
+#include <iostream>
 #include "IndexWriter.h"
 #include "ErrorAccumulator.h"
 
 const unsigned int IndexWriter::INDEX_WRITER_VERSION = 1;
 
 
-IndexWriter::IndexWriter(const path &indexFile) : IndexProcessor(indexFile) {
+IndexWriter::IndexWriter(const path &indexFile, bool forceOverwrite) : IndexProcessor(indexFile) {
+    this->forceOverwrite = forceOverwrite;
 }
 
 bool IndexWriter::tryOpen() {
     if (writerIsOpen)
         return true;
 
-    if (exists(indexFile)) {
+    if (!forceOverwrite && exists(indexFile)) {
         addErrorMessage("The index file cannot be overwritten: " + indexFile.string());
         unlock();
         return false;

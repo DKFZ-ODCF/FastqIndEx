@@ -18,16 +18,16 @@ shared_ptr<IndexerRunner> createRunner(const char *const testID, bool createInde
 
     path fastq = res.createEmptyFile("fastq.fastq");
     if (createIndex)
-        return make_shared<IndexerRunner>(fastq, res.createEmptyFile("fastq.fastq.idx"));
+        return make_shared<IndexerRunner>(fastq, res.createEmptyFile("fastq.fastq.fqi"));
     else
-        return make_shared<IndexerRunner>(fastq, res.filePath("fastq.fastq.idx"));
+        return make_shared<IndexerRunner>(fastq, res.filePath("fastq.fastq.fqi"));
 }
 
 SUITE (INDEXERRUNNER_SUITE_TESTS) {
     TEST (TEST_INDEXERRUNNER_CREATION) {
         TestResourcesAndFunctions res(INDEXERRUNNER_SUITE_TESTS, TEST_INDEXERRUNNER_CREATION);
         path fastq = res.createEmptyFile("fastq.fastq");
-        path index = res.filePath("fastq.fastq.idx");
+        path index = res.filePath("fastq.fastq.fqi");
 
         auto r = make_shared<IndexerRunner>(fastq, index);
                 CHECK(r->checkPremises()); // Index file missing.
@@ -40,7 +40,7 @@ SUITE (INDEXERRUNNER_SUITE_TESTS) {
     TEST (TEST_INDEXERRUNNER_ERRORMESSAGE_PASSTHROUGH) {
         TestResourcesAndFunctions res(INDEXERRUNNER_SUITE_TESTS, TEST_INDEXERRUNNER_ERRORMESSAGE_PASSTHROUGH);
         path fastq = res.createEmptyFile("fastq.fastq");
-        path index = res.createEmptyFile("fastq.fastq.idx");
+        path index = res.createEmptyFile("fastq.fastq.fqi");
 
         auto r = make_shared<IndexerRunner>(fastq, index);
                 CHECK(!r->checkPremises()); // Index exists. Not indexable!

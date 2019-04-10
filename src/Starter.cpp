@@ -48,7 +48,7 @@ IndexerRunner *Starter::assembleCmdLineParserForIndexAndParseOpts(int argc, cons
     ValueArg<string> indexFile(
             "i",
             "indexfile",
-            string("The index file which shall be created or - for stdout or \"\" to append .idx to the FASTQ filename. ") +
+            string("The index file which shall be created or - for stdout or \"\" to append .fqi to the FASTQ filename. ") +
             "Note, that the index will be streamed to stdout, if you provide \"\" or - as the FASTQ file parameter.",
             false,
             "",
@@ -70,6 +70,18 @@ IndexerRunner *Starter::assembleCmdLineParserForIndexAndParseOpts(int argc, cons
             -1,
             "int", cmdLineParser);
 
+    SwitchArg forceOverwrite(
+            "w",
+            "forceoverwrite",
+            "Allow the indexer to overwrite an existing index file.",
+            cmdLineParser);
+
+    SwitchArg debugSwitch(
+            "D",
+            "enabledebuggin",
+            "Only practicable when you debug the application, e.g. with an IDE. This will tell the indexer component to store various debug information during runtime.",
+            cmdLineParser);
+
     vector<string> allowedMode{"index"};
     ValuesConstraint<string> allowedModesConstraint(allowedMode);
     UnlabeledValueArg<string> mode("mode", "mode is index", true, "", &allowedModesConstraint);
@@ -88,14 +100,18 @@ IndexerRunner *Starter::assembleCmdLineParserForIndexAndParseOpts(int argc, cons
         if (fastq == "/-") {
             index = "/-";  // Set to stdout
         } else {
-            index = fastq.string() + ".idx";
+            index = fastq.string() + ".fqi";
         }
     }
 
     int bi = blockInterval.getValue();
     if (bi < -1) bi = -1;
 
-    return new IndexerRunner(fastq, index, bi);
+    bool fo = forceOverwrite.getValue();
+
+    bool dbg = debugSwitch.getValue();
+
+    return new IndexerRunner(fastq, index, bi, dbg, fo);
 }
 
 ExtractorRunner *Starter::assembleCmdLineParserForExtractAndParseOpts(int argc, const char **argv) {
@@ -117,7 +133,7 @@ ExtractorRunner *Starter::assembleCmdLineParserForExtractAndParseOpts(int argc, 
     ValueArg<string> indexFile(
             "i",
             "indexfile",
-            string("The index file which shall be used for extraction. If the value is not set, .idx will be") +
+            string("The index file which shall be used for extraction. If the value is not set, .fqi will be") +
             "to the name of the FASTQ file.",
             false,
             "",
@@ -163,12 +179,19 @@ ExtractorRunner *Starter::assembleCmdLineParserForExtractAndParseOpts(int argc, 
             10,
             "int", cmdLineParser);
 
+    SwitchArg debugSwitch(
+            "D",
+            "enabledebuggin",
+            "Only practicable when you debug the application, e.g. with an IDE. This will tell the extractor component to store various debug information during runtime.",
+            cmdLineParser);
+
     cmdLineParser.parse(argc, argv);
     return new ExtractorRunner(
             argumentToPath(fastqFile),
             argumentToPath(indexFile),
             startingread.getValue() * extractionmultiplier.getValue(),
-            numberofreads.getValue() * extractionmultiplier.getValue()
+            numberofreads.getValue() * extractionmultiplier.getValue(),
+            debugSwitch.getValue()
     );
 }
 

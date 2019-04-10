@@ -7,4 +7,4 @@
 #include "TestConstants.h"
 
 const char* FASTQ_FILENAME = "some_fastq.fastq";
-const char* INDEX_FILENAME = "some_fastq.fastq.idx";
+const char* INDEX_FILENAME = "some_fastq.fastq.fqi";

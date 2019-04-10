@@ -26,13 +26,15 @@ private:
 
     bool writerIsOpen = false;
 
+    bool forceOverwrite = false;
+
     shared_ptr<std::ofstream> outputStream;
 
 public:
 
     static const unsigned int INDEX_WRITER_VERSION;
 
-    explicit IndexWriter(const path &indexFile);
+    explicit IndexWriter(const path &indexFile, bool forceOverwrite = false);
 
     virtual ~IndexWriter();
 

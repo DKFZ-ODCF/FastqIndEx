@@ -130,13 +130,13 @@ The tests take around 10sec on my machine.
 ### Index
 
 ``` Bash
-/home/heinold/Projekte/FastqIndEx/release/src/fastqindex index -f=test4.fastq.gz -i=test4.fastq.gz.idx2
+fastqindex index -f=test4.fastq.gz -i=test4.fastq.gz.fqi
 ```
 
 ### Extract
 
 ``` Bash
-
+fastqindex extract -f=test4.fastq.gz -i=test4.fastq.gz.fqi
 ```
 
 ## Code stability and safety

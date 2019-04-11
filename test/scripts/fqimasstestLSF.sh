@@ -11,7 +11,7 @@ declare baseOutputFolder="$2"
 
 [[ ! -f "$listOfFiles" ]] && echo "File does not exist" && exit 3
 
-[[ ! -d "$baseOutputFolder"]] && echo "Base output folder does not exist, please create it." && exit 4
+[[ ! -d "$baseOutputFolder" ]] && echo "Base output folder does not exist, please create it." && exit 4
 
 for f in `cat $listOfFiles`; do
 	[[ -z "$f" ]] && continue

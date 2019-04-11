@@ -6,8 +6,8 @@
 cmake_minimum_required(VERSION 3.13)
 
 set(CMAKE_CXX_STANDARD 17)
-SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
-SET(CMAKE_C_FLAGS_DEBUG "-O0 -g")
+SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fPIC")
+SET(CMAKE_C_FLAGS_DEBUG "-O0 -g -fPIC")
 
 # See https://stackoverflow.com/questions/14446495/cmake-project-structure-with-unit-tests
 project(FASTQIndEx)

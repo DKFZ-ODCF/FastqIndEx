@@ -79,14 +79,24 @@ SUITE (INDEXER_SUITE_TESTS) {
     // TEST ("readCompressedDataFromStream")  <-- How to write a test? Currently its covered in the larger tests.
 
     // TEST ("call createIndex() twice")
-    
+
     TEST (TEST_CREATE_INDEX_CONCAT) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_INDEX_SMALL);
 
-        path fastq = res.getResource("test_concat.fastq.gz");
+        path fastq = res.getResource("test.fastq.gz");
+        path concat = res.filePath("test_concat.fastq.gz");
         path index = res.filePath("test_concat.fastq.gz.fqi");
 
-        auto *indexer = new Indexer(fastq, index, -1, true);
+        int appendCount = 4;
+
+        string command("cat \"" + fastq.string() + "\" >> \"" + concat.string() + '"');
+
+        for (int i = 0; i < appendCount; i++) {
+            int success = std::system(command.c_str());
+                    CHECK_EQUAL(0, success);
+        }
+
+        auto *indexer = new Indexer(concat, index, -1, true);
                 CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.
 
         bool result = indexer->createIndex();
@@ -95,7 +105,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         auto storedEntries = indexer->getStoredEntries();
         auto storedLines = indexer->getStoredLines();
 
-        int numberOfLinesInTestFASTQ = 12000;
+        int numberOfLinesInTestFASTQ = appendCount * 4000;
 
                 CHECK(result);
                 CHECK(exists(index));
@@ -113,7 +123,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         delete indexer;
                 CHECK(exists(index));
     }
-    
+
     TEST (TEST_CREATE_INDEX_SMALL) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_INDEX_SMALL);
 

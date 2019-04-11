@@ -11,6 +11,7 @@
 #include <fstream>
 #include <cstdio>
 #include <sys/stat.h>
+#include <iostream>
 
 using namespace std::experimental::filesystem;
 using std::experimental::filesystem::path;
@@ -47,7 +48,7 @@ path TestResourcesAndFunctions::getTestPath() {
         char *buf = new char[testDir.size() + 1]{0};
         testDir.copy(buf, testDir.size(), 0);
         char *result = mkdtemp(buf);
-        if(result == buf) { // Check for nullptr
+        if (result == buf) { // Check for nullptr
             testPath = path(result);
             create_directories(testPath);
             bool success = exists(testPath);
@@ -82,7 +83,10 @@ path TestResourcesAndFunctions::getResource(const string &filename) {
     //   ~/Projects/FastqIndEx/cmake-build-debug/test/testapp
     // instead, we will have to walk a bit in the paths to get the right file.
     path applicationBasePath = current_path().parent_path().parent_path();
-    return path(applicationBasePath.string() + string("/test/resources/") + filename);
+    path resourcePath = path(applicationBasePath.string() + string("/test/resources/") + filename);
+    if (!exists(resourcePath))
+        cout << "The resource " << applicationBasePath;
+    return resourcePath;
 }
 
 path TestResourcesAndFunctions::createEmptyFile(const string &filename) {

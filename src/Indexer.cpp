@@ -77,11 +77,6 @@ bool Indexer::createIndex() {
         return false;
     }
 
-    if (!initializeZStreamForInflate()) {
-        finishedSuccessful = false;
-        return false;
-    }
-
     // If not already set, recalculate the interval for index entries.
     if (blockInterval == -1) {
         blockInterval = Indexer::calculateIndexBlockInterval(file_size(this->fastqfile));
@@ -98,33 +93,68 @@ bool Indexer::createIndex() {
 
     // Create a C FILE to read from it. We will skip further file checks as they were already performed in earlier steps
     FILE *fastqFile = std::fopen(this->getFastq().c_str(), "rb");
+    auto sizeOfFastq = file_size(this->getFastq());
 
-    do {
-        if (!readCompressedDataFromStream(fastqFile)) {
-            errorWasRaised = true;
-            break;
+    bool keepProcessing = true;
+
+    while (keepProcessing) {
+
+        if (!initializeZStreamForInflate()) {
+            finishedSuccessful = false;
+            return false;
         }
-        // Process read data or until end of stream
+
         do {
-            checkAndResetSlidingWindow();
-
-            bool checkForStreamEnd = true;
-
-            if (!decompressNextChunkOfData(checkForStreamEnd, Z_BLOCK))
+            if (!readCompressedDataFromStream(fastqFile)) {
+                errorWasRaised = true;
                 break;
-
-            if (checkStreamForBlockEnd()) {
-                finalizeProcessingForCurrentBlock(currentDecompressedBlock, &zStream);
             }
+            // Process read data or until end of stream
+            do {
+                checkAndResetSlidingWindow();
 
-            firstPass = false;
+                bool checkForStreamEnd = true;
 
-        } while (zStream.avail_in != 0);
+                if (!decompressNextChunkOfData(checkForStreamEnd, Z_BLOCK))
+                    break;
 
-    } while (!errorWasRaised && zlibResult != Z_STREAM_END);
+                if (checkStreamForBlockEnd()) {
+                    finalizeProcessingForCurrentBlock(currentDecompressedBlock, &zStream);
+                }
 
-    if (enableDebugging) {
-        storeLinesOfCurrentBlockForDebugMode(currentDecompressedBlock);
+                firstPass = false;
+
+            } while (zStream.avail_in != 0);
+
+            keepProcessing = zlibResult != Z_STREAM_END;
+
+        } while (!errorWasRaised && keepProcessing);
+
+        if (enableDebugging) {
+            storeLinesOfCurrentBlockForDebugMode(currentDecompressedBlock);
+        }
+
+        /**
+         * We also want to process concatenated gzip files.
+         */
+        if (!keepProcessing) {
+            if (totalBytesIn < sizeOfFastq) {
+                // Clean up clean up and go on
+                initializeZStreamForInflate();
+                checkAndResetSlidingWindow();
+                memset(this->window, 0, WINDOW_SIZE);
+                memset(this->input, 0, CHUNK_SIZE);
+                this->zStream.avail_in = CHUNK_SIZE;
+                firstPass = true;
+                fseeko64(fastqFile, totalBytesIn, SEEK_SET);
+                keepProcessing = true;
+
+                lastBlockEndedWithNewline = true;
+
+                currentDecompressedBlock.str("");
+                currentDecompressedBlock.clear();
+            }
+        }
     }
 
     // Free the file pointer and close the file.

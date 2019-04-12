@@ -109,7 +109,6 @@ bool ZLibBasedFASTQProcessorBaseClass::decompressNextChunkOfData(bool checkForSt
         errorWasRaised = true;
         return false;
     }
-//    && totalBytesIn == file_size(fastqfile)
     if (checkForStreamEnd && zlibResult == Z_STREAM_END) {
         return false;
     }

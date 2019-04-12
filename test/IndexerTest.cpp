@@ -86,6 +86,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         path fastq = res.getResource("test.fastq.gz");
         path concat = res.filePath("test_concat.fastq.gz");
         path index = res.filePath("test_concat.fastq.gz.fqi");
+        path extractedFastq = res.filePath("test.fastq.gz");
 
         int appendCount = 4;
 
@@ -95,6 +96,7 @@ SUITE (INDEXER_SUITE_TESTS) {
             int success = std::system(command.c_str());
                     CHECK_EQUAL(0, success);
         }
+                CHECK(4 * file_size(fastq) == file_size(concat));
 
         auto *indexer = new Indexer(concat, index, -1, true);
                 CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.
@@ -106,7 +108,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         auto storedLines = indexer->getStoredLines();
 
         int numberOfLinesInTestFASTQ = appendCount * 4000;
-
+        int storedLineCount = storedLines.size();
                 CHECK(result);
                 CHECK(exists(index));
                 CHECK(indexer->wasSuccessful());
@@ -115,7 +117,31 @@ SUITE (INDEXER_SUITE_TESTS) {
                 CHECK_EQUAL(Indexer::INDEXER_VERSION, storedHeader->indexWriterVersion);
 
                 CHECK_EQUAL(1, storedEntries.size());
-                CHECK_EQUAL(numberOfLinesInTestFASTQ, storedLines.size());
+                CHECK(numberOfLinesInTestFASTQ == storedLineCount);
+
+        int firstDiff = -1; // This is more for debug purposes.
+
+        command = (
+                string("gunzip -c \"") + concat.string() + "\"" +
+                " > \"" + extractedFastq.string() + "\""
+        );
+
+        int success = std::system(command.c_str());
+                CHECK_EQUAL(0, success);
+        ifstream strm(extractedFastq);
+        vector<string> decompressedSourceContent;
+        string line;
+        while (std::getline(strm, line)) {
+            decompressedSourceContent.emplace_back(line);
+        }
+
+        for (int i = 0; i < std::min(storedLineCount, numberOfLinesInTestFASTQ); i++) {
+            if (storedLines[i] != decompressedSourceContent[i]) {
+                firstDiff = i;
+                break;
+            }
+        }
+                CHECK(firstDiff == -1);
 
         // Why is this a pointer? Just to get access to the file on the command line. It is written if the
         // Indexer is delete OR enough data was written. If we do not have the pointer, the file gets written after the

@@ -96,7 +96,7 @@ SUITE (StarterTests) {
                 "-i=afastq.fqi"
         };
 
-        auto runner = starter.createRunner(3, argv);
+        auto runner = starter.createRunner(4, argv);
 
                 CHECK (runner && runner->isIndexer());
 

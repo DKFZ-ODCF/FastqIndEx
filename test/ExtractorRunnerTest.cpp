@@ -5,6 +5,7 @@
  */
 
 #include "../src/ExtractorRunner.h"
+#include "../src/PathInputSource.h"
 #include "TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
 
@@ -19,7 +20,7 @@ SUITE (SUITE_EXTRACTORRUNNER_TESTS) {
         path fastq = res.createEmptyFile("fastq.fastq");
         path index = res.createEmptyFile("fastq.fastq.fqi");
 
-        ExtractorRunner r(fastq, index, 0, 100);
+        ExtractorRunner r(make_shared<PathInputSource>(fastq), index, "-", false, 0, 100);
                 CHECK(!r.checkPremises()); // Index is empty. Won't work!
                 CHECK(!r.isCLIOptionsPrinter());
                 CHECK(r.isExtractor());
@@ -30,10 +31,10 @@ SUITE (SUITE_EXTRACTORRUNNER_TESTS) {
     TEST (TEST_EXTRACTORRUNNER_CREATION_VALID_FILES) {
         TestResourcesAndFunctions res(SUITE_EXTRACTORRUNNER_TESTS, TEST_EXTRACTORRUNNER_CREATION_VALID_FILES);
 
-        path fastq = res.getResource("test.fastq.gz");
-        path index = res.getResource("test.fastq.gz.fqi_v1");
+        path fastq = res.getResource(TEST_FASTQ_SMALL);
+        path index = res.getResource(TEST_INDEX_SMALL);
 
-        ExtractorRunner r(fastq, index, 0, 100);
+        ExtractorRunner r(make_shared<PathInputSource>(fastq), index, "-", false, 0, 100);
         bool premisesMet = r.checkPremises();
                 CHECK(premisesMet);
                 CHECK(!r.isCLIOptionsPrinter());

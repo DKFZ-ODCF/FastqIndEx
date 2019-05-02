@@ -53,7 +53,7 @@ path writeTestFile(TestResourcesAndFunctions *res, size_t size) {
 SUITE (SUITE_INDEXREADER_TESTS) {
     TEST (TEST_READER_CREATION_WITH_EXISTING_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READER_CREATION_WITH_EXISTING_FILE);
-        path idx = res.getResource("test.fastq.gz.fqi_v1");
+        path idx = res.getResource(TEST_INDEX_SMALL);
         auto ir = make_shared<IndexReader>(idx);
                 CHECK(ir->tryOpenAndReadHeader());
                 CHECK(ir->getIndexHeader());
@@ -94,7 +94,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 
     TEST (TEST_READ_HEADER_FROM_NEWLY_OPENED_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_HEADER_FROM_NEWLY_OPENED_FILE);
-        path idx = res.getResource("test.fastq.gz.fqi_v1");
+        path idx = res.getResource(TEST_INDEX_SMALL);
         auto ir = make_shared<IndexReader>(idx);
                 CHECK(ir->tryOpenAndReadHeader());
 
@@ -110,7 +110,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 
     TEST (TEST_READ_INDEX_FROM_NEWLY_OPENED_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_NEWLY_OPENED_FILE);
-        path idx = res.getResource("test.fastq.gz.fqi_v1");
+        path idx = res.getResource(TEST_INDEX_SMALL);
 
         auto ir = make_shared<IndexReader>(idx);
                 CHECK(ir->tryOpenAndReadHeader());
@@ -121,7 +121,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 
     TEST (TEST_READ_INDEX_FROM_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_FILE);
-        path idx = res.getResource("test2.fastq.gz.fqi_v1");
+        path idx = res.getResource(TEST_INDEX_LARGE);
 
         auto ir = make_shared<IndexReader>(idx);
                 CHECK(ir->tryOpenAndReadHeader());
@@ -151,7 +151,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 
     TEST (TEST_READ_SEVERAL_ENTRIES_FROM_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_SEVERAL_ENTRIES_FROM_FILE);
-        path idx = res.getResource("test2.fastq.gz.fqi_v1");
+        path idx = res.getResource(TEST_INDEX_LARGE);
         auto ir = make_shared<IndexReader>(idx);
                 CHECK(ir->tryOpenAndReadHeader());
 
@@ -174,7 +174,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 
     TEST (TEST_READ_INDEX_FROM_END_OF_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_END_OF_FILE);
-        path idx = res.getResource("test.fastq.gz.fqi_v1");
+        path idx = res.getResource(TEST_INDEX_SMALL);
         auto ir = make_shared<IndexReader>(idx);
                 CHECK(ir->tryOpenAndReadHeader());
 

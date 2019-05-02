@@ -6,29 +6,58 @@
 
 #include "Extractor.h"
 #include "ZLibBasedFASTQProcessorBaseClass.h"
+#include "PathInputSource.h"
 #include <cstdio>
-#include <zlib.h>
 #include <experimental/filesystem>
 #include <iostream>
+#include <unistd.h>
+#include <zlib.h>
 
+using namespace experimental::filesystem;
 using namespace std;
 using experimental::filesystem::path;
 
-Extractor::Extractor(const path &fastqfile,
-                     const path &indexfile,
-                     u_int64_t startingLine,
-                     u_int64_t lineCount,
-                     bool enableDebugging)
+Extractor::Extractor(
+        const shared_ptr<PathInputSource> &fastqfile,
+        const path &indexfile,
+        const path &resultfile,
+        bool forceOverwrite,
+        u_int64_t startingLine,
+        u_int64_t lineCount,
+        bool enableDebugging)
         : ZLibBasedFASTQProcessorBaseClass(fastqfile, indexfile, enableDebugging),
           startingLine(startingLine),
           lineCount(lineCount) {
     this->indexReader = make_shared<IndexReader>(indexfile);
+    this->resultFile = resultFile;
+    this->forceOverwrite = forceOverwrite;
+
+    if (resultFile.empty() || resultFile.generic_u8string() == "-") {
+        this->forceOverwrite = false;
+    } else {
+        useFile = true;
+    }
 }
 
 bool Extractor::checkPremises() {
     if (lineCount == 0) {
         addErrorMessage("Can't extract a line count of 0 lines. The value needs to be a positive number.");
         return false;
+    }
+    if (useFile) {
+        if (!forceOverwrite && exists(resultFile)) {
+            addErrorMessage(
+                    "The result file already exists and cannot be overwritten. Allow overwriting with -w, if it is intentional.");
+            return false;
+        }
+        if (exists(resultFile) && access(resultFile.string().c_str(), W_OK) != 0) {
+            addErrorMessage("The result file exists and cannot be overwritten. Check its file access rights.");
+            return false;
+        }
+        if (!exists(resultFile) && access(resultFile.parent_path().string().c_str(), W_OK) != 0) {
+            addErrorMessage("The result cannot be written. Check the access rights of the parent folder.");
+            return false;
+        }
     }
     return this->indexReader->tryOpenAndReadHeader();
 }
@@ -48,24 +77,24 @@ bool Extractor::extractReadsToCout() {
         return false;
     }
 
-    FILE *fastqFile = fopen(fastqfile.c_str(), "rb");
+    fastqfile->open();
     off_t initialOffset = startingIndexLine->offsetInRawFile;
     totalBytesIn += initialOffset;
     int startBits = startingIndexLine->bits;
     if (startBits > 0)
         initialOffset--;
-    zlibResult = fseeko(fastqFile, initialOffset, SEEK_SET);
+    zlibResult = fastqfile->seek(initialOffset, true);
     if (zlibResult == -1) {
         addErrorMessage("");
-        fclose(fastqFile);
+        fastqfile->close();
         return false;
     }
 
     if (startBits > 0) {
-        int ret = getc(fastqFile);
+        int ret = fastqfile->readChar();
         totalBytesIn++;
         if (ret == -1) {
-            ret = ferror(fastqFile) ? Z_ERRNO : Z_DATA_ERROR;
+            ret = fastqfile->lastError() ? Z_ERRNO : Z_DATA_ERROR;
             errorWasRaised = true;
         }
         // This will pop up a clang-tidy warning, but as Mark Adler does it, I don't want to change it.
@@ -75,7 +104,7 @@ bool Extractor::extractReadsToCout() {
 
     if (errorWasRaised) {
         addErrorMessage(string("zlib reported an error: ") + zStream.msg);
-        fclose(fastqFile);
+        fastqfile->close();
         return false;
     }
 
@@ -92,12 +121,12 @@ bool Extractor::extractReadsToCout() {
     // Keep track of all split lines. Merely for debugging
     u_int64_t totalSplitCount = 0;
 
-    bool keepExtracting = false;
+    bool keepExtracting{false};
     bool finalAbort = false;
     do {
         do {
 
-            if (!readCompressedDataFromStream(fastqFile)) {
+            if (!readCompressedDataFromInputSource()) {
                 errorWasRaised = true;
                 break;
             }
@@ -182,7 +211,7 @@ bool Extractor::extractReadsToCout() {
         if (!finalAbort) {
             totalBytesIn += 8 + 10; // Plus 8 Byte (for what? they are missing...) and 10 Byte for the next header
             uint64_t streamEndPosition = totalBytesIn;
-            uintmax_t fileSize = experimental::filesystem::file_size(this->fastqfile);
+            uintmax_t fileSize = fastqfile->size();
             if (streamEndPosition < fileSize) { // plus 10 Bytes for the next header block
                 keepExtracting = true;
                 initializeZStreamForRawInflate();
@@ -191,7 +220,7 @@ bool Extractor::extractReadsToCout() {
                 memset(this->input, 0, CHUNK_SIZE);
                 this->zStream.avail_in = CHUNK_SIZE;
                 firstPass = true;
-                fseeko64(fastqFile, streamEndPosition, SEEK_SET);
+                fastqfile->seek(streamEndPosition, true);
                 Bytef dict[WINDOW_SIZE]{0};
                 zlibResult = inflateSetDictionary(&zStream, dict, WINDOW_SIZE);
             }
@@ -199,12 +228,11 @@ bool Extractor::extractReadsToCout() {
     } while (keepExtracting);
 
     // Free the file pointer and close the file.
-    fclose(fastqFile);
+    fastqfile->close();
     inflateEnd(&zStream);
 
     if (errorWasRaised) {
         addErrorMessage(string("Last error message from zlib: ") + zStream.msg);
-//        fclose(fastqFile);
         finishedSuccessful = false;
     } else {
         finishedSuccessful = true;

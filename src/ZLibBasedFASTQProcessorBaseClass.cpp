@@ -9,7 +9,7 @@
 #include "ZLibBasedFASTQProcessorBaseClass.h"
 
 ZLibBasedFASTQProcessorBaseClass::ZLibBasedFASTQProcessorBaseClass(
-        path fastq,
+        shared_ptr<InputSource> fastq,
         path index,
         const bool enableDebugging) :
         enableDebugging(enableDebugging) {
@@ -36,13 +36,15 @@ bool ZLibBasedFASTQProcessorBaseClass::initializeZStream(int mode) {
     return true;
 }
 
-bool ZLibBasedFASTQProcessorBaseClass::readCompressedDataFromStream(FILE *inputFile) {
+bool ZLibBasedFASTQProcessorBaseClass::readCompressedDataFromInputSource() {
     /* get some compressed data from input file */
-    zStream.avail_in = std::fread((void *) input, 1, CHUNK_SIZE, inputFile);
-    if (std::ferror(inputFile)) {
+    int result = this->fastqfile->read(input, CHUNK_SIZE);
+    if (result == -1) {
         this->addErrorMessage("There was an error during fread.");
         return false;
-    }
+    } else
+        zStream.avail_in = (uInt) result;
+
     if (zStream.avail_in == 0) {
         this->addErrorMessage("There was no data available in the stream");
         return false;

@@ -5,6 +5,7 @@
  */
 
 #include "Indexer.h"
+#include "ActualRunner.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -40,8 +41,14 @@ u_int32_t Indexer::calculateIndexBlockInterval(u_int64_t fileSize) {
     return 8192;
 }
 
-Indexer::Indexer(const path &fastq, const path &index, int blockInterval, bool enableDebugging, bool forceOverwrite) :
-        ZLibBasedFASTQProcessorBaseClass(fastq, index, enableDebugging),
+Indexer::Indexer(
+        const shared_ptr<InputSource> &fastqfile,
+        const path &index,
+        int blockInterval,
+        bool enableDebugging,
+        bool forceOverwrite
+) :
+        ZLibBasedFASTQProcessorBaseClass(fastqfile, index, enableDebugging),
         blockInterval(blockInterval) {
     indexWriter = make_shared<IndexWriter>(index, forceOverwrite);
 }
@@ -77,9 +84,14 @@ bool Indexer::createIndex() {
         return false;
     }
 
+    auto sizeOfFastq = fastqfile->size();
     // If not already set, recalculate the interval for index entries.
     if (blockInterval == -1) {
-        blockInterval = Indexer::calculateIndexBlockInterval(file_size(this->fastqfile));
+        if (sizeOfFastq == -1) {
+            blockInterval = 512; // Like for 32GB files.
+        } else {
+            blockInterval = Indexer::calculateIndexBlockInterval(sizeOfFastq);
+        }
     }
 
     // After init, store header, then start indexing
@@ -91,9 +103,7 @@ bool Indexer::createIndex() {
         return false;
     }
 
-    // Create a C FILE to read from it. We will skip further file checks as they were already performed in earlier steps
-    FILE *fastqFile = std::fopen(this->getFastq().c_str(), "rb");
-    auto sizeOfFastq = file_size(this->getFastq());
+    fastqfile->open();
 
     bool keepProcessing = true;
 
@@ -103,9 +113,8 @@ bool Indexer::createIndex() {
             finishedSuccessful = false;
             return false;
         }
-
         do {
-            if (!readCompressedDataFromStream(fastqFile)) {
+            if (!readCompressedDataFromInputSource()) {
                 errorWasRaised = true;
                 break;
             }
@@ -138,7 +147,8 @@ bool Indexer::createIndex() {
          * We also want to process concatenated gzip files.
          */
         if (!keepProcessing) {
-            if (totalBytesIn < sizeOfFastq) {
+//            || totalBytesIn < sizeOfFastq || totalBytesIn < fastqfile->getTotalReadBytes()
+            if (fastqfile->canRead()) {
                 // Clean up clean up and go on
                 initializeZStreamForInflate();
                 checkAndResetSlidingWindow();
@@ -146,7 +156,7 @@ bool Indexer::createIndex() {
                 memset(this->input, 0, CHUNK_SIZE);
                 this->zStream.avail_in = CHUNK_SIZE;
                 firstPass = true;
-                fseeko64(fastqFile, totalBytesIn, SEEK_SET);
+                fastqfile->seek(totalBytesIn, true);
                 keepProcessing = true;
 
                 lastBlockEndedWithNewline = true;
@@ -158,14 +168,12 @@ bool Indexer::createIndex() {
     }
 
     // Free the file pointer and close the file.
-    fclose(fastqFile);
+    fastqfile->close();
     inflateEnd(&zStream);
 
+    finishedSuccessful = !errorWasRaised;
     if (errorWasRaised) {
         addErrorMessage("There were errors during index creation. Index file is corrupt.");
-        finishedSuccessful = false;
-    } else {
-        finishedSuccessful = true;
     }
     return finishedSuccessful;
 }

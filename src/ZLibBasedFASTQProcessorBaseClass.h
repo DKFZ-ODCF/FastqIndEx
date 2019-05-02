@@ -7,12 +7,13 @@
 #ifndef FASTQINDEX_ZLIBHELPER_H
 #define FASTQINDEX_ZLIBHELPER_H
 
-#include <cstdio>
-#include <zlib.h>
-#include "ErrorAccumulator.h"
 #include "CommonStructsAndConstants.h"
+#include "ErrorAccumulator.h"
 #include "IndexReader.h"
+#include "InputSource.h"
+#include <cstdio>
 #include <experimental/filesystem>
+#include <zlib.h>
 
 using std::experimental::filesystem::path;
 using std::stringstream;
@@ -24,7 +25,7 @@ class ZLibBasedFASTQProcessorBaseClass : public ErrorAccumulator {
 
 protected:
 
-    path fastqfile;
+    shared_ptr<InputSource> fastqfile;
 
     path indexfile;
 
@@ -96,7 +97,7 @@ protected:
      */
     stringstream currentDecompressedBlock;
 
-    ZLibBasedFASTQProcessorBaseClass(path fastq, path index, bool enableDebugging);
+    ZLibBasedFASTQProcessorBaseClass(shared_ptr<InputSource> fastq, path index, bool enableDebugging);
 
 public:
 
@@ -104,17 +105,16 @@ public:
         std::stringstream ss(str);
         std::string item;
         std::vector<std::string> splittedStrings;
-        while (std::getline(ss, item, delimiter))
-        {
+        while (std::getline(ss, item, delimiter)) {
             splittedStrings.push_back(item);
         }
-        if(str.c_str()[str.size() - 1] == delimiter)
+        if (str.c_str()[str.size() - 1] == delimiter)
             splittedStrings.emplace_back("");
 
         return splittedStrings;
     }
 
-    path getFastq() { return fastqfile; }
+    shared_ptr<InputSource> getFastq() { return fastqfile; }
 
     path getIndex() { return indexfile; }
 
@@ -151,14 +151,16 @@ public:
     }
 
     /**
-     * (Unfortunately,) zlib uses the C File API. Use that as well to read from the inputFile to the buffer.
-     * If errors pop up, they are stored.
+     * Read data from an input source and store it to the internal input buffer and zstream instance.
+     *
+     * This version is merely for debugg
+     *
      * @param inputFile File to read from (FASTQ)
      * @param strm Reference to the strm struct which is used by zlib decompression.
      * @param buffer which will hold the latest decompressed chunk of data.
      * @return
      */
-    bool readCompressedDataFromStream(FILE * inputFile);
+    bool readCompressedDataFromInputSource();
 
     bool checkStreamForBlockEnd();
 

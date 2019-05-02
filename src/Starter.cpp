@@ -4,9 +4,12 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "Starter.h"
-#include "IndexerRunner.h"
 #include "ExtractorRunner.h"
+#include "IndexerRunner.h"
+#include "InputSource.h"
+#include "PathInputSource.h"
+#include "Starter.h"
+#include "StreamInputSource.h"
 #include <cstring>
 #include <tclap/CmdLine.h>
 
@@ -23,7 +26,7 @@ Starter *Starter::getInstance() {
 path Starter::argumentToPath(ValueArg<string> &cliArg) const {
     path _path;
     if (cliArg.getValue() == "-")
-        _path = path("/-");
+        _path = path("-");
     else
         _path = path(cliArg.getValue());
     return _path;
@@ -89,18 +92,20 @@ IndexerRunner *Starter::assembleCmdLineParserForIndexAndParseOpts(int argc, cons
 
     cmdLineParser.parse(argc, argv);
 
-    path fastq = argumentToPath(fastqFile);
-    path index = argumentToPath(indexFile);
+    shared_ptr<InputSource> fastq = shared_ptr<InputSource>(nullptr);
+    path index(indexFile.getValue());
 
-    if (fastqFile.getValue().empty()) {
-        fastq = "/-";  // Set to stdin
+    if (fastqFile.getValue() == "-") {
+        fastq = shared_ptr<InputSource>(new StreamInputSource(&cin));
+    } else {
+        fastq = make_shared<PathInputSource>(fastqFile.getValue());
     }
 
     if (indexFile.getValue().empty()) {
-        if (fastq == "/-") {
-            index = "/-";  // Set to stdout
+        if (fastq->isStreamSource()) {
+            index = "";
         } else {
-            index = fastq.string() + ".fqi";
+            index = dynamic_pointer_cast<PathInputSource>(fastq)->absolutePath() + ".fqi";
         }
     }
 
@@ -123,38 +128,42 @@ ExtractorRunner *Starter::assembleCmdLineParserForExtractAndParseOpts(int argc, 
     cmdLineParser.add(mode);
 
     ValueArg<string> outFile(
-            "o",
-            "outfile",
+            "o", "outfile",
             "The output file which shall be created or - (default) for stdout.",
             false,
             "-",
             "string", cmdLineParser);
 
     ValueArg<string> indexFile(
-            "i",
-            "indexfile",
+            "i", "indexfile",
             string("The index file which shall be used for extraction. If the value is not set, .fqi will be") +
             "to the name of the FASTQ file.",
             false,
-            "",
-            "string", cmdLineParser);
+            "", "string", cmdLineParser);
+
+    ValueArg<string> resultFastqFile(
+            "r", "resultfile",
+            "The FASTQ result (or text) which shall be written.",
+            false,
+            "-", "string", cmdLineParser);
 
     ValueArg<string> fastqFile(
-            "f",
-            "fastqfile",
+            "f", "fastqfile",
             "The FASTQ (or text) file from which shall be extracted.",
             true,
-            "",
-            "string", cmdLineParser);
+            "", "string", cmdLineParser);
+
+    SwitchArg forceOverwrite(
+            "w", "forceoverwrite",
+            "Allow the indexer to overwrite an existing index file.",
+            cmdLineParser);
 
     ValueArg<int> extractionmultiplier(
-            "e",
-            "extractionmultiplier",
+            "e", "extractionmultiplier",
             string("Defines a multiplier by which the startingline parameter will be mulitplied. For FASTQ files ") +
             "this is 4 (record size), but you could use 1 for e.g. regular text files.",
             false,
-            4,
-            "int", cmdLineParser);
+            4, "int", cmdLineParser);
 
 //    SwitchArg disablefastqchecks(
 //            "d",
@@ -164,31 +173,30 @@ ExtractorRunner *Starter::assembleCmdLineParserForExtractAndParseOpts(int argc, 
 //    cmdLineParser.add(disablefastqchecks);
 
     ValueArg<int> startingread(
-            "s",
-            "startingread",
+            "s", "startingread",
             "Defines the first line (multiplied by extractionmultiplier) which should be extracted.",
             false,
-            0,
-            "int", cmdLineParser);
+            0, "int", cmdLineParser);
 
     ValueArg<int> numberofreads(
-            "n",
-            "numberofreads",
-            "Defines the number of reads which should be extracted. The size of each read is defined by extractionmultiplier.",
+            "n", "numberofreads",
+            string("Defines the number of reads which should be extracted. The size of each read is defined by ") +
+            "extractionmultiplier.",
             false,
-            10,
-            "int", cmdLineParser);
+            10, "int", cmdLineParser);
 
     SwitchArg debugSwitch(
-            "D",
-            "enabledebuggin",
-            "Only practicable when you debug the application, e.g. with an IDE. This will tell the extractor component to store various debug information during runtime.",
+            "D", "enabledebuggin",
+            string("Only practicable when you debug the application, e.g. with an IDE. This will tell the extractor ") +
+            "component to store various debug information during runtime.",
             cmdLineParser);
 
     cmdLineParser.parse(argc, argv);
     return new ExtractorRunner(
-            argumentToPath(fastqFile),
-            argumentToPath(indexFile),
+            make_shared<PathInputSource>(argumentToPath(fastqFile)),
+            path(indexFile.getValue()),
+            argumentToPath(resultFastqFile),
+            forceOverwrite.getValue(),
             startingread.getValue() * extractionmultiplier.getValue(),
             numberofreads.getValue() * extractionmultiplier.getValue(),
             debugSwitch.getValue()

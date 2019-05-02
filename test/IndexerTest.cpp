@@ -4,20 +4,23 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "../src/Runner.h"
 #include "../src/Indexer.h"
 #include "../src/IndexerRunner.h"
 #include "../src/IndexReader.h"
+#include "../src/PathInputSource.h"
+#include "../src/Runner.h"
+#include "../src/StreamInputSource.h"
 #include "TestResourcesAndFunctions.h"
+#include <fstream>
 #include <memory>
 #include <UnitTest++/UnitTest++.h>
 #include <zlib.h>
-#include <fstream>
 
 const char *const INDEXER_SUITE_TESTS = "IndexerTests";
 const char *const TEST_INDEXER_CREATION = "IndexerCreation";
 const char *const TEST_CREATE_INDEX = "testCreateIndex";
 const char *const TEST_CREATE_INDEX_SMALL = "Test create index with small fastq test data.";
+const char *const TEST_CREATE_INDEX_W_STREAMED_DATA = "Test create index with streamed concatenated data";
 const char *const TEST_CREATE_INDEX_LARGE = "Test create index with more fastq test data.";
 const char *const TEST_CREATE_INDEX_CONCAT = "Test create index with the small fastq concatenated two times.";
 
@@ -45,12 +48,12 @@ SUITE (INDEXER_SUITE_TESTS) {
     TEST (TEST_INDEXER_CREATION) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_INDEXER_CREATION);
 
-        path fastq = res.getResource(string("test2.fastq.gz"));
+        path fastq = res.getResource(string(TEST_FASTQ_LARGE));
         path index = res.filePath("test2.fastq.gz.fqi");
 
-        auto *indexer = new Indexer(fastq, index, -1);
+        auto *indexer = new Indexer(make_shared<PathInputSource>(fastq), index, -1);
 
-                CHECK_EQUAL(fastq, indexer->getFastq());
+                CHECK_EQUAL(fastq, dynamic_pointer_cast<PathInputSource>(indexer->getFastq())->getPath());
                 CHECK_EQUAL(index, indexer->getIndex());
                 CHECK_EQUAL(false, indexer->isDebuggingEnabled());
                 CHECK_EQUAL(false, indexer->wasSuccessful());
@@ -58,7 +61,7 @@ SUITE (INDEXER_SUITE_TESTS) {
                 CHECK(!indexer->getStoredHeader());
 
         delete indexer;
-        indexer = new Indexer(fastq, index, -1, true);
+        indexer = new Indexer(make_shared<PathInputSource>(fastq), index, -1, true);
                 CHECK_EQUAL(true, indexer->isDebuggingEnabled());
         delete indexer;
     }
@@ -66,42 +69,38 @@ SUITE (INDEXER_SUITE_TESTS) {
     TEST (TEST_CREATE_HEADER) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_INDEX);
 
-        path fastq = res.getResource("test2.fastq.gz");
+        path fastq = res.getResource(TEST_FASTQ_LARGE);
         path index = res.filePath("test2.fastq.gz.fqi");
 
-        Indexer indexer(fastq, index, -1,
+        Indexer indexer(make_shared<PathInputSource>(fastq), index, -1,
                         true); // Tell the indexer to store entries. This is solely a debug feature but it
         shared_ptr<IndexHeader> header = indexer.createHeader();
                 CHECK(header.get());
                 CHECK_EQUAL(Indexer::INDEXER_VERSION, header->indexWriterVersion);
     }
 
-    // TEST ("readCompressedDataFromStream")  <-- How to write a test? Currently its covered in the larger tests.
+    // TEST ("readCompressedDataFromInputSource")  <-- How to write a test? Currently its covered in the larger tests.
 
     // TEST ("call createIndex() twice")
 
     TEST (TEST_CREATE_INDEX_CONCAT) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_INDEX_SMALL);
 
-        path fastq = res.getResource("test.fastq.gz");
+        path fastq = res.getResource(TEST_FASTQ_SMALL);
         path concat = res.filePath("test_concat.fastq.gz");
         path index = res.filePath("test_concat.fastq.gz.fqi");
-        path extractedFastq = res.filePath("test.fastq.gz");
+        path extractedFastq = res.filePath(TEST_FASTQ_SMALL);
+
 
         int appendCount = 4;
-
-        string command("cat \"" + fastq.string() + "\" >> \"" + concat.string() + '"');
-
-        for (int i = 0; i < appendCount; i++) {
-            int success = std::system(command.c_str());
-                    CHECK_EQUAL(0, success);
-        }
+        bool result = TestResourcesAndFunctions::createConcatenatedFile(fastq, concat, appendCount);
+                CHECK_EQUAL(true, result);
                 CHECK(4 * file_size(fastq) == file_size(concat));
 
-        auto *indexer = new Indexer(concat, index, -1, true);
+        auto *indexer = new Indexer(make_shared<PathInputSource>(concat), index, -1, true);
                 CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.
 
-        bool result = indexer->createIndex();
+        result = indexer->createIndex();
 
         auto storedHeader = indexer->getStoredHeader();
         auto storedEntries = indexer->getStoredEntries();
@@ -121,13 +120,9 @@ SUITE (INDEXER_SUITE_TESTS) {
 
         int firstDiff = -1; // This is more for debug purposes.
 
-        command = (
-                string("gunzip -c \"") + concat.string() + "\"" +
-                " > \"" + extractedFastq.string() + "\""
-        );
+        result = TestResourcesAndFunctions::extractGZFile(concat, extractedFastq);
+                CHECK_EQUAL(true, result);
 
-        int success = std::system(command.c_str());
-                CHECK_EQUAL(0, success);
         ifstream strm(extractedFastq);
         vector<string> decompressedSourceContent;
         string line;
@@ -153,10 +148,10 @@ SUITE (INDEXER_SUITE_TESTS) {
     TEST (TEST_CREATE_INDEX_SMALL) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_INDEX_SMALL);
 
-        path fastq = res.getResource(string("test.fastq.gz"));
+        path fastq = res.getResource(string(TEST_FASTQ_SMALL));
         path index = res.filePath("test.fastq.gz.fqi");
 
-        auto *indexer = new Indexer(fastq, index, -1, true);
+        auto indexer = new Indexer(make_shared<PathInputSource>(fastq), index, -1, true);
                 CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.
 
         bool result = indexer->createIndex();
@@ -184,16 +179,44 @@ SUITE (INDEXER_SUITE_TESTS) {
                 CHECK(exists(index));
     }
 
+    TEST (TEST_CREATE_INDEX_W_STREAMED_DATA) {
+        TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_INDEX_SMALL);
+        path fastq = res.getResource(TEST_FASTQ_SMALL);
+        path concat = res.filePath("test_concat.fastq.gz");
+        path index = res.filePath("test_concat.fastq.gz.fqi");
+        path extractedFastq = res.filePath(TEST_FASTQ_SMALL);
+
+
+        int appendCount = 4;
+        bool result = TestResourcesAndFunctions::createConcatenatedFile(fastq, concat, appendCount);
+                CHECK_EQUAL(true, result);
+                CHECK(4 * file_size(fastq) == file_size(concat));
+
+        ifstream fastqStream(concat.string());
+        auto indexer = new Indexer(make_shared<StreamInputSource>(&fastqStream), index, 1, true);
+
+        indexer->createIndex();
+        auto storedHeader = indexer->getStoredHeader();
+        auto storedEntries = indexer->getStoredEntries();
+        auto storedLines = indexer->getStoredLines();
+
+                CHECK(indexer->wasSuccessful());
+                CHECK_EQUAL(4, storedEntries.size());
+
+        delete indexer;
+                CHECK(exists(index));
+    }
+
     TEST (TEST_CREATE_INDEX_LARGE) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_INDEX_LARGE);
 
-        path fastq = res.getResource(string("test2.fastq.gz"));
+        path fastq = res.getResource(string(TEST_FASTQ_LARGE));
         path index = res.filePath("test2.fastq.gz.fqi");
 
         uint blockSize = 4;
 
         auto *indexer = new Indexer(
-                fastq,
+                make_shared<PathInputSource>(fastq),
                 index,
                 blockSize,
                 true
@@ -288,13 +311,9 @@ SUITE (INDEXER_SUITE_TESTS) {
         // Here we're going to prepare the test data for our line-by-line test. But only, if the preceding tests were
         // successful.
         path extractedFastq = res.filePath("test.fastq");
-        string command = (
-                string("gunzip -c \"") + fastq.string() + "\"" +
-                " > \"" + extractedFastq.string() + "\""
-        );
 
-        int success = std::system(command.c_str());
-                CHECK_EQUAL(0, success);
+        result = TestResourcesAndFunctions::extractGZFile(fastq, extractedFastq);
+                CHECK_EQUAL(true, result);
 
         ifstream strm(extractedFastq);
         vector<string> decompressedSourceContent;

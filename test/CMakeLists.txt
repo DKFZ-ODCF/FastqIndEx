@@ -22,6 +22,7 @@ include_directories(
 add_executable(
         testapp
         main.cpp
+        InputSourceTest.cpp         # Leave this right at the beginning, these tests are crucial
         ActualRunnerTest.cpp
         CommonStructsTest.cpp
         ExtractorRunnerTest.cpp
@@ -36,7 +37,9 @@ add_executable(
         StarterTest.cpp
         TestResourcesAndFunctions.cpp TestResourcesAndFunctions.h
         TestResourcesAndFunctionsTest.cpp
-        TestConstants.cpp TestConstants.h ZLibBasedFASTQProcessorBaseClassTest.cpp)
+        TestConstants.cpp TestConstants.h
+        ZLibBasedFASTQProcessorBaseClassTest.cpp
+)
 
 target_link_libraries(
         testapp

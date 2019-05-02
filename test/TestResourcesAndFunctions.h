@@ -10,6 +10,8 @@
 #include <experimental/filesystem>
 #include <mutex>
 #include <string>
+#include <cstdarg>
+#include "TestConstants.h"
 
 using namespace std;
 using std::experimental::filesystem::path;
@@ -58,6 +60,32 @@ public:
     path createEmptyFile(const string &filename);
 
     static void CreateEmptyFile(const path &_path);
+
+    /**
+     * This method formats a string with parameters like %s, %d.
+     *
+     * The source of this method is here: http://www.martinbroadhurst.com/string-formatting-in-c.html
+     *
+     * This method is definitely not safe, it does not check, how many placeholders are in! It will cause a sigsev, if
+     * e.g. more placeholders than arguments exist.
+     *
+     * @param format The string to format with placeholders like %s, %d.
+     * @param ...    The range of parameters which should be put in place of the placeholders.
+     * @return
+     */
+    static std::string format(const std::string &format, ...);
+
+    static path getPathOfFQIBinary();
+
+    static bool runCommand(const string &command);
+
+    static bool runIndexerBinary(const path &fastq, const path &index, bool pipeFastq);
+
+    static bool runExtractorBinary(const path &fastq, const path &index);
+
+    static bool extractGZFile(const path &file, const path &extractedFile);
+
+    static bool createConcatenatedFile(const path &file, const path &result, int repetitions);
 };
 
 

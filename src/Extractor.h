@@ -11,6 +11,7 @@
 #include "ErrorAccumulator.h"
 #include "IndexReader.h"
 #include "ZLibBasedFASTQProcessorBaseClass.h"
+#include "PathInputSource.h"
 #include <experimental/filesystem>
 #include <zlib.h>
 
@@ -30,12 +31,35 @@ private:
 
     u_int64_t lineCount;
 
+    path resultFile;
+
+    bool useFile{false};
+
+    /**
+     * If the extractor shall write a new fastq file, this indicates, that the file will be overwritten.
+     */
+    bool forceOverwrite;
+
 public:
-    explicit Extractor(const path &fastqfile,
-                       const path &indexfile,
-                       u_int64_t startingLine,
-                       u_int64_t lineCount,
-                       bool enableDebugging);
+
+    /**
+     * @param fastqfile         The file from which we will extract data
+     * @param indexfile         The index file for this file
+     * @param resultfile        The result file or
+     * @param forceOverwrite    If the resultfile exists, we can overwrite it with this flag
+     * @param startingLine      Start extraction from this line
+     * @param lineCount         Extract a maximum of lineCount lines
+     * @param enableDebugging   Used for interactive debugging and unit tests
+     */
+    explicit Extractor(
+            const shared_ptr<PathInputSource> &fastqfile,
+            const path &indexfile,
+            const path &resultfile,
+            bool forceOverwrite,
+            u_int64_t startingLine,
+            u_int64_t lineCount,
+            bool enableDebugging
+    );
 
     virtual ~Extractor() = default;
 

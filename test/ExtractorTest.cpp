@@ -7,18 +7,24 @@
 #include "../src/Runner.h"
 #include "../src/Extractor.h"
 #include "../src/ExtractorRunner.h"
-#include "TestResourcesAndFunctions.h"
 #include "../src/Indexer.h"
-#include <UnitTest++/UnitTest++.h>
-#include <zlib.h>
+#include "../src/PathInputSource.h"
+#include "TestResourcesAndFunctions.h"
 #include <fstream>
 #include <iostream>
+#include <UnitTest++/UnitTest++.h>
+#include <zlib.h>
 
 const char *const INDEXER_SUITE_TESTS = "IndexerTests";
 const char *const TEST_EXTRACTOR_CREATION = "Extractor creation";
 const char *const TEST_CREATE_EXTRACTOR_AND_EXTRACT_SMALL_TO_COUT = "Combined test for index creation and extraction with the small dataset, extracts to cout.";
 const char *const TEST_CREATE_EXTRACTOR_AND_EXTRACT_LARGE_TO_COUT = "Combined test for index creation and extraction with the larger dataset, extracts to cout.";
 const char *const TEST_CREATE_EXTRACTOR_AND_EXTRACT_CONCAT_TO_COUT = "Combined test for index creation and extraction with the concatenated dataset, extracts to cout.";
+const char *const TEST_EXTRACTOR_CHECKPREM_OVERWRITE_EXISTING = "Test fail on exsiting file with disabled overwrite.";
+const char *const TEST_EXTRACTOR_CHECKPREM_MISSING_NOTWRITABLE = "Test fail on non-writable result file with overwrite enabled.";
+const char *const TEST_EXTRACTOR_CHECKPREM_MISSING_PARENTNOTWRITABLE = "Test fail on non-writable output folder.";
+const char *const TEST_EXTRACTOR_EXTRACT_WITH_OUTFILE = "Text extract to an output file.";
+const char *const TEST_EXTRACTOR_EXTRACT_WITH_EXISTINGOUTFILE = "Text extract to an output file which already exists.";
 
 
 void runRangedExtractionTest(const path &fastq,
@@ -27,7 +33,7 @@ void runRangedExtractionTest(const path &fastq,
                              const u_int64_t firstLine,
                              const u_int64_t lineCount,
                              const u_int64_t expectedLineCount) {
-    auto *extractor = new Extractor(fastq, index, firstLine, lineCount, true);
+    auto *extractor = new Extractor(make_shared<PathInputSource>(fastq), index, "-", false, firstLine, lineCount, true);
     bool ok = extractor->extractReadsToCout();
             CHECK(ok);
     if (!ok) {
@@ -66,7 +72,7 @@ bool initializeComplexTest(const path &fastq,
      * Create the index fresh from the FASTQ, so we do not need to store the index file in our resources, also makes
      * debugging the indexer easier.
      */
-    auto *indexer = new Indexer(fastq, index, blockInterval, true);
+    auto *indexer = new Indexer(make_shared<PathInputSource>(fastq), index, blockInterval, true);
             CHECK(indexer->checkPremises());
     indexer->createIndex();
     bool success = indexer->wasSuccessful();
@@ -80,7 +86,7 @@ bool initializeComplexTest(const path &fastq,
      * Check premises first. As we are going to run more than one test, we'll delete this instantly and use new
      * instances everytime.
      */
-    auto *extractor = new Extractor(fastq, index, 0, 10, true);
+    auto *extractor = new Extractor(make_shared<PathInputSource>(fastq), index, "-", false, 0, 10, true);
     bool premisesMet = extractor->checkPremises();
             CHECK(premisesMet);
     delete extractor;
@@ -91,9 +97,8 @@ bool initializeComplexTest(const path &fastq,
      * Here we're going to prepare the test data for our line-by-line test. But only, if the preceding tests were
      * successful.
      */
-    string command = (string("gunzip -c \"") + fastq.string() + "\" > \"" + extractedFastq.string() + "\"");
-    success = std::system(command.c_str()) == 0;
-            CHECK_EQUAL(true, success);
+    bool result = TestResourcesAndFunctions::extractGZFile(fastq, extractedFastq);
+            CHECK_EQUAL(true, result);
 
     ifstream strm(extractedFastq);
     string line;
@@ -110,12 +115,37 @@ SUITE (INDEXER_SUITE_TESTS) {
     TEST (TEST_EXTRACTOR_CREATION) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_EXTRACTOR_CREATION);
 
-        path fastq = res.getResource("test.fastq.gz");
-        path index = res.getResource("test.fastq.gz.fqi_v1");
+        path fastq = res.getResource(TEST_FASTQ_SMALL);
+        path index = res.getResource(TEST_INDEX_SMALL);
 
-        auto *extractor = new Extractor(fastq, index, 0, 10, true);
+        auto *extractor = new Extractor(make_shared<PathInputSource>(fastq), index, "-", false, 0, 10, true);
                 CHECK(extractor->checkPremises());
         delete extractor;
+    }
+
+    TEST (TEST_EXTRACTOR_CHECKPREM_OVERWRITE_EXISTING) {
+                CHECK(false);
+    }
+
+    TEST (TEST_EXTRACTOR_CHECKPREM_MISSING_NOTWRITABLE) {
+                CHECK(false);
+    }
+
+    TEST (TEST_EXTRACTOR_CHECKPREM_MISSING_PARENTNOTWRITABLE) {
+                CHECK(false);
+    }
+
+    TEST (TEST_EXTRACTOR_EXTRACT_WITH_OUTFILE) {
+        TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_EXTRACTOR_EXTRACT_WITH_OUTFILE);
+
+        res.getResource(TEST_FASTQ_SMALL);
+
+                CHECK(false);
+    }
+
+    TEST (TEST_EXTRACTOR_EXTRACT_WITH_EXISTINGOUTFILE) {
+        // Check, that the output file size matches!
+                CHECK(false);
     }
 
     TEST (TEST_CREATE_EXTRACTOR_AND_EXTRACT_SMALL_TO_COUT) {
@@ -126,8 +156,8 @@ SUITE (INDEXER_SUITE_TESTS) {
         // - We extract several line ranges and compare them with the help of head/tail with the original data
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_EXTRACTOR_AND_EXTRACT_SMALL_TO_COUT);
 
-        path fastq = res.getResource("test.fastq.gz");
-        path index = res.filePath("test.fastq.gz.fqi_v1");
+        path fastq = res.getResource(TEST_FASTQ_SMALL);
+        path index = res.filePath(TEST_INDEX_SMALL);
         path extractedFastq = res.filePath("test.fastq");
         u_int64_t linesInFastq = 4000;
         vector<string> decompressedSourceContent;
@@ -147,8 +177,8 @@ SUITE (INDEXER_SUITE_TESTS) {
     TEST (TEST_CREATE_EXTRACTOR_AND_EXTRACT_LARGE_TO_COUT) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_EXTRACTOR_AND_EXTRACT_LARGE_TO_COUT);
 
-        path fastq = res.getResource("test2.fastq.gz");
-        path index = res.filePath("test2.fastq.gz.fqi_v1");
+        path fastq = res.getResource(TEST_FASTQ_LARGE);
+        path index = res.filePath(TEST_INDEX_LARGE);
         path extractedFastq = res.filePath("test2.fastq");
         u_int64_t linesInFastq = 160000;
         vector<string> decompressedSourceContent;
@@ -178,20 +208,17 @@ SUITE (INDEXER_SUITE_TESTS) {
     TEST (TEST_CREATE_EXTRACTOR_AND_EXTRACT_CONCAT_TO_COUT) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_EXTRACTOR_AND_EXTRACT_CONCAT_TO_COUT);
 
-        path fastq = res.getResource("test.fastq.gz");
+        path fastq = res.getResource(TEST_FASTQ_SMALL);
         path fastqConcat = res.filePath("test_concat.fastq.gz");
         path index = res.filePath("test_concat.fastq.gz.fqi_v1");
         path extractedFastq = res.filePath("test_concat.fastq");
-        u_int64_t linesInFastq = 16000;
         vector<string> decompressedSourceContent;
 
         int appendCount = 4;
-        string command("cat \"" + fastq.string() + "\" >> \"" + fastqConcat.string() + '"');
+        u_int64_t linesInFastq = appendCount * 4000;
 
-        for (int i = 0; i < appendCount; i++) {
-            int success = std::system(command.c_str());
-                    CHECK_EQUAL(0, success);
-        }
+        bool result = TestResourcesAndFunctions::createConcatenatedFile(fastq, fastqConcat, appendCount);
+                CHECK_EQUAL(true, result);
 
         if (!initializeComplexTest(fastqConcat, index, extractedFastq, 4, linesInFastq, &decompressedSourceContent))
             return;

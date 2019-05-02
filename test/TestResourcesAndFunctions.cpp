@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <sys/stat.h>
 #include <iostream>
+#include <UnitTest++/UnitTest++.h>
 
 using namespace std::experimental::filesystem;
 using std::experimental::filesystem::path;
@@ -102,4 +103,100 @@ void TestResourcesAndFunctions::CreateEmptyFile(const path &_path) {
     ofstream stream(_path);
     stream << "";
     stream.close();
+}
+
+std::string TestResourcesAndFunctions::format(const std::string &format, ...) {
+    va_list args;
+    va_start(args, format);
+    size_t len = std::vsnprintf(nullptr, 0, format.c_str(), args);
+    va_end(args);
+    std::vector<char> vec(len + 1);
+    va_start(args, format);
+    std::vsnprintf(&vec[0], len + 1, format.c_str(), args);
+    va_end(args);
+    return &vec[0];
+}
+
+path TestResourcesAndFunctions::getPathOfFQIBinary() {
+    path pTestApp(TEST_BINARY);
+    path pSrcApplication(pTestApp.parent_path().parent_path().string() + "/src");
+    path pFastqIndex(pSrcApplication.string() + "/fastqindex");
+    return pFastqIndex;
+}
+
+bool TestResourcesAndFunctions::runCommand(const string &command) {
+    return std::system(command.c_str()) == 0;
+}
+
+/**
+ * No test for this, tested with integration tests.
+ */
+bool TestResourcesAndFunctions::runIndexerBinary(const path &fastq, const path &index, bool pipeFastq) {
+    if (!pipeFastq) {
+        return runCommand(
+                format(R"("%s" index "-f=%s" "-i=%s")",
+                       getPathOfFQIBinary().string().c_str(),
+                       fastq.string().c_str(),
+                       index.string().c_str()
+                )
+        );
+    } else {
+        return runCommand(
+                format(R"(cat "%s" | "%s" index -f=- -i="%s")",
+                       fastq.string().c_str(),
+                       getPathOfFQIBinary().string().c_str(),
+                       index.string().c_str()
+                )
+        );
+    }
+}
+
+/**
+ * No test for this, tested with integration tests.
+ */
+bool TestResourcesAndFunctions::runExtractorBinary(const path &fastq, const path &index) {
+    return runCommand(
+            format(R"("%s" extract "-f=%s" "-i=%s")",
+                   getPathOfFQIBinary().string().c_str(),
+                   fastq.string().c_str(),
+                   index.string().c_str())
+    );
+}
+
+/**
+ * No test for this, tested within other tests.
+ */
+bool TestResourcesAndFunctions::extractGZFile(const path &file, const path &extractedFile) {
+    return runCommand(
+            format(string(R"(gunzip -c "%s" > "%s")"), file.string().c_str(), extractedFile.string().c_str())
+    );
+}
+
+/**
+ * No test for this, tested within other tests.
+ */
+bool TestResourcesAndFunctions::createConcatenatedFile(const path &file, const path &result, int repetitions) {
+            CHECK(repetitions > 0);
+    bool res = true;
+    /**
+     * First time, create a fresh file.
+     */
+    res &= runCommand(
+            format(R"(cat "%s" > "%s")",
+                   file.string().c_str(),
+                   result.string().c_str()
+            )
+    );
+    /**
+     * Second to n-time append gz.
+     */
+    for (int i = 1; i < repetitions; i++) {
+        res &= runCommand(
+                format(R"(cat "%s" >> "%s")",
+                       file.string().c_str(),
+                       result.string().c_str()
+                )
+        );
+    }
+    return res;
 }

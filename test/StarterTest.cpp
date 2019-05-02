@@ -4,14 +4,15 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "../src/Starter.h"
-#include "../src/IndexerRunner.h"
 #include "../src/ExtractorRunner.h"
+#include "../src/IndexerRunner.h"
+#include "../src/Starter.h"
+#include "../src/PathInputSource.h"
 #include "TestConstants.h"
 
 #include <cstring>
-#include <UnitTest++/UnitTest++.h>
 #include <experimental/filesystem>
+#include <UnitTest++/UnitTest++.h>
 
 using std::experimental::filesystem::path;
 
@@ -19,10 +20,10 @@ using namespace std;
 
 SUITE (StarterTests) {
     TEST (testCreateNewRunners) {
-        path fastqFile("/tmp/abc");
+        auto fastqFile = shared_ptr<InputSource>(new PathInputSource("/tmp/abc"));
         path indexFile("/tmp/abc.fqi");
         IndexerRunner runner(fastqFile, indexFile);
-                CHECK_EQUAL(runner.getFastqFile(), fastqFile);
+                CHECK_EQUAL(dynamic_pointer_cast<PathInputSource>(runner.getFastqFile())->getPath(), dynamic_pointer_cast<PathInputSource>(fastqFile)->getPath());
                 CHECK_EQUAL(runner.getIndexFile(), indexFile);
     }
 

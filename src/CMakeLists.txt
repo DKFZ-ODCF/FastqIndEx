@@ -13,18 +13,24 @@ add_executable(fastqindex main.cpp main.h)
 
 add_library(
         fastqindexlib
-        CommonStructsAndConstants.cpp CommonStructsAndConstants.h
-        Starter.cpp Starter.h
-        Runner.cpp Runner.h
         ActualRunner.cpp ActualRunner.h
-        IndexerRunner.cpp IndexerRunner.h
-        ExtractorRunner.cpp ExtractorRunner.h
+        CommonStructsAndConstants.cpp CommonStructsAndConstants.h
+        ErrorAccumulator.cpp ErrorAccumulator.h
         ErrorMessages.cpp ErrorMessages.h
+        Extractor.cpp Extractor.h
+        ExtractorRunner.cpp ExtractorRunner.h
+        IndexerRunner.cpp IndexerRunner.h
         Indexer.cpp Indexer.h
         IndexReader.cpp IndexReader.h
         IndexWriter.cpp IndexWriter.h
         IndexProcessor.cpp IndexProcessor.h
-        ErrorAccumulator.cpp ErrorAccumulator.h Extractor.cpp Extractor.h ZLibBasedFASTQProcessorBaseClass.cpp ZLibBasedFASTQProcessorBaseClass.h)
+        InputSource.cpp InputSource.h
+        StreamInputSource.cpp StreamInputSource.h
+        PathInputSource.cpp PathInputSource.h
+        Runner.cpp Runner.h
+        Starter.cpp Starter.h
+        ZLibBasedFASTQProcessorBaseClass.cpp ZLibBasedFASTQProcessorBaseClass.h
+)
 
 target_link_libraries(
         fastqindexlib

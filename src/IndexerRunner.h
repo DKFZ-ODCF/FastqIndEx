@@ -10,6 +10,8 @@
 
 #include "ActualRunner.h"
 #include "Indexer.h"
+#include "InputSource.h"
+#include "PathInputSource.h"
 
 /**
  * The IndexRunner will, once started, create an index for the  FASTQ file by utilizing the Indexer class. As of now,
@@ -21,17 +23,42 @@ class IndexerRunner : public ActualRunner {
 
 private:
 
-    Indexer* indexer = nullptr;
+    Indexer *indexer = nullptr;
 
 public:
 
-    IndexerRunner(const path &fastqfile, const path &indexfile, int blockInterval = -1, bool enableDebugging = false, bool forceOverwrite = false);
+    IndexerRunner(
+            const path &fastqfile,
+            const path &indexfile,
+            int blockInterval = -1,
+            bool enableDebugging = false,
+            bool forceOverwrite = false
+    ) : IndexerRunner(
+            shared_ptr<InputSource>(new PathInputSource(fastqfile)),
+            indexfile,
+            blockInterval,
+            enableDebugging,
+            forceOverwrite
+    ) {};
+
+    IndexerRunner(
+            const shared_ptr<InputSource> &fastqfile,
+            const path &indexfile,
+            int blockInterval = -1,
+            bool enableDebugging = false,
+            bool forceOverwrite = false
+    );
 
     virtual ~IndexerRunner();
 
     bool isIndexer() override { return true; }
 
     bool checkPremises() override;
+
+    /**
+     * The Indexer may use a piped input file, thus this will return true for the IndexerRunner!
+     */
+    bool allowsReadFromStreamedSource() override;
 
     unsigned char run() override;
 

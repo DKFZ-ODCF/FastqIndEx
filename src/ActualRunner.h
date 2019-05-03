@@ -11,6 +11,7 @@
 #include "Runner.h"
 #include <experimental/filesystem>
 #include <string>
+#include <iostream>
 
 using namespace std;
 using experimental::filesystem::path;
@@ -63,6 +64,7 @@ public:
     shared_ptr<InputSource> getFastqFile() { return fastqFile; }
 
     path getIndexFile() { return indexFile; }
+
 
 };
 

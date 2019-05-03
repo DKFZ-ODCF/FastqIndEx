@@ -73,6 +73,14 @@ IndexerRunner *Starter::assembleCmdLineParserForIndexAndParseOpts(int argc, cons
             -1,
             "int", cmdLineParser);
 
+    ValueArg<int> verbosity(
+            "v",
+            "verbosity",
+            "Sets the verbosity of the application in the range of 0 (default, less) to 3 (debug, max). Invalid values will be ignored and the default of 0 will apply. -D automatically sets the level to 3.",
+            false,
+            0,
+            "int", cmdLineParser);
+
     SwitchArg forceOverwrite(
             "w",
             "forceoverwrite",
@@ -80,10 +88,11 @@ IndexerRunner *Starter::assembleCmdLineParserForIndexAndParseOpts(int argc, cons
             cmdLineParser);
 
     SwitchArg debugSwitch(
-            "D",
-            "enabledebuggin",
-            "Only practicable when you debug the application, e.g. with an IDE. This will tell the indexer component to store various debug information during runtime.",
-            cmdLineParser);
+            "D", "enabledebugging",
+            string("Only practicable when you debug the application, e.g. with an IDE. This will tell the extractor ") +
+            "component to store various debug information during runtime.",
+            cmdLineParser,
+            false);
 
     vector<string> allowedMode{"index"};
     ValuesConstraint<string> allowedModesConstraint(allowedMode);
@@ -114,7 +123,10 @@ IndexerRunner *Starter::assembleCmdLineParserForIndexAndParseOpts(int argc, cons
 
     bool fo = forceOverwrite.getValue();
 
+    ErrorAccumulator::setVerbosity(verbosity.getValue());
     bool dbg = debugSwitch.getValue();
+    if (dbg)
+        ErrorAccumulator::setVerbosity(3);
 
     return new IndexerRunner(fastq, index, bi, dbg, fo);
 }
@@ -185,11 +197,26 @@ ExtractorRunner *Starter::assembleCmdLineParserForExtractAndParseOpts(int argc, 
             false,
             10, "int", cmdLineParser);
 
+    ValueArg<int> verbosity(
+            "v",
+            "verbosity",
+            "Sets the verbosity of the application in the range of 0 (default, less) to 3 (debug, max). Invalid values will be ignored and the default of 0 will apply. -D automatically sets the level to 3.",
+            false,
+            0,
+            "int", cmdLineParser);
+
     SwitchArg debugSwitch(
-            "D", "enabledebuggin",
+            "D", "enabledebugging",
             string("Only practicable when you debug the application, e.g. with an IDE. This will tell the extractor ") +
             "component to store various debug information during runtime.",
-            cmdLineParser);
+            cmdLineParser,
+            false);
+
+    ErrorAccumulator::setVerbosity(verbosity.getValue());
+
+    bool dbg = debugSwitch.getValue();
+    if (dbg)
+        ErrorAccumulator::setVerbosity(3);
 
     cmdLineParser.parse(argc, argv);
     return new ExtractorRunner(

@@ -12,10 +12,12 @@ const u_int64_t StreamInputSource::getTotalReadBytes() {
 }
 
 bool StreamInputSource::open() {
+    debug("Opening stream input source");
     return true;
 }
 
 bool StreamInputSource::close() {
+    debug("Closing stream input source");
     return true;
 }
 
@@ -95,7 +97,9 @@ int StreamInputSource::readFromBuffer(Bytef *targetBuffer, int numberOfBytes) {
 
 int StreamInputSource::readFromStream(Bytef *targetBuffer, int numberOfBytes) {
     char *readBuffer = new char[numberOfBytes];
-    int amountRead = inputStream->readsome(readBuffer, numberOfBytes);
+    inputStream->sync();
+    inputStream->read(readBuffer, numberOfBytes);
+    int amountRead = inputStream->gcount();
     if (amountRead > 0) {
         if (targetBuffer != nullptr)
             memcpy(targetBuffer, readBuffer, amountRead);
@@ -154,11 +158,6 @@ int StreamInputSource::seek(int64_t nByte, bool absolute) {
 }
 
 /**
- * Several cases:
- *
- * => Normalize to border
- *
- *
  * @param nByte
  * @return
  */
@@ -220,13 +219,10 @@ int StreamInputSource::lastError() {
 }
 
 /**
- * Try to read one more byte from the stream. The streams eof() method won't necessarily work and will return false in
- * most cases I tested.
+ * Peek and check for eof()
  * @return
  */
 bool StreamInputSource::canRead() {
-    Byte buf{0};
-    int nByte = read(&buf, 1);
-    if(nByte == 0) return false;
-    rewind(1);
+    this->inputStream->peek();
+    return !this->inputStream->eof();
 }

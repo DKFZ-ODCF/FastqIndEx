@@ -15,11 +15,13 @@ PathInputSource::~PathInputSource() {
 }
 
 bool PathInputSource::open() {
+    debug("Opening path input source from file " + this->source.string());
     if (!filePointer)
         this->filePointer = fopen(source.string().c_str(), "rb");
 }
 
 bool PathInputSource::close() {
+    debug("Closing path in put source.");
     if (filePointer) {
         fclose(filePointer);
         filePointer = nullptr;

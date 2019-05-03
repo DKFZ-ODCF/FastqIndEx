@@ -71,11 +71,13 @@ private:
      */
     bool lastBlockEndedWithNewline = true;
 
-    u_int64_t totalLineCount{0};            // The compression block we are in.
+    u_int64_t lineCountForNextIndexEntry{0};
 
     long blockID{-1};                   // Number of the currently processed block.
 
     int blockInterval;                  // Only store every n'th index entry.
+
+    shared_ptr<IndexEntryV1> lastStoredEntry;
 
     /**
      * When we write out a new index entry, we need a dictionary. This is taken from the block of data before the block
@@ -94,7 +96,8 @@ public:
      * @param index The index for the FASTQ.
      * @param enableDebugging Store debug information or not.
      */
-    Indexer(const shared_ptr<InputSource> &fastqfile, const path &index, int blockInterval, bool enableDebugging = false, bool forceOverwrite = false);
+    Indexer(const shared_ptr<InputSource> &fastqfile, const path &index, int blockInterval,
+            bool enableDebugging = false, bool forceOverwrite = false);
 
     virtual ~Indexer() = default;
 
@@ -135,7 +138,6 @@ public:
      * @return The index entries, which were created during the index run.
      */
     const vector<shared_ptr<IndexEntryV1>> &getStoredEntries() { return storedEntries; }
-
 
 
 };

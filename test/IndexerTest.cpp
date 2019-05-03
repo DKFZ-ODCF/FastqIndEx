@@ -207,6 +207,16 @@ SUITE (INDEXER_SUITE_TESTS) {
                 CHECK(exists(index));
     }
 
+    TEST (testIndexerIntegrationTestWPipedSmallDataset) {
+        TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, "testIndexerIntegrationTestWPipedSmallDataset");
+        path fastq = res.getResource(string(TEST_FASTQ_LARGE));
+        path index = res.filePath("test2.fastq.gz.fqi");
+        ifstream fqStream(fastq);
+        IndexerRunner runner(shared_ptr<InputSource>(new StreamInputSource(&fqStream)), index);
+                CHECK(runner.run() == 0);
+                CHECK(file_size(index) > 0);
+    }
+
     TEST (TEST_CREATE_INDEX_LARGE) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_INDEX_LARGE);
 

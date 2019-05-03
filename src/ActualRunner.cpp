@@ -17,16 +17,25 @@ using experimental::filesystem::path;
 ActualRunner::ActualRunner(const path &fastqfile, const path &indexfile) {
     this->fastqFile = make_shared<PathInputSource>(fastqfile);
     this->indexFile = indexfile;
+    debug(string(
+            "Created runner with fastq file: \"" + fastqfile.string() + "\" and index \"" + indexfile.string() + "\""));
 }
 
 ActualRunner::ActualRunner(istream *fastqStream, const path &indexfile) {
     this->fastqFile = make_shared<StreamInputSource>(fastqStream);
     this->indexFile = indexfile;
+    debug(string("Created runner with input stream and index \"" + indexfile.string() + "\""));
 }
 
 ActualRunner::ActualRunner(const shared_ptr<InputSource> &fastqfile, const path &indexfile) {
     this->fastqFile = fastqfile;
     this->indexFile = indexfile;
+    if (fastqfile->isStreamSource())
+        debug(string("Created runner with input stream and index \"" + indexfile.string() + "\""));
+    else
+        debug(string("Created runner with fastq file: \"" +
+                     dynamic_pointer_cast<PathInputSource>(fastqfile)->getPath().string() +
+                     "\" and index \"" + indexfile.string() + "\""));
 }
 
 bool ActualRunner::checkPremises() {

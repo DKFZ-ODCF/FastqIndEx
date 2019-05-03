@@ -72,6 +72,8 @@ shared_ptr<IndexHeader> Indexer::createHeader() {
  */
 bool Indexer::createIndex() {
 
+    info("Start indexing.");
+
     if (wasStarted) {
         addErrorMessage("It is not allowed to run Indexer.createIndex() more than once.");
         // finishedSuccessful will not be changed.
@@ -114,6 +116,10 @@ bool Indexer::createIndex() {
             return false;
         }
         do {
+            if (!fastqfile->canRead()) {
+                keepProcessing = false; // Happens, when input streams are used.
+                break;
+            }
             if (!readCompressedDataFromInputSource()) {
                 errorWasRaised = true;
                 break;
@@ -135,7 +141,7 @@ bool Indexer::createIndex() {
 
             } while (zStream.avail_in != 0);
 
-            keepProcessing = zlibResult != Z_STREAM_END;
+            keepProcessing = zlibResult != Z_STREAM_END && fastqfile->canRead();
 
         } while (!errorWasRaised && keepProcessing);
 
@@ -149,6 +155,7 @@ bool Indexer::createIndex() {
         if (!keepProcessing) {
 //            || totalBytesIn < sizeOfFastq || totalBytesIn < fastqfile->getTotalReadBytes()
             if (fastqfile->canRead()) {
+                debug("Stream end reached in concatenated file, resetting indexer for next gz block.");
                 // Clean up clean up and go on
                 initializeZStreamForInflate();
                 checkAndResetSlidingWindow();
@@ -167,13 +174,15 @@ bool Indexer::createIndex() {
         }
     }
 
-    // Free the file pointer and close the file.
     fastqfile->close();
     inflateEnd(&zStream);
 
     finishedSuccessful = !errorWasRaised;
     if (errorWasRaised) {
         addErrorMessage("There were errors during index creation. Index file is corrupt.");
+    } else {
+        cerr << "Finished indexing with the last entry for compressed block #" << lastStoredEntry->blockID
+             << " starting with entry number " << lastStoredEntry->startingLineInEntry << "\n";
     }
     return finishedSuccessful;
 }
@@ -219,7 +228,7 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
     offset = totalBytesIn;          // Set new blockOffsetInRawFile.
     if (!firstPass) {
         blockID++;
-//        cout << blockID << "\n";
+
         // String representation of currentDecompressedBlock. Might or might not start with a fresh line, we need to
         // figure this out.
         std::vector<string> lines;
@@ -238,12 +247,11 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
         // Find the first newline character to get the blockOffsetInRawFile of the line inside
         ushort offsetOfFirstLine{0};
         if (currentBlockString.empty()) {
-//            cout << "Block " << blockID << " is empty\n";
         } else if (!lastBlockEndedWithNewline) {
             numberOfLinesInBlock--;  // If the last block ended with an incomplete line (and not '\n'), reduce this.
             offsetOfFirstLine = lines[0].size() + 1;
-        } else if (totalLineCount > 0) {
-            totalLineCount--;
+        } else if (lineCountForNextIndexEntry > 0) {
+            lineCountForNextIndexEntry--;
         }
 
         // Only store every n'th block.
@@ -253,7 +261,7 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
                 blockID,
                 offsetOfFirstLine,
                 blockOffset,
-                totalLineCount);
+                lineCountForNextIndexEntry);
 
         // Compared to the original zran example, which uses two memcpy operations to retrieve the dictionary, we
         // use zlibs inflateGetDictionaryMethod. This looks more clean and works, whereas I could not get the
@@ -271,6 +279,7 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
         // entries which would be around 115GB for an index file.
         if (blockID % blockInterval == 0) {
             indexWriter->writeIndexEntry(entry);
+            lastStoredEntry = entry;
             if (enableDebugging) {
                 storedEntries.emplace_back(entry);
             }
@@ -282,7 +291,7 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
 
         // Keep some info for next entry.
         lastBlockEndedWithNewline = currentBlockEndedWithNewLine;
-        totalLineCount += numberOfLinesInBlock;
+        lineCountForNextIndexEntry += numberOfLinesInBlock;
 
         // This will pop up a clang-tidy warning, but as Mark Adler does it, I don't want to change it.
         curBits = strm->data_type & 7;

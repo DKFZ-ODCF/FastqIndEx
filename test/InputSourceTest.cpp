@@ -63,16 +63,17 @@ SUITE (SUITE_BIS_TESTS) {
         runInputStreamTest(&inputSource, file_size(textFile));
     }
 
-//    TEST (testReadOverBufferBoundaries) {
-//        TestResourcesAndFunctions res(SUITE_BIS_TESTS, TEST_STREAM_ISOURCE_OPERATIONS);
-//        path testFile = getAndCheckTextFile(&res);
-//        ifstream testData(testFile);
-//
-//        StreamInputSource inputSource(&testData);
-//
-//        inputSource.skip(file_size(testFile));
-//                CHECK(!inputSource.canRead());
-//    }
+    TEST (testCanRead) {
+        TestResourcesAndFunctions res(SUITE_BIS_TESTS, TEST_STREAM_ISOURCE_OPERATIONS);
+        path testFile = getAndCheckTextFile(&res);
+        ifstream testData(testFile);
+
+        StreamInputSource inputSource(&testData);
+
+                CHECK(inputSource.tell() == 0);
+                CHECK(inputSource.canRead());
+                CHECK(inputSource.tell() == 0);
+    }
 
     TEST (testCanReadWontWorkWhenDatasourceIsDepleted) {
         TestResourcesAndFunctions res(SUITE_BIS_TESTS, TEST_STREAM_ISOURCE_OPERATIONS);

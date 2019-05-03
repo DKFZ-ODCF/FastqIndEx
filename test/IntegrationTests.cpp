@@ -4,16 +4,17 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "../src/Runner.h"
 #include "../src/Indexer.h"
 #include "../src/IndexerRunner.h"
 #include "../src/IndexReader.h"
+#include "../src/Runner.h"
+#include "../src/Starter.h"
 #include "TestConstants.h"
 #include "TestResourcesAndFunctions.h"
 #include <fstream>
 #include <memory>
-#include <zlib.h>
 #include <UnitTest++/UnitTest++.h>
+#include <zlib.h>
 
 const char *const INTEGRATIONTESTS_SUITE = "IntegrationTests";
 const char *const TEST_INDEXER_EXECUTION = "Run the indexer";
@@ -39,15 +40,16 @@ SUITE (INTEGRATIONTESTS_SUITE) {
 //        path refIndex = res.getResource(TEST_INDEX_SMALL);
 //        path index = res.filePath(TEST_INDEX_SMALL);
 //
-//        bool result = res.runIndexerBinary(fastq, index, true);
-//                CHECK(result);
-//
-//                CHECK(exists(index));
-//
-//        if (exists(index)) {
-//                    CHECK_EQUAL(file_size(refIndex), file_size(index));
-//            // Compare file size && md5sum.
-//        }
+//        Starter::getInstance()->createRunner()
+////        bool result = res.runIndexerBinary(fastq, index, true);
+////                CHECK(result);
+////
+////                CHECK(exists(index));
+////
+////        if (exists(index)) {
+////                    CHECK_EQUAL(file_size(refIndex), file_size(index));
+////             Compare file size && md5sum.
+////        }
 //    }
 //
 //    TEST (TEST_EXTRACTOR_EXECUTION) {

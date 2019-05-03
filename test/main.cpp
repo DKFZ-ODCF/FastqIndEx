@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include "TestConstants.h"
 #include "UnitTest++/UnitTest++.h"
+#include "../src/ErrorAccumulator.h"
 
 using namespace std;
 
@@ -38,6 +39,8 @@ void unintentionalTestApplicationExit(void) {
 
 int main(int argc, const char *argv[]) {
     // Register the exit trap to detect unintentional exits.
+    ErrorAccumulator::setVerbosity(3);
+
     atexit(unintentionalTestApplicationExit);
     strcpy(TEST_BINARY, argv[0]);
     int result = UnitTest::RunAllTests();

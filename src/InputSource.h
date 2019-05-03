@@ -9,6 +9,7 @@
 
 #include <experimental/filesystem>
 #include <zlib.h>
+#include "ErrorAccumulator.h"
 
 using namespace std;
 using namespace std::experimental::filesystem;
@@ -18,7 +19,7 @@ using namespace std::experimental::filesystem;
  * (to some extent) rewinding. Rewinding is necessary for e.g. the indexer, which needs to jump back in the source, when
  * the stream ended and concatenated files are used.
  */
-class InputSource {
+class InputSource : public ErrorAccumulator {
 protected:
     uint64_t totalReadBytes{0};
 

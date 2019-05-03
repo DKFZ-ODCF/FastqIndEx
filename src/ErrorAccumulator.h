@@ -7,6 +7,7 @@
 
 #include <string>
 #include <vector>
+#include <iostream>
 
 using std::vector;
 using std::string;
@@ -23,13 +24,33 @@ private:
      */
     vector<string> errorMessages;
 
+    static int verbosity;
+
 public:
 
-    virtual vector<string> getErrorMessages() { return errorMessages; }
+    /**
+     * Set the runners verbosity level in a range from 0 to 3 IF and only IF the passed value is in this range.
+     *
+     * 0 == severe messages and important messages only
+     * 1 == warnings as well
+     * 2 == informational messages
+     * 3 == debug messages
+     *
+     * @param verbosity
+     */
+    static void setVerbosity(int verbosity);
 
-    const void addErrorMessage(const string &message) {
-        errorMessages.emplace_back(message);
-    }
+    static void debug(string msg);
+
+    static void info(string msg);
+
+    static void warning(string msg);
+
+    static void severe(string msg);
+
+    virtual vector<string> getErrorMessages();
+
+    const void addErrorMessage(const string &message);
 
     /**
      * This method can be used, if two vectors should be merged. Note, that we always copy the content of the two source
@@ -39,14 +60,7 @@ public:
      * @param r The right vector
      * @return A new vector<string> with both vectors merged. The messages of l will be placed before the messages of r.
      */
-    static vector<string> mergeToNewVector(const vector<string> &l, const vector<string> &r) {
-        std::vector<string> merged;
-        merged.reserve(l.size() + r.size());
-        merged.insert(merged.end(), l.begin(), l.end());
-        merged.insert(merged.end(), r.begin(), r.end());
-        return merged;
-    };
-
+    static vector<string> mergeToNewVector(const vector<string> &l, const vector<string> &r);
 };
 
 

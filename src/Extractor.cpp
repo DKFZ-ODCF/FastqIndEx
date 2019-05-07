@@ -29,12 +29,15 @@ Extractor::Extractor(
           startingLine(startingLine),
           lineCount(lineCount) {
     this->indexReader = make_shared<IndexReader>(indexfile);
-    this->resultFile = resultFile;
+    this->resultFile = resultfile;
     this->forceOverwrite = forceOverwrite;
 
     if (resultFile.empty() || resultFile.generic_u8string() == "-") {
         this->forceOverwrite = false;
     } else {
+        char buf[WINDOW_SIZE]{0};
+        realpath(this->resultFile.string().c_str(), buf);
+        this->resultFile = path(string(buf));
         useFile = true;
     }
 }
@@ -55,7 +58,7 @@ bool Extractor::checkPremises() {
             return false;
         }
         if (!exists(resultFile) && access(resultFile.parent_path().string().c_str(), W_OK) != 0) {
-            addErrorMessage("The result cannot be written. Check the access rights of the parent folder.");
+            addErrorMessage("The result file cannot be written. Check the access rights of the parent folder.");
             return false;
         }
     }
@@ -63,6 +66,16 @@ bool Extractor::checkPremises() {
 }
 
 bool Extractor::extractReadsToCout() {
+    auto resultFileStream = shared_ptr<ofstream>(nullptr);
+    ofstream outfilestream;
+    ostream *out;
+    if (!useFile)
+        out = &cout;
+    else {
+        outfilestream.open(resultFile.string());
+        out = &outfilestream;
+    }
+
     shared_ptr<IndexEntry> previousEntry = indexReader->readIndexEntry();
     shared_ptr<IndexEntry> startingIndexLine = previousEntry;
     while (indexReader->getIndicesLeft() > 0) {
@@ -177,7 +190,7 @@ bool Extractor::extractReadsToCout() {
                         if (enableDebugging)
                             storedLines.emplace_back(line);
                         else
-                            cout << line << "\n";
+                            (*out) << line << "\n";
                         extractedLines++;
                         iStart = 1;
                     }
@@ -191,7 +204,7 @@ bool Extractor::extractReadsToCout() {
                     if (enableDebugging)
                         storedLines.emplace_back(splitLines[i]);
                     else
-                        cout << splitLines[i] << "\n";
+                        (*out) << splitLines[i] << "\n";
                     extractedLines++;
                 }
                 incompleteLastLine = curIncompleteLastLine;
@@ -229,6 +242,8 @@ bool Extractor::extractReadsToCout() {
 
     // Free the file pointer and close the file.
     fastqfile->close();
+    if (outfilestream.is_open())
+        outfilestream.close();
     inflateEnd(&zStream);
 
     if (errorWasRaised) {

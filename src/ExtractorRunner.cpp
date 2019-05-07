@@ -41,7 +41,7 @@ bool ExtractorRunner::checkPremises() {
 }
 
 unsigned char ExtractorRunner::run() {
-    extractor->extractReadsToCout();
+    return extractor->extractReadsToCout() ? 0 : 1;
 }
 
 vector<string> ExtractorRunner::getErrorMessages() {

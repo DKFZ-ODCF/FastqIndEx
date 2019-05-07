@@ -141,10 +141,9 @@ ExtractorRunner *Starter::assembleCmdLineParserForExtractAndParseOpts(int argc, 
 
     ValueArg<string> outFile(
             "o", "outfile",
-            "The output file which shall be created or - (default) for stdout.",
+            "The uncompressed output FASTQ or textfile which shall be created or - (default) for stdout.",
             false,
-            "-",
-            "string", cmdLineParser);
+            "-", "string", cmdLineParser);
 
     ValueArg<string> indexFile(
             "i", "indexfile",
@@ -152,12 +151,6 @@ ExtractorRunner *Starter::assembleCmdLineParserForExtractAndParseOpts(int argc, 
             "to the name of the FASTQ file.",
             false,
             "", "string", cmdLineParser);
-
-    ValueArg<string> resultFastqFile(
-            "r", "resultfile",
-            "The FASTQ result (or text) which shall be written.",
-            false,
-            "-", "string", cmdLineParser);
 
     ValueArg<string> fastqFile(
             "f", "fastqfile",
@@ -222,7 +215,7 @@ ExtractorRunner *Starter::assembleCmdLineParserForExtractAndParseOpts(int argc, 
     return new ExtractorRunner(
             make_shared<PathInputSource>(argumentToPath(fastqFile)),
             path(indexFile.getValue()),
-            argumentToPath(resultFastqFile),
+            argumentToPath(outFile),
             forceOverwrite.getValue(),
             startingread.getValue() * extractionmultiplier.getValue(),
             numberofreads.getValue() * extractionmultiplier.getValue(),

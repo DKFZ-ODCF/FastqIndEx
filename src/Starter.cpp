@@ -37,11 +37,44 @@ DoNothingRunner *Starter::assembleSmallCmdLineParserAndParseOpts(int argc, const
     vector<string> allowedValues;
     allowedValues.emplace_back("index");
     allowedValues.emplace_back("extract");
+    allowedValues.emplace_back("stats");
     ValuesConstraint<string> allowedModesConstraint(allowedValues);
-    UnlabeledValueArg<string> mode("mode", "mode is either index or extract", true, "", &allowedModesConstraint,
+    UnlabeledValueArg<string> mode("mode", "mode is either index, extract or stats", true, "", &allowedModesConstraint,
                                    cmdLineParser);
     cmdLineParser.parse(argc, argv);
     return new DoNothingRunner();
+}
+
+IndexStatsRunner *Starter::assembleCmdLineParserForIndexStatsAndParseOpts(int argc, const char **argv) {
+    CmdLine cmdLineParser("Command description message", '=', "0.0.1", false);
+    ValueArg<string> indexFile(
+            "i", "indexfile",
+            string("The index file which shall be used for extraction. If the value is not set, .fqi will be") +
+            "to the name of the FASTQ file.",
+            false,
+            "", "string", cmdLineParser);
+
+    ValueArg<int> startingread(
+            "s", "startingentry",
+            "Defines the first to show.",
+            false,
+            0, "int", cmdLineParser);
+
+    ValueArg<int> numberofreads(
+            "n", "numberofentries",
+            "Number of index entries to show.",
+            false,
+            -1, "int", cmdLineParser);
+
+    vector<string> allowedMode{"stats"};
+    ValuesConstraint<string> allowedModesConstraint(allowedMode);
+    UnlabeledValueArg<string> mode("mode", "mode is stats", true, "", &allowedModesConstraint);
+    cmdLineParser.add(mode);
+
+    cmdLineParser.parse(argc, argv);
+
+    path index(indexFile.getValue());
+    return new IndexStatsRunner(index, startingread.getValue(), numberofreads.getValue());
 }
 
 IndexerRunner *Starter::assembleCmdLineParserForIndexAndParseOpts(int argc, const char **argv) {
@@ -235,14 +268,19 @@ Runner *Starter::assembleCLIOptions(int argc, const char *argv[]) {
             mode = string(argv[1]);
 
         // Neither index nor extract provided
-        if (argc == 1 ||
-            (mode != "index" && mode != "extract")) {
+        if (argc == 1 || (
+                mode != "index" &&
+                mode != "extract" &&
+                mode != "stats")
+                ) {
             assembleSmallCmdLineParserAndParseOpts(argc, argv);
             return new DoNothingRunner();
         } else if (mode == "index") {
             return assembleCmdLineParserForIndexAndParseOpts(argc, argv);
         } else if (mode == "extract") {
             return assembleCmdLineParserForExtractAndParseOpts(argc, argv);
+        } else if (mode == "stats") {
+            return assembleCmdLineParserForIndexStatsAndParseOpts(argc, argv);
         }
     } catch (TCLAP::ArgException &e) { // catch any exceptions
         std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl;

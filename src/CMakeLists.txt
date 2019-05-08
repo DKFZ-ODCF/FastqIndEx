@@ -30,7 +30,7 @@ add_library(
         Runner.cpp Runner.h
         Starter.cpp Starter.h
         ZLibBasedFASTQProcessorBaseClass.cpp ZLibBasedFASTQProcessorBaseClass.h
-)
+        IndexStatsRunner.cpp IndexStatsRunner.h)
 
 target_link_libraries(
         fastqindexlib

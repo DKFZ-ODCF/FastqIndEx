@@ -9,6 +9,7 @@
 
 #include "Runner.h"
 #include "IndexerRunner.h"
+#include "IndexStatsRunner.h"
 #include "ExtractorRunner.h"
 #include <tclap/CmdLine.h>
 #include <cstring>
@@ -44,13 +45,15 @@ public:
 
     path argumentToPath(ValueArg<string> &cliArg) const;
 
-    DoNothingRunner* assembleSmallCmdLineParserAndParseOpts(int argc, const char **argv);
+    DoNothingRunner *assembleSmallCmdLineParserAndParseOpts(int argc, const char **argv);
 
-    IndexerRunner* assembleCmdLineParserForIndexAndParseOpts(int argc, const char **argv);
+    IndexStatsRunner *assembleCmdLineParserForIndexStatsAndParseOpts(int argc, const char **argv);
 
-    ExtractorRunner* assembleCmdLineParserForExtractAndParseOpts(int argc, const char **argv);
+    IndexerRunner *assembleCmdLineParserForIndexAndParseOpts(int argc, const char **argv);
 
-    Runner* assembleCLIOptions(int argc, const char *argv[]);
+    ExtractorRunner *assembleCmdLineParserForExtractAndParseOpts(int argc, const char **argv);
+
+    Runner *assembleCLIOptions(int argc, const char *argv[]);
 
     shared_ptr<Runner> createRunner(int argc, const char *argv[]);
 

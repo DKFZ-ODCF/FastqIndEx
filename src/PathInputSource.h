@@ -8,6 +8,8 @@
 #define FASTQINDEX_PATHINPUTSOURCE_H
 
 #include "InputSource.h"
+#include <iostream>
+#include <fstream>
 
 /**
  * InputSource implementation for a path object.
@@ -18,6 +20,8 @@ private:
     path source;
 
     FILE *filePointer{nullptr};
+
+    std::ifstream fPointer;
 
 public:
 

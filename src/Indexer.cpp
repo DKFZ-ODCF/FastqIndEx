@@ -109,12 +109,12 @@ bool Indexer::createIndex() {
 
     bool keepProcessing = true;
 
+    if (!initializeZStreamForInflate()) {
+        finishedSuccessful = false;
+        return false;
+    }
     while (keepProcessing) {
 
-        if (!initializeZStreamForInflate()) {
-            finishedSuccessful = false;
-            return false;
-        }
         do {
             if (!fastqfile->canRead()) {
                 keepProcessing = false; // Happens, when input streams are used.
@@ -130,8 +130,15 @@ bool Indexer::createIndex() {
 
                 bool checkForStreamEnd = true;
 
-                if (!decompressNextChunkOfData(checkForStreamEnd, Z_BLOCK))
+                if (!decompressNextChunkOfData(checkForStreamEnd, Z_BLOCK)) {
+                    // In some cases, the data chunk after the initial block can be so small, that the Indexer will
+                    // instantly skip the part, because stream end is reached and NO index entry get written. To prevent
+                    // this, we check for stream end and finalize anyway. Then break.
+                    if (zlibResult == Z_STREAM_END) {
+                        finalizeProcessingForCurrentBlock(currentDecompressedBlock, &zStream);
+                    }
                     break;
+                }
 
                 if (checkStreamForBlockEnd()) {
                     finalizeProcessingForCurrentBlock(currentDecompressedBlock, &zStream);
@@ -145,32 +152,13 @@ bool Indexer::createIndex() {
 
         } while (!errorWasRaised && keepProcessing);
 
-        if (enableDebugging) {
-            storeLinesOfCurrentBlockForDebugMode(currentDecompressedBlock);
-        }
+        storeLinesOfCurrentBlockForDebugMode(currentDecompressedBlock);
 
         /**
          * We also want to process concatenated gzip files.
          */
         if (!keepProcessing) {
-//            || totalBytesIn < sizeOfFastq || totalBytesIn < fastqfile->getTotalReadBytes()
-            if (fastqfile->canRead()) {
-                debug("Stream end reached in concatenated file, resetting indexer for next gz block.");
-                // Clean up clean up and go on
-                initializeZStreamForInflate();
-                checkAndResetSlidingWindow();
-                memset(this->window, 0, WINDOW_SIZE);
-                memset(this->input, 0, CHUNK_SIZE);
-                this->zStream.avail_in = CHUNK_SIZE;
-                firstPass = true;
-                fastqfile->seek(totalBytesIn, true);
-                keepProcessing = true;
-
-                lastBlockEndedWithNewline = true;
-
-                currentDecompressedBlock.str("");
-                currentDecompressedBlock.clear();
-            }
+            keepProcessing = checkAndPrepareForNextConcatenatedPart();
         }
     }
 
@@ -183,8 +171,41 @@ bool Indexer::createIndex() {
     } else {
         cerr << "Finished indexing with the last entry for compressed block #" << lastStoredEntry->blockID
              << " starting with entry number " << lastStoredEntry->startingLineInEntry << "\n";
+        if (numberOfConcatenatedFiles > 1) {
+            cerr << " The source data consisted of " << numberOfConcatenatedFiles << " concatenated gzip streams.\n";
+        }
     }
     return finishedSuccessful;
+}
+
+bool Indexer::checkAndPrepareForNextConcatenatedPart() {
+//    bool keepProcessing{false};
+
+    // The stream position needs to be set to the beginning of the new gzip stream. If reading from the data stream is
+    // possible afterwards, there might be another gzip stream and we will continue decompression.
+    fastqfile->seek(totalBytesIn, true);
+    if (!fastqfile->canRead())
+        return false;
+
+    // Clean up and go on
+    inflateEnd(&zStream);
+    if (!initializeZStreamForInflate()) {
+        finishedSuccessful = false;
+        return false;
+    }
+    checkAndResetSlidingWindow();
+    numberOfConcatenatedFiles++;
+    memset(window, 0, WINDOW_SIZE);
+    memset(input, 0, CHUNK_SIZE);
+    zStream.avail_in = CHUNK_SIZE;
+    firstPass = true;
+
+    lastBlockEndedWithNewline = true;
+
+    currentDecompressedBlock.str("");
+    currentDecompressedBlock.clear();
+
+    return true;
 }
 
 /**
@@ -266,9 +287,9 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
         // Compared to the original zran example, which uses two memcpy operations to retrieve the dictionary, we
         // use zlibs inflateGetDictionaryMethod. This looks more clean and works, whereas I could not get the
         // original memcpy operations to work.
-        Bytef dictTest[WINDOW_SIZE];              // Build in later, around 60% decrease in size.
-        u_int64_t compressedBytes = WINDOW_SIZE;
-        compress2(dictTest, &compressedBytes, dictionaryForNextBlock, WINDOW_SIZE, 9);
+//        Bytef dictTest[WINDOW_SIZE];              // Build in later, around 60% decrease in size.
+//        u_int64_t compressedBytes = WINDOW_SIZE;
+//        compress2(dictTest, &compressedBytes, dictionaryForNextBlock, WINDOW_SIZE, 9);
 
         u_int32_t copiedBytes = 0;
         memcpy(entry->dictionary, dictionaryForNextBlock, WINDOW_SIZE);
@@ -285,9 +306,7 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
             }
         }
 
-        if (enableDebugging) {
-            storeLinesOfCurrentBlockForDebugMode(currentDecompressedBlock);
-        }
+        storeLinesOfCurrentBlockForDebugMode(currentDecompressedBlock);
 
         // Keep some info for next entry.
         lastBlockEndedWithNewline = currentBlockEndedWithNewLine;
@@ -302,6 +321,8 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
 }
 
 void Indexer::storeLinesOfCurrentBlockForDebugMode(std::stringstream &currentDecompressedBlock) {
+    if (!enableDebugging) return;
+
     string str = currentDecompressedBlock.str();
     std::vector<string> lines = splitStr(str);
 

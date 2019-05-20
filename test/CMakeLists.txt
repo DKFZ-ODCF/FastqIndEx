@@ -25,14 +25,14 @@ add_executable(
         InputSourceTest.cpp         # Leave this right at the beginning, these tests are crucial
         ActualRunnerTest.cpp
         CommonStructsTest.cpp
-        ExtractorRunnerTest.cpp
-        ExtractorTest.cpp
         IndexerRunnerTest.cpp
         IndexerTest.cpp
         IndexProcessorTest.cpp
         IndexReaderTest.cpp
         IndexWriterTest.cpp
         IntegrationTests.cpp
+        ExtractorRunnerTest.cpp
+        ExtractorTest.cpp
         ShowStopperRunnerTest.cpp
         StarterTest.cpp
         TestResourcesAndFunctions.cpp TestResourcesAndFunctions.h

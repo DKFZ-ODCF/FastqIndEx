@@ -99,7 +99,7 @@ bool ZLibBasedFASTQProcessorBaseClass::decompressNextChunkOfData(bool checkForSt
     totalBytesIn += readBytes;
     totalBytesOut += writtenBytes;
 
-    // The window buffer used by inflate will be filled at somehwere between 0 <= n <= WINDOW_SIZE
+    // The window buffer used by inflate will be filled at somewhere between 0 <= n <= WINDOW_SIZE
     // as we work with a string append method, we need to copy the read data to a fresh buffer first.
     Bytef cleansedWindowForCout[CLEAN_WINDOW_SIZE]{0}; // +1 for a definitely 0-terminated c-string!
     std::memcpy(cleansedWindowForCout, window + windowPositionBeforeInflate, writtenBytes);

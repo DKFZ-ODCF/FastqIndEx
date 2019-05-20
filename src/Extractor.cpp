@@ -78,6 +78,14 @@ bool Extractor::extractReadsToCout() {
 
     shared_ptr<IndexEntry> previousEntry = indexReader->readIndexEntry();
     shared_ptr<IndexEntry> startingIndexLine = previousEntry;
+
+    uint64_t skipLines = 0;
+    if (startingLine >= 4) {
+        startingLine -= 4;
+        skipLines = 4;
+        lineCount += 4;
+    }
+
     while (indexReader->getIndicesLeft() > 0) {
         auto entry = indexReader->readIndexEntry();
         if (entry->startingLineInEntry > startingLine) {
@@ -163,11 +171,16 @@ bool Extractor::extractReadsToCout() {
 
                 string curIncompleteLastLine;
                 // Strip away incomplete line, store this line for the next block.
-                string lastSplitLine = splitLines[splitLines.size() - 1];
-                char lastChar = lastSplitLine.c_str()[lastSplitLine.size() - 1];
+                string lastSplitLine;
+                if (splitLines.size() > 0)
+                    lastSplitLine = splitLines[splitLines.size() - 1];
+                char lastChar{0};
+                if (lastSplitLine.size() > 0)
+                    lastChar = lastSplitLine.c_str()[lastSplitLine.size() - 1];
                 if (lastChar != '\n') {
                     curIncompleteLastLine = lastSplitLine;
-                    splitLines.pop_back();
+                    if (splitLines.size() > 0)
+                        splitLines.pop_back();
                     totalSplitCount--;
                 }
 
@@ -186,11 +199,7 @@ bool Extractor::extractReadsToCout() {
                     iStart = skip;
                 } else {
                     if (!incompleteLastLine.empty() && extractedLines < lineCount) {
-                        string line = incompleteLastLine + splitLines[0];
-                        if (enableDebugging)
-                            storedLines.emplace_back(line);
-                        else
-                            (*out) << line << "\n";
+                        storeOrOutputLine(out, &skipLines, incompleteLastLine + splitLines[0]);
                         extractedLines++;
                         iStart = 1;
                     }
@@ -201,10 +210,7 @@ bool Extractor::extractReadsToCout() {
 
                 // iStart is 0 or 1
                 for (int i = iStart; i < splitLines.size() && extractedLines < lineCount; ++i) {
-                    if (enableDebugging)
-                        storedLines.emplace_back(splitLines[i]);
-                    else
-                        (*out) << splitLines[i] << "\n";
+                    storeOrOutputLine(out, &skipLines, splitLines[i]);
                     extractedLines++;
                 }
                 incompleteLastLine = curIncompleteLastLine;
@@ -224,16 +230,20 @@ bool Extractor::extractReadsToCout() {
         if (!finalAbort) {
             totalBytesIn += 8 + 10; // Plus 8 Byte (for what? they are missing...) and 10 Byte for the next header
             uint64_t streamEndPosition = totalBytesIn;
-            uintmax_t fileSize = fastqfile->size();
-            if (streamEndPosition < fileSize) { // plus 10 Bytes for the next header block
+            fastqfile->seek(streamEndPosition, true);
+            if (fastqfile->canRead()) {
                 keepExtracting = true;
-                initializeZStreamForRawInflate();
+                inflateEnd(&zStream);
+                if (!initializeZStreamForRawInflate()) {
+                    finishedSuccessful = false;
+                    keepExtracting = false;
+                }
                 checkAndResetSlidingWindow();
                 memset(this->window, 0, WINDOW_SIZE);
                 memset(this->input, 0, CHUNK_SIZE);
                 this->zStream.avail_in = CHUNK_SIZE;
                 firstPass = true;
-                fastqfile->seek(streamEndPosition, true);
+
                 Bytef dict[WINDOW_SIZE]{0};
                 zlibResult = inflateSetDictionary(&zStream, dict, WINDOW_SIZE);
             }
@@ -242,8 +252,10 @@ bool Extractor::extractReadsToCout() {
 
     // Free the file pointer and close the file.
     fastqfile->close();
+
     if (outfilestream.is_open())
         outfilestream.close();
+
     inflateEnd(&zStream);
 
     if (errorWasRaised) {
@@ -253,6 +265,18 @@ bool Extractor::extractReadsToCout() {
         finishedSuccessful = true;
     }
     return finishedSuccessful;
+}
+
+void Extractor::storeOrOutputLine(ostream *outStream, uint64_t *skipLines, string line) {
+    if (*skipLines > 0) {
+        (*skipLines)--;
+        debug(string("skip line: ") + line);
+    } else {
+        if (enableDebugging)
+            storedLines.emplace_back(line);
+        else
+            (*outStream) << line << "\n";
+    }
 }
 
 vector<string> Extractor::getErrorMessages() {

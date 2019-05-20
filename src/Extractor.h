@@ -82,6 +82,7 @@ public:
      */
     vector<string> getErrorMessages() override;
 
+    void storeOrOutputLine(ostream *outStream, uint64_t *skipLines, string line);
 };
 
 

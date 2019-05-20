@@ -73,6 +73,8 @@ private:
 
     u_int64_t lineCountForNextIndexEntry{0};
 
+    u_int64_t numberOfConcatenatedFiles{1};
+
     long blockID{-1};                   // Number of the currently processed block.
 
     int blockInterval;                  // Only store every n'th index entry.
@@ -116,6 +118,8 @@ public:
 
     void finalizeProcessingForCurrentBlock(stringstream &currentDecompressedBlock, z_stream *strm);
 
+    bool checkAndPrepareForNextConcatenatedPart();
+
     void storeLinesOfCurrentBlockForDebugMode(std::stringstream &currentDecompressedBlock);
 
     /**
@@ -139,6 +143,7 @@ public:
      */
     const vector<shared_ptr<IndexEntryV1>> &getStoredEntries() { return storedEntries; }
 
+    const uint64_t getNumberOfConcatenatedFiles() { return numberOfConcatenatedFiles; }
 
 };
 

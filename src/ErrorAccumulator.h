@@ -40,6 +40,8 @@ public:
      */
     static void setVerbosity(int verbosity);
 
+    static bool verbosityIsSetToDebug();
+
     static void debug(string msg);
 
     static void info(string msg);
@@ -61,6 +63,7 @@ public:
      * @return A new vector<string> with both vectors merged. The messages of l will be placed before the messages of r.
      */
     static vector<string> mergeToNewVector(const vector<string> &l, const vector<string> &r);
+
 };
 
 

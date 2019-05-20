@@ -52,6 +52,7 @@ unsigned char IndexStatsRunner::run() {
             cout << "\tEntry id:      " << entry->id << "\n";
             cout << "\tRaw offset:    " << entry->offsetInRawFile << "\n";
             cout << "\tStarting line: " << entry->startingLineInEntry << "\n";
+            cout << "\t  Record (/4): " << (entry->startingLineInEntry / 4) << "\n";
             cout << "\tLine offset:   " << entry->offsetOfFirstValidLine << "\n";
             cout << "\tBits:          " << entry->bits << "\n";
         }

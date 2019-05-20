@@ -23,6 +23,7 @@ const char *const TEST_CREATE_INDEX_SMALL = "Test create index with small fastq 
 const char *const TEST_CREATE_INDEX_W_STREAMED_DATA = "Test create index with streamed concatenated data";
 const char *const TEST_CREATE_INDEX_LARGE = "Test create index with more fastq test data.";
 const char *const TEST_CREATE_INDEX_CONCAT = "Test create index with the small fastq concatenated two times.";
+const char *const TEST_CREATE_INDEX_CONCAT_SINGLEBLOCKS = "Test create index with several concatenated FASTQ with single compressed blocks.";
 
 SUITE (INDEXER_SUITE_TESTS) {
 
@@ -82,6 +83,57 @@ SUITE (INDEXER_SUITE_TESTS) {
     // TEST ("readCompressedDataFromInputSource")  <-- How to write a test? Currently its covered in the larger tests.
 
     // TEST ("call createIndex() twice")
+
+    TEST (TEST_CREATE_INDEX_CONCAT_SINGLEBLOCKS) {
+        TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_INDEX_CONCAT_SINGLEBLOCKS);
+        path fastq = res.getResource("test_singlecompressedblocks.fastq.gz");
+        path index = res.filePath("test.fastq.gz.fqi");
+        path extractedFastq = res.filePath(TEST_FASTQ_SMALL);
+        auto *indexer = new Indexer(make_shared<PathInputSource>(fastq), index, -1, true);
+                CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.
+
+        bool result = indexer->createIndex();
+
+        auto storedHeader = indexer->getStoredHeader();
+        auto storedEntries = indexer->getStoredEntries();
+        auto storedLines = indexer->getStoredLines();
+
+        int numberOfLinesInTestFASTQ = 800;
+        int storedLineCount = storedLines.size();
+
+                CHECK(result);
+                CHECK(exists(index));
+                CHECK(indexer->wasSuccessful());
+                CHECK(indexer->getNumberOfConcatenatedFiles() == 8);
+
+                CHECK(storedHeader);
+                CHECK(Indexer::INDEXER_VERSION == storedHeader->indexWriterVersion);
+
+                CHECK(1 == storedEntries.size());
+                CHECK(numberOfLinesInTestFASTQ == storedLineCount);
+
+        int firstDiff = -1; // This is more for debug purposes.
+
+        result = TestResourcesAndFunctions::extractGZFile(fastq, extractedFastq);
+                CHECK_EQUAL(true, result);
+
+        ifstream strm(extractedFastq);
+        vector<string> decompressedSourceContent;
+        string line;
+        while (std::getline(strm, line)) {
+            decompressedSourceContent.emplace_back(line);
+        }
+
+        for (int i = 0; i < std::min(storedLineCount, numberOfLinesInTestFASTQ); i++) {
+            if (storedLines[i] != decompressedSourceContent[i]) {
+                firstDiff = i;
+                break;
+            }
+        }
+                CHECK(firstDiff == -1);
+
+        delete indexer;
+    }
 
     TEST (TEST_CREATE_INDEX_CONCAT) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_INDEX_SMALL);
@@ -189,7 +241,7 @@ SUITE (INDEXER_SUITE_TESTS) {
 
         int appendCount = 4;
         bool result = TestResourcesAndFunctions::createConcatenatedFile(fastq, concat, appendCount);
-                CHECK_EQUAL(true, result);
+                CHECK(result);
                 CHECK(4 * file_size(fastq) == file_size(concat));
 
         ifstream fastqStream(concat.string());
@@ -201,7 +253,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         auto storedLines = indexer->getStoredLines();
 
                 CHECK(indexer->wasSuccessful());
-                CHECK_EQUAL(4, storedEntries.size());
+                CHECK(8 == storedEntries.size());
 
         delete indexer;
                 CHECK(exists(index));

@@ -8,6 +8,7 @@
 
 PathInputSource::PathInputSource(const path &source) {
     this->source = source;
+    fPointer = std::ifstream(source, std::ifstream::binary);
 }
 
 PathInputSource::~PathInputSource() {
@@ -16,38 +17,42 @@ PathInputSource::~PathInputSource() {
 
 bool PathInputSource::open() {
     debug("Opening path input source from file " + this->source.string());
-    if (!filePointer)
-        this->filePointer = fopen(source.string().c_str(), "rb");
+    if (!fPointer.is_open())
+        fPointer.open(source);
+    return fPointer.is_open();
 }
 
 bool PathInputSource::close() {
     debug("Closing path in put source.");
-    if (filePointer) {
-        fclose(filePointer);
-        filePointer = nullptr;
-        return true;
-    } else
-        return false;
+    if (fPointer.is_open())
+        fPointer.close();
+    return true;
 }
 
 int PathInputSource::read(Bytef *targetBuffer, int numberOfBytes) {
-    size_t read = fread((void *) targetBuffer, 1, numberOfBytes, filePointer);
-    if (ferror(filePointer))
-        return -1;
-    return (int) read;
+    fPointer.read(reinterpret_cast<char *>(targetBuffer), numberOfBytes);
+    int amountRead = fPointer.gcount();
+    return (int) amountRead;
 }
 
 int PathInputSource::readChar() {
-    return getc(this->filePointer);
+    Byte result = 0;
+    int res = this->read(&result, 1);
+    return res < 0 ? res : (int) result;
 }
 
 int PathInputSource::seek(int64_t nByte, bool absolute) {
-    int result = 0;
+    if(lastError()) {
+        // Seek / Read can run over file borders and it might be necessary to just reopen it. We do this here.
+        close();
+        if(!open()) return 0;
+    }
+
     if (absolute)
-        result = fseeko64(filePointer, nByte, SEEK_SET);
+        fPointer.seekg(nByte, fPointer.beg);
     else
-        result = fseeko64(filePointer, nByte, SEEK_CUR);
-    return result == 0 ? 1 : 0;
+        fPointer.seekg(nByte, fPointer.cur);
+    return (!fPointer.fail() && !fPointer.bad()) ? 1 : 0;
 }
 
 int PathInputSource::skip(uint64_t nBytes) {
@@ -55,7 +60,7 @@ int PathInputSource::skip(uint64_t nBytes) {
 }
 
 uint64_t PathInputSource::tell() {
-    return ftello64(filePointer);
+    return fPointer.tellg();
 }
 
 bool PathInputSource::canRead() {
@@ -63,5 +68,5 @@ bool PathInputSource::canRead() {
 }
 
 int PathInputSource::lastError() {
-    return ferror(filePointer);
+    return fPointer.fail() || fPointer.bad();
 }

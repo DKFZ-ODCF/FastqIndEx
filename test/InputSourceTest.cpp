@@ -36,7 +36,8 @@ void runInputStreamTest(InputSource *inputSource, uint64_t expectedSize) {
          */
     Byte buf[128]{0};
     inputSource->open();
-    inputSource->read(buf, 5);
+    auto readBytes = inputSource->read(buf, 5);
+            CHECK(readBytes == 5);
             CHECK(inputSource->size() == expectedSize);
             CHECK(string((const char *) buf) == string("First"));
     memset(buf, 0, 128);

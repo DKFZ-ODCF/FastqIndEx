@@ -19,8 +19,10 @@ void ErrorAccumulator::setVerbosity(int verbosity) {
     }
 }
 
+bool ErrorAccumulator::verbosityIsSetToDebug() { return verbosity >= 3; }
+
 void ErrorAccumulator::debug(string msg) {
-    if (verbosity >= 3) cerr << msg << "\n";
+    if (verbosityIsSetToDebug()) cerr << msg << "\n";
 }
 
 void ErrorAccumulator::info(string msg) {

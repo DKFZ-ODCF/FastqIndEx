@@ -49,9 +49,9 @@ int PathInputSource::seek(int64_t nByte, bool absolute) {
     }
 
     if (absolute)
-        fPointer.seekg(nByte, fPointer.beg);
+        fPointer.seekg(nByte, std::ifstream::beg);
     else
-        fPointer.seekg(nByte, fPointer.cur);
+        fPointer.seekg(nByte, std::ifstream::cur);
     return (!fPointer.fail() && !fPointer.bad()) ? 1 : 0;
 }
 

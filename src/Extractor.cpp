@@ -172,14 +172,14 @@ bool Extractor::extractReadsToCout() {
                 string curIncompleteLastLine;
                 // Strip away incomplete line, store this line for the next block.
                 string lastSplitLine;
-                if (splitLines.size() > 0)
+                if (!splitLines.empty())
                     lastSplitLine = splitLines[splitLines.size() - 1];
                 char lastChar{0};
-                if (lastSplitLine.size() > 0)
+                if (!lastSplitLine.empty())
                     lastChar = lastSplitLine.c_str()[lastSplitLine.size() - 1];
                 if (lastChar != '\n') {
                     curIncompleteLastLine = lastSplitLine;
-                    if (splitLines.size() > 0)
+                    if (!splitLines.empty())
                         splitLines.pop_back();
                     totalSplitCount--;
                 }

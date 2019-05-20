@@ -42,13 +42,13 @@ public:
 
     static bool verbosityIsSetToDebug();
 
-    static void debug(string msg);
+    static void debug(const string& msg);
 
-    static void info(string msg);
+    static void info(const string& msg);
 
-    static void warning(string msg);
+    static void warning(const string& msg);
 
-    static void severe(string msg);
+    static void severe(const string& msg);
 
     virtual vector<string> getErrorMessages();
 

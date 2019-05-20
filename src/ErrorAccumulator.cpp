@@ -21,19 +21,19 @@ void ErrorAccumulator::setVerbosity(int verbosity) {
 
 bool ErrorAccumulator::verbosityIsSetToDebug() { return verbosity >= 3; }
 
-void ErrorAccumulator::debug(string msg) {
+void ErrorAccumulator::debug(const string& msg) {
     if (verbosityIsSetToDebug()) cerr << msg << "\n";
 }
 
-void ErrorAccumulator::info(string msg) {
+void ErrorAccumulator::info(const string& msg) {
     if (verbosity >= 2) cerr << msg << "\n";
 }
 
-void ErrorAccumulator::warning(string msg) {
+void ErrorAccumulator::warning(const string& msg) {
     if (verbosity >= 1) cerr << msg << "\n";
 }
 
-void ErrorAccumulator::severe(string msg) {
+void ErrorAccumulator::severe(const string& msg) {
     if (verbosity >= 0) cerr << msg << "\n";
 }
 

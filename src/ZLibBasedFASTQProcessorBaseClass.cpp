@@ -39,6 +39,7 @@ bool ZLibBasedFASTQProcessorBaseClass::initializeZStream(int mode) {
 bool ZLibBasedFASTQProcessorBaseClass::readCompressedDataFromInputSource() {
     /* get some compressed data from input file */
     int result = this->fastqfile->read(input, CHUNK_SIZE);
+
     if (result == -1) {
         this->addErrorMessage("There was an error during fread.");
         return false;

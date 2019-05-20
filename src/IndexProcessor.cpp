@@ -7,12 +7,12 @@
 #include <mutex>
 #include <sys/file.h>
 #include <iostream>
-
+#include <utility>
 using std::lock_guard;
 using std::mutex;
 
 IndexProcessor::IndexProcessor(path indexFile)  {
-    this->indexFile = indexFile;
+    this->indexFile = std::move(indexFile);
 }
 
 const path &IndexProcessor::getIndexFile() const {

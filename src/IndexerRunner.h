@@ -46,7 +46,9 @@ public:
             const path &indexfile,
             int blockInterval = -1,
             bool enableDebugging = false,
-            bool forceOverwrite = false
+            bool forceOverwrite = false,
+            bool forbidWriteFQI = false,
+            bool disableFailsafeDistance = false
     );
 
     virtual ~IndexerRunner();

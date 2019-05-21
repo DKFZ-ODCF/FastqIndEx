@@ -33,8 +33,9 @@ void runRangedExtractionTest(const path &fastq,
                              const u_int64_t firstLine,
                              const u_int64_t lineCount,
                              const u_int64_t expectedLineCount) {
-    auto *extractor = new Extractor(make_shared<PathInputSource>(fastq), index, "-", false, firstLine, lineCount, true);
-    bool ok = extractor->extractReadsToCout();
+    auto *extractor = new Extractor(make_shared<PathInputSource>(fastq), index, "-", false, firstLine, lineCount, 4,
+                                    true);
+    bool ok = extractor->extract();
             CHECK(ok);
     if (!ok) {
         for (int i = 0; i < extractor->getErrorMessages().size(); i++) {
@@ -48,10 +49,6 @@ void runRangedExtractionTest(const path &fastq,
         return;
 
             CHECK_EQUAL(expectedLineCount, lines.size());
-
-    // Don't do further tests, if the previous condition failed, the tests are obsolete then.
-//    if (expectedLineCount > lines.size())
-//        return;
 
     u_int64_t differences = 0;
     for (int i = 0; i < min(decompressedSourceContent.size() - firstLine, lines.size()); i++) {
@@ -72,7 +69,7 @@ bool initializeComplexTest(const path &fastq,
      * Create the index fresh from the FASTQ, so we do not need to store the index file in our resources, also makes
      * debugging the indexer easier.
      */
-    auto *indexer = new Indexer(make_shared<PathInputSource>(fastq), index, blockInterval, true);
+    auto *indexer = new Indexer(make_shared<PathInputSource>(fastq), index, blockInterval, true, false, false, true);
             CHECK(indexer->checkPremises());
     indexer->createIndex();
     bool success = indexer->wasSuccessful();
@@ -86,7 +83,7 @@ bool initializeComplexTest(const path &fastq,
      * Check premises first. As we are going to run more than one test, we'll delete this instantly and use new
      * instances everytime.
      */
-    auto *extractor = new Extractor(make_shared<PathInputSource>(fastq), index, "-", false, 0, 10, true);
+    auto *extractor = new Extractor(make_shared<PathInputSource>(fastq), index, "-", false, 0, 10, 4, true);
     bool premisesMet = extractor->checkPremises();
             CHECK(premisesMet);
     delete extractor;
@@ -118,7 +115,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         path fastq = res.getResource(TEST_FASTQ_SMALL);
         path index = res.getResource(TEST_INDEX_SMALL);
 
-        auto *extractor = new Extractor(make_shared<PathInputSource>(fastq), index, "-", false, 0, 10, true);
+        auto *extractor = new Extractor(make_shared<PathInputSource>(fastq), index, "-", false, 0, 10, 4, true);
                 CHECK(extractor->checkPremises());
         delete extractor;
     }

@@ -11,6 +11,7 @@
 #include "ErrorAccumulator.h"
 #include "IndexReader.h"
 #include "InputSource.h"
+#include "PathInputSource.h"
 #include <cstdio>
 #include <experimental/filesystem>
 #include <zlib.h>
@@ -167,6 +168,8 @@ public:
     void checkAndResetSlidingWindow();
 
     bool decompressNextChunkOfData(bool checkForStreamEnd, int flushMode);
+
+    void clearCurrentCompressedBlock();
 };
 
 

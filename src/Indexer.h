@@ -42,6 +42,10 @@ private:
 
     shared_ptr<IndexWriter> indexWriter;
 
+    bool forbidWriteFQI;
+
+    bool disableFailsafeDistance;
+
     /**
      * For debug and test purposes, used when debuggingEnabled is true
      * keeps the index header
@@ -98,8 +102,14 @@ public:
      * @param index The index for the FASTQ.
      * @param enableDebugging Store debug information or not.
      */
-    Indexer(const shared_ptr<InputSource> &fastqfile, const path &index, int blockInterval,
-            bool enableDebugging = false, bool forceOverwrite = false);
+    Indexer(const shared_ptr<InputSource> &fastqfile,
+            const path &index,
+            int blockInterval,
+            bool enableDebugging = false,
+            bool forceOverwrite = false,
+            bool forbidWriteFQI = false,
+            bool disableFailsafeDistance = false
+    );
 
     virtual ~Indexer() = default;
 

@@ -77,11 +77,6 @@ void IndexProcessor::unlock() {
     readLockActive = false;
     writeLockActive = false;
     if (this->indexFileHandle != nullptr) {
-//        try {
-//            fclose(indexFileHandle);
-//        } catch(...) {
-//            std::cout << "";
-//        }
         flock(fileno(indexFileHandle), LOCK_UN);
     }
 }

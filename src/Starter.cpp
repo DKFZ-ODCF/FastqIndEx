@@ -127,6 +127,18 @@ IndexerRunner *Starter::assembleCmdLineParserForIndexAndParseOpts(int argc, cons
             cmdLineParser,
             false);
 
+    SwitchArg forbidIndexWriteoutSwitch(
+            "F", "forbidindexwriteout",
+            string("Forbids writing the index file. More interesting for debugging."),
+            cmdLineParser,
+            false);
+
+    SwitchArg disableFailsafeDistanceSwitch(
+            "S", "disablefailsafedistance",
+            string("Disables the minimum offset-byte-distance checks for entries in the index file. The failsafe distance is calculated with (block distance) * (16kByte)"),
+            cmdLineParser,
+            false);
+
     vector<string> allowedMode{"index"};
     ValuesConstraint<string> allowedModesConstraint(allowedMode);
     UnlabeledValueArg<string> mode("mode", "mode is index", true, "", &allowedModesConstraint);
@@ -161,7 +173,9 @@ IndexerRunner *Starter::assembleCmdLineParserForIndexAndParseOpts(int argc, cons
     if (dbg)
         ErrorAccumulator::setVerbosity(3);
 
-    return new IndexerRunner(fastq, index, bi, dbg, fo);
+    return new IndexerRunner(fastq, index, bi, dbg, fo,
+                             forbidIndexWriteoutSwitch.getValue(),
+                             disableFailsafeDistanceSwitch.getValue());
 }
 
 ExtractorRunner *Starter::assembleCmdLineParserForExtractAndParseOpts(int argc, const char **argv) {
@@ -244,14 +258,18 @@ ExtractorRunner *Starter::assembleCmdLineParserForExtractAndParseOpts(int argc, 
     if (dbg)
         ErrorAccumulator::setVerbosity(3);
 
+    path _indexFile(indexFile.getValue());
+    if (indexFile.getValue().empty())
+        _indexFile = path(fastqFile.getValue() + ".fqi");
+
     cmdLineParser.parse(argc, argv);
     return new ExtractorRunner(
             make_shared<PathInputSource>(argumentToPath(fastqFile)),
-            path(indexFile.getValue()),
+            _indexFile,
             argumentToPath(outFile),
             forceOverwrite.getValue(),
             startingread.getValue() * extractionmultiplier.getValue(),
-            numberofreads.getValue() * extractionmultiplier.getValue(),
+            numberofreads.getValue() * extractionmultiplier.getValue(), 0,
             debugSwitch.getValue()
     );
 }

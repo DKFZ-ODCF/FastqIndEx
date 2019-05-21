@@ -24,13 +24,15 @@ Extractor::Extractor(
         bool forceOverwrite,
         u_int64_t startingLine,
         u_int64_t lineCount,
-        bool enableDebugging)
-        : ZLibBasedFASTQProcessorBaseClass(fastqfile, indexfile, enableDebugging),
-          startingLine(startingLine),
-          lineCount(lineCount) {
+        uint extractionMulitplier,
+        bool enableDebugging
+) : ZLibBasedFASTQProcessorBaseClass(fastqfile, indexfile, enableDebugging),
+    startingLine(startingLine),
+    lineCount(lineCount) {
     this->indexReader = make_shared<IndexReader>(indexfile);
     this->resultFile = resultfile;
     this->forceOverwrite = forceOverwrite;
+    this->extractionMulitplier = extractionMulitplier == 0 ? 4 : extractionMulitplier;
 
     if (resultFile.empty() || resultFile.generic_u8string() == "-") {
         this->forceOverwrite = false;
@@ -65,7 +67,7 @@ bool Extractor::checkPremises() {
     return this->indexReader->tryOpenAndReadHeader();
 }
 
-bool Extractor::extractReadsToCout() {
+bool Extractor::extract() {
     auto resultFileStream = shared_ptr<ofstream>(nullptr);
     ofstream outfilestream;
     ostream *out;
@@ -79,11 +81,10 @@ bool Extractor::extractReadsToCout() {
     shared_ptr<IndexEntry> previousEntry = indexReader->readIndexEntry();
     shared_ptr<IndexEntry> startingIndexLine = previousEntry;
 
-    uint64_t skipLines = 0;
-    if (startingLine >= 4) {
-        startingLine -= 4;
-        skipLines = 4;
-        lineCount += 4;
+    if (startingLine >= extractionMulitplier) {
+        startingLine -= extractionMulitplier;
+        skipLines = extractionMulitplier;
+        lineCount += extractionMulitplier;
     }
 
     while (indexReader->getIndicesLeft() > 0) {
@@ -129,20 +130,10 @@ bool Extractor::extractReadsToCout() {
         return false;
     }
 
-    // If a block starts with an offset, this can be used to complete the unfinished line of the last block (if necessary)
-    string unfinishedLineInLastBlock;
-
-    string incompleteLastLine;
-
-    u_int64_t extractedLines = 0;
-
     // The number of lines which will be skipped in the found starting block
-    u_int64_t skip = startingLine - startingIndexLine->startingLineInEntry;
+    skip = startingLine - startingIndexLine->startingLineInEntry;
 
-    // Keep track of all split lines. Merely for debugging
-    u_int64_t totalSplitCount = 0;
-
-    bool keepExtracting{false};
+    bool keepExtracting = false;
     bool finalAbort = false;
     do {
         do {
@@ -158,96 +149,25 @@ bool Extractor::extractReadsToCout() {
 
                 bool checkForStreamEnd = false;
 
-                currentDecompressedBlock.str("");
-                currentDecompressedBlock.clear();
+                clearCurrentCompressedBlock();
 
                 if (!decompressNextChunkOfData(checkForStreamEnd, Z_NO_FLUSH))
                     break;
 
-                std::vector<string> splitLines;
-                string str = currentDecompressedBlock.str();
-                splitLines = splitStr(str);
-                totalSplitCount += splitLines.size();
-
-                string curIncompleteLastLine;
-                // Strip away incomplete line, store this line for the next block.
-                string lastSplitLine;
-                if (!splitLines.empty())
-                    lastSplitLine = splitLines[splitLines.size() - 1];
-                char lastChar{0};
-                if (!lastSplitLine.empty())
-                    lastChar = lastSplitLine.c_str()[lastSplitLine.size() - 1];
-                if (lastChar != '\n') {
-                    curIncompleteLastLine = lastSplitLine;
-                    if (!splitLines.empty())
-                        splitLines.pop_back();
-                    totalSplitCount--;
-                }
-
-                if (splitLines.empty()) {
-                    incompleteLastLine = incompleteLastLine + curIncompleteLastLine;
+                if (!processDecompressedData(out, startingIndexLine))
                     continue;
-                }
 
-                // Two options. Extraction began earlier OR we are processing another chunk of data.
-                u_int64_t iStart = 0;
-                if (extractedLines == 0) {
-                    if (startingIndexLine->offsetOfFirstValidLine > 0 && firstPass) {
-                        if (!splitLines.empty()) splitLines.erase(splitLines.begin());
-
-                    }
-                    iStart = skip;
-                } else {
-                    if (!incompleteLastLine.empty() && extractedLines < lineCount) {
-                        storeOrOutputLine(out, &skipLines, incompleteLastLine + splitLines[0]);
-                        extractedLines++;
-                        iStart = 1;
-                    }
-                }
                 // Tell the extractor, that the inner loop was called at least once, so we don't remove the first line of
                 // the splitLines on every iteration.
                 firstPass = false;
-
-                // iStart is 0 or 1
-                for (int i = iStart; i < splitLines.size() && extractedLines < lineCount; ++i) {
-                    storeOrOutputLine(out, &skipLines, splitLines[i]);
-                    extractedLines++;
-                }
-                incompleteLastLine = curIncompleteLastLine;
-                if (skip > 0) skip -= min(splitLines.size(), skip);
 
             } while (zStream.avail_in != 0 && zlibResult != Z_STREAM_END);
             finalAbort = !(extractedLines < lineCount && !errorWasRaised);
         } while (!finalAbort && zlibResult != Z_STREAM_END);
 
-        if (enableDebugging) {
-            while (storedLines.size() > lineCount) {
-                storedLines.pop_back();
-            }
-        }
+        storeLinesOfCurrentBlockForDebugMode();
 
-        keepExtracting = false;
-        if (!finalAbort) {
-            totalBytesIn += 8 + 10; // Plus 8 Byte (for what? they are missing...) and 10 Byte for the next header
-            uint64_t streamEndPosition = totalBytesIn;
-            fastqfile->seek(streamEndPosition, true);
-            if (fastqfile->canRead()) {
-                keepExtracting = true;
-                inflateEnd(&zStream);
-                if (!initializeZStreamForRawInflate()) {
-                    finishedSuccessful = false;
-                    keepExtracting = false;
-                }
-                checkAndResetSlidingWindow();
-                memset(this->window, 0, WINDOW_SIZE);
-                memset(this->input, 0, CHUNK_SIZE);
-                this->zStream.avail_in = CHUNK_SIZE;
-                firstPass = true;
-
-                Bytef dict[WINDOW_SIZE]{0};
-                zlibResult = inflateSetDictionary(&zStream, dict, WINDOW_SIZE);
-            }
-        }
+        keepExtracting = checkAndPrepareForNextConcatenatedPart(finalAbort);
     } while (keepExtracting);
 
     // Free the file pointer and close the file.
@@ -258,13 +178,88 @@ bool Extractor::extractReadsToCout() {
 
     inflateEnd(&zStream);
 
-    if (errorWasRaised) {
+    if (errorWasRaised)
         addErrorMessage(string("Last error message from zlib: ") + zStream.msg);
+
+    return !errorWasRaised;
+}
+
+bool Extractor::checkAndPrepareForNextConcatenatedPart(bool finalAbort) {
+    if (finalAbort) return false;
+
+    totalBytesIn += 8 + 10; // Plus 8 Byte (for what? they are missing...) and 10 Byte for the next header
+    uint64_t streamEndPosition = totalBytesIn;
+    fastqfile->seek(streamEndPosition, true);
+
+    if (!fastqfile->canRead()) return false;
+
+    inflateEnd(&zStream);
+    if (!initializeZStreamForRawInflate()) {
         finishedSuccessful = false;
-    } else {
-        finishedSuccessful = true;
+        return false;
     }
-    return finishedSuccessful;
+
+    checkAndResetSlidingWindow();
+    memset(window, 0, WINDOW_SIZE);
+    memset(input, 0, CHUNK_SIZE);
+    zStream.avail_in = CHUNK_SIZE;
+    firstPass = true;
+
+    Bytef dict[WINDOW_SIZE]{0};
+    zlibResult = inflateSetDictionary(&zStream, dict, WINDOW_SIZE);
+
+    return true;
+}
+
+bool Extractor::processDecompressedData(ostream *out, const shared_ptr<IndexEntry> &startingIndexLine) {
+    vector<string> splitLines;
+    string str = currentDecompressedBlock.str();
+    splitLines = splitStr(str);
+    totalSplitCount += splitLines.size();
+
+    string curIncompleteLastLine;
+    // Strip away incomplete line, store this line for the next block.
+    string lastSplitLine;
+    if (!splitLines.empty())
+        lastSplitLine = splitLines[splitLines.size() - 1];
+    char lastChar{0};
+    if (!lastSplitLine.empty())
+        lastChar = lastSplitLine.c_str()[lastSplitLine.size() - 1];
+    if (lastChar != '\n') {
+        curIncompleteLastLine = lastSplitLine;
+        if (!splitLines.empty())
+            splitLines.pop_back();
+        totalSplitCount--;
+    }
+
+    if (splitLines.empty()) {
+        incompleteLastLine = incompleteLastLine + curIncompleteLastLine;
+        return false;
+    }
+
+    // Two options. Extraction began earlier OR we are processing another chunk of data.
+    u_int64_t iStart = 0;
+    if (extractedLines == 0) {
+        if (startingIndexLine->offsetOfFirstValidLine > 0 && firstPass) {
+            if (!splitLines.empty()) splitLines.erase(splitLines.begin());
+        }
+        iStart = skip;
+    } else {
+        if (!incompleteLastLine.empty() && extractedLines < lineCount) {
+            storeOrOutputLine(out, &skipLines, incompleteLastLine + splitLines[0]);
+            extractedLines++;
+            iStart = 1;
+        }
+    }
+    // iStart is 0 or 1
+    for (int i = iStart; i < splitLines.size() && extractedLines < lineCount; ++i) {
+        storeOrOutputLine(out, &skipLines, splitLines[i]);
+        extractedLines++;
+    }
+    incompleteLastLine = curIncompleteLastLine;
+    if (skip > 0) skip -= min(splitLines.size(), skip);
+
+    return true;
 }
 
 void Extractor::storeOrOutputLine(ostream *outStream, uint64_t *skipLines, string line) {
@@ -276,6 +271,13 @@ void Extractor::storeOrOutputLine(ostream *outStream, uint64_t *skipLines, strin
             storedLines.emplace_back(line);
         else
             (*outStream) << line << "\n";
+    }
+}
+
+void Extractor::storeLinesOfCurrentBlockForDebugMode() {
+    if (!enableDebugging) return;
+    while (storedLines.size() > lineCount) {
+        storedLines.pop_back();
     }
 }
 

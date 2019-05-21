@@ -89,7 +89,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         path fastq = res.getResource("test_singlecompressedblocks.fastq.gz");
         path index = res.filePath("test.fastq.gz.fqi");
         path extractedFastq = res.filePath(TEST_FASTQ_SMALL);
-        auto *indexer = new Indexer(make_shared<PathInputSource>(fastq), index, -1, true);
+        auto *indexer = new Indexer(make_shared<PathInputSource>(fastq), index, -1, true, false, false, true);
                 CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.
 
         bool result = indexer->createIndex();
@@ -149,7 +149,7 @@ SUITE (INDEXER_SUITE_TESTS) {
                 CHECK_EQUAL(true, result);
                 CHECK(4 * file_size(fastq) == file_size(concat));
 
-        auto *indexer = new Indexer(make_shared<PathInputSource>(concat), index, -1, true);
+        auto *indexer = new Indexer(make_shared<PathInputSource>(concat), index, -1, true, false, false, true);
                 CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.
 
         result = indexer->createIndex();
@@ -203,7 +203,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         path fastq = res.getResource(string(TEST_FASTQ_SMALL));
         path index = res.filePath("test.fastq.gz.fqi");
 
-        auto indexer = new Indexer(make_shared<PathInputSource>(fastq), index, -1, true);
+        auto indexer = new Indexer(make_shared<PathInputSource>(fastq), index, -1, true, false, false, true);
                 CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.
 
         bool result = indexer->createIndex();
@@ -245,7 +245,7 @@ SUITE (INDEXER_SUITE_TESTS) {
                 CHECK(4 * file_size(fastq) == file_size(concat));
 
         ifstream fastqStream(concat.string());
-        auto indexer = new Indexer(make_shared<StreamInputSource>(&fastqStream), index, 1, true);
+        auto indexer = new Indexer(make_shared<StreamInputSource>(&fastqStream), index, 1, true, false, false, true);
 
         indexer->createIndex();
         auto storedHeader = indexer->getStoredHeader();
@@ -264,7 +264,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         path fastq = res.getResource(string(TEST_FASTQ_LARGE));
         path index = res.filePath("test2.fastq.gz.fqi");
         ifstream fqStream(fastq);
-        IndexerRunner runner(shared_ptr<InputSource>(new StreamInputSource(&fqStream)), index);
+        IndexerRunner runner(shared_ptr<InputSource>(new StreamInputSource(&fqStream)), index, -1, false, false, false, true);
                 CHECK(runner.run() == 0);
                 CHECK(file_size(index) > 0);
     }
@@ -281,7 +281,7 @@ SUITE (INDEXER_SUITE_TESTS) {
                 make_shared<PathInputSource>(fastq),
                 index,
                 blockSize,
-                true
+                true, false, false, true
         ); // Tell the indexer to store entries. This is solely a debug feature but it
                 CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.
 

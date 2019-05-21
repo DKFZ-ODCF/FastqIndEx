@@ -4,6 +4,11 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
+#include <zlib.h>
+#include <unistd.h>
+#include <iostream>
+#include <experimental/filesystem>
+#include "PathInputSource.h"
 #include <cstdio>
 #include "Extractor.h"
 #include "ZLibBasedFASTQProcessorBaseClass.h"
@@ -118,4 +123,9 @@ bool ZLibBasedFASTQProcessorBaseClass::decompressNextChunkOfData(bool checkForSt
 
     currentDecompressedBlock << cleansedWindowForCout;
     return true;
+}
+
+void ZLibBasedFASTQProcessorBaseClass::clearCurrentCompressedBlock() {
+    currentDecompressedBlock.str("");
+    currentDecompressedBlock.clear();
 }

@@ -30,7 +30,7 @@ TEST (SANITY_TEST) {
 /**
  * Trap for exit(). Detects, if exitIntentionally is set to true and reports a message if it is not.
  */
-void unintentionalTestApplicationExit() {
+void unintentionalTestApplicationExit(void) {
     if (!exitIntentionally)
         std::cout << "A test failed and forced the testapp to end unintentionally.\n"
                   << "This is probably the case because a method or library called exit, forcing the application to "

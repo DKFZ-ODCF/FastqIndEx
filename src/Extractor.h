@@ -31,6 +31,8 @@ private:
 
     u_int64_t lineCount;
 
+    uint extractionMulitplier;
+
     path resultFile;
 
     bool useFile{false};
@@ -39,6 +41,24 @@ private:
      * If the extractor shall write a new fastq file, this indicates, that the file will be overwritten.
      */
     bool forceOverwrite;
+
+    // If a block starts with an offset, this can be used to complete the unfinished line of the last block (if necessary)
+    string unfinishedLineInLastBlock;
+
+    string incompleteLastLine;
+
+    u_int64_t extractedLines = 0;
+
+    // The number of lines which will be skipped in the found starting block
+    u_int64_t skip = 0;
+
+    // Keep track of all split lines. Merely for debugging
+    u_int64_t totalSplitCount = 0;
+
+    /**
+     * Lines to skip, when the extraction starts. This is for a bugfix...
+     */
+    uint64_t skipLines = 0;
 
 public:
 
@@ -51,15 +71,9 @@ public:
      * @param lineCount         Extract a maximum of lineCount lines
      * @param enableDebugging   Used for interactive debugging and unit tests
      */
-    explicit Extractor(
-            const shared_ptr<PathInputSource> &fastqfile,
-            const path &indexfile,
-            const path &resultfile,
-            bool forceOverwrite,
-            u_int64_t startingLine,
-            u_int64_t lineCount,
-            bool enableDebugging
-    );
+    explicit Extractor(const shared_ptr<PathInputSource> &fastqfile, const path &indexfile, const path &resultfile,
+                       bool forceOverwrite, u_int64_t startingLine, u_int64_t lineCount, uint extractionMulitplier,
+                       bool enableDebugging);
 
     virtual ~Extractor() = default;
 
@@ -73,7 +87,15 @@ public:
      * @param start
      * @param count
      */
-    bool extractReadsToCout();
+    bool extract();
+
+    bool processDecompressedData(ostream *out, const shared_ptr<IndexEntry> &startingIndexLine);
+
+    bool checkAndPrepareForNextConcatenatedPart(bool finalAbort);
+
+    void storeOrOutputLine(ostream *outStream, uint64_t *skipLines, string line);
+
+    void storeLinesOfCurrentBlockForDebugMode();
 
     /**
      * Overriden to also pass through (copywise, safe but slow but also only with a few entries and in error cases)
@@ -81,8 +103,6 @@ public:
      * @return Merged vector of the objects error messages + the index writers error messages.
      */
     vector<string> getErrorMessages() override;
-
-    void storeOrOutputLine(ostream *outStream, uint64_t *skipLines, string line);
 };
 
 

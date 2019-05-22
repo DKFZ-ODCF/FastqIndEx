@@ -6,9 +6,9 @@
 cmake_minimum_required(VERSION 3.13)
 
 set(CMAKE_CXX_STANDARD 17)
-SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fPIC")
+SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fPIC -pedantic -ansi -Winit-self -Wmissing-declarations -Wextra -Winit-self -Wold-style-cast -Woverloaded-virtual -Wuninitialized")
 SET(CMAKE_C_FLAGS_DEBUG "-O0 -g -fPIC")
-
+#-Wall
 # See https://stackoverflow.com/questions/14446495/cmake-project-structure-with-unit-tests
 project(FASTQIndEx)
 

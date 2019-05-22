@@ -329,7 +329,7 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
             offsetOfLastEntry = lastStoredEntry->blockOffsetInRawFile;
         failsafeDistanceIsReached = (blockOffset - offsetOfLastEntry) > (failsafeDistance);
     }
-    if (blockID % blockInterval == 0 && failsafeDistanceIsReached) {
+    if (blockID == 0 || (blockID % blockInterval == 0 && failsafeDistanceIsReached)) {
         if (!forbidWriteFQI)
             indexWriter->writeIndexEntry(entry);
         lastStoredEntry = entry;

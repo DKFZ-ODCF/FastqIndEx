@@ -64,7 +64,7 @@ IndexStatsRunner *Starter::assembleCmdLineParserForIndexStatsAndParseOpts(int ar
             "n", "numberofentries",
             "Number of index entries to show.",
             false,
-            -1, "int", cmdLineParser);
+            1, "int", cmdLineParser);
 
     vector<string> allowedMode{"stats"};
     ValuesConstraint<string> allowedModesConstraint(allowedMode);
@@ -252,6 +252,8 @@ ExtractorRunner *Starter::assembleCmdLineParserForExtractAndParseOpts(int argc, 
             cmdLineParser,
             false);
 
+    cmdLineParser.parse(argc, argv);
+
     ErrorAccumulator::setVerbosity(verbosity.getValue());
 
     bool dbg = debugSwitch.getValue();
@@ -262,7 +264,6 @@ ExtractorRunner *Starter::assembleCmdLineParserForExtractAndParseOpts(int argc, 
     if (indexFile.getValue().empty())
         _indexFile = path(fastqFile.getValue() + ".fqi");
 
-    cmdLineParser.parse(argc, argv);
     return new ExtractorRunner(
             make_shared<PathInputSource>(argumentToPath(fastqFile)),
             _indexFile,

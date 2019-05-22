@@ -7,6 +7,8 @@
 #include "Extractor.h"
 #include "ZLibBasedFASTQProcessorBaseClass.h"
 #include "PathInputSource.h"
+#include "IndexStatsRunner.h"
+#include <chrono>
 #include <cstdio>
 #include <experimental/filesystem>
 #include <iostream>
@@ -15,6 +17,8 @@
 
 using namespace experimental::filesystem;
 using namespace std;
+using namespace std::chrono;
+
 using experimental::filesystem::path;
 
 Extractor::Extractor(
@@ -67,6 +71,22 @@ bool Extractor::checkPremises() {
     return this->indexReader->tryOpenAndReadHeader();
 }
 
+high_resolution_clock::time_point measurement;
+
+void timerStart() {
+    measurement = high_resolution_clock::now();
+}
+
+void timerStop(const string &message) {
+    auto result = duration_cast<microseconds>(high_resolution_clock::now() - measurement).count();
+//    cerr << "Measurement for: " << message << " took " << (result ) << "µs\n";
+}
+
+void timerRestart(const string &message) {
+    timerStop(message);
+    timerStart();
+}
+
 bool Extractor::extract() {
     auto resultFileStream = shared_ptr<ofstream>(nullptr);
     ofstream outfilestream;
@@ -78,22 +98,29 @@ bool Extractor::extract() {
         out = &outfilestream;
     }
 
-    shared_ptr<IndexEntry> previousEntry = indexReader->readIndexEntry();
-    shared_ptr<IndexEntry> startingIndexLine = previousEntry;
-
-    if (startingLine >= extractionMulitplier) {
+        if (startingLine >= extractionMulitplier) {
         startingLine -= extractionMulitplier;
         skipLines = extractionMulitplier;
         lineCount += extractionMulitplier;
     }
 
+    timerStart();
+
+    shared_ptr<IndexEntry> previousEntry = indexReader->readIndexEntry();
+    shared_ptr<IndexEntry> startingIndexLine = previousEntry;
+
+    u_int64_t indexEntryNumber = 0;
     while (indexReader->getIndicesLeft() > 0) {
         auto entry = indexReader->readIndexEntry();
+        indexEntryNumber++;
         if (entry->startingLineInEntry > startingLine) {
             break;
         }
-        startingIndexLine = previousEntry;
+        startingIndexLine = entry;
+//        previousEntry = entry;
     }
+
+    timerRestart("Index entry search");
 
     if (!initializeZStreamForRawInflate()) {
         return false;
@@ -129,6 +156,10 @@ bool Extractor::extract() {
         fastqfile->close();
         return false;
     }
+
+    timerRestart("Final extractor init");
+
+    IndexStatsRunner::printIndexEntryToConsole(startingIndexLine, indexEntryNumber);
 
     // The number of lines which will be skipped in the found starting block
     skip = startingLine - startingIndexLine->startingLineInEntry;
@@ -276,6 +307,7 @@ void Extractor::storeOrOutputLine(ostream *outStream, uint64_t *skipLines, strin
 
 void Extractor::storeLinesOfCurrentBlockForDebugMode() {
     if (!enableDebugging) return;
+
     while (storedLines.size() > lineCount) {
         storedLines.pop_back();
     }

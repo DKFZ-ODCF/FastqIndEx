@@ -114,6 +114,7 @@ bool ZLibBasedFASTQProcessorBaseClass::decompressNextChunkOfData(bool checkForSt
         zlibResult = Z_DATA_ERROR;
     }
     if (zlibResult == Z_MEM_ERROR || zlibResult == Z_DATA_ERROR) {
+        cerr << "Zlib data or memory error occurred: " << zlibResult << "\n";
         errorWasRaised = true;
         return false;
     }

@@ -59,6 +59,14 @@ private:
     vector<shared_ptr<IndexEntryV1>> storedEntries;
 
     /**
+     * For debug and test purposes, used when decompressed blocks are processed. Will store them
+     * to a file next to the
+     */
+    bool writeOutOfDecompressedBlocksAndStatistics;
+
+    path storageForDecompressedBlocks;
+
+    /**
      * Current bits for the next index entry.
      */
     int curBits{0};
@@ -154,6 +162,23 @@ public:
     const vector<shared_ptr<IndexEntryV1>> &getStoredEntries() { return storedEntries; }
 
     const uint64_t getNumberOfConcatenatedFiles() { return numberOfConcatenatedFiles; }
+
+    shared_ptr<IndexEntryV1> createIndexEntryFromBlockData(const string &currentBlockString,
+                                                           const vector<string> &lines,
+                                                           u_int64_t &blockOffsetInRawFile,
+                                                           bool lastBlockEndedWithNewline,
+                                                           bool *currentBlockEndedWithNewLine,
+                                                           u_int32_t *numberOfLinesInBlock);
+
+    void storeDictionaryForEntry(z_stream *strm, shared_ptr<IndexEntryV1> entry);
+
+    void writeIndexEntryIfPossible(shared_ptr<IndexEntryV1> &entry, const vector<string> &lines);
+
+    void enableWriteOutOfDecompressedBlocksAndStatistics(const path &location) {
+        this->writeOutOfDecompressedBlocksAndStatistics = true;
+        this->storageForDecompressedBlocks = location;
+    }
+
 
 };
 

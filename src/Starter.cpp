@@ -264,13 +264,18 @@ ExtractorRunner *Starter::assembleCmdLineParserForExtractAndParseOpts(int argc, 
     if (indexFile.getValue().empty())
         _indexFile = path(fastqFile.getValue() + ".fqi");
 
+    int _extractionMultiplier = extractionmultiplier.getValue();
+    if(_extractionMultiplier <= 0)
+        _extractionMultiplier = 0;
+
     return new ExtractorRunner(
             make_shared<PathInputSource>(argumentToPath(fastqFile)),
             _indexFile,
             argumentToPath(outFile),
             forceOverwrite.getValue(),
-            startingread.getValue() * extractionmultiplier.getValue(),
-            numberofreads.getValue() * extractionmultiplier.getValue(), 0,
+            startingread.getValue() * _extractionMultiplier,
+            numberofreads.getValue() * _extractionMultiplier,
+            _extractionMultiplier,
             debugSwitch.getValue()
     );
 }

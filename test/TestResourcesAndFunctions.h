@@ -11,6 +11,7 @@
 #include <mutex>
 #include <string>
 #include <cstdarg>
+#include <fstream>
 #include "TestConstants.h"
 
 using namespace std;
@@ -86,6 +87,20 @@ public:
     static bool extractGZFile(const path &file, const path &extractedFile);
 
     static bool createConcatenatedFile(const path &file, const path &result, int repetitions);
+
+    static vector<string> readLinesOfFile(const path &file);
+
+    static string readFile(const path &file);
+
+    vector<string> readLinesOfResourceFile(const string &resourceFile) {
+        return readLinesOfFile(getResource(resourceFile));
+    }
+
+    string readResourceFile(const string &resourceFile) {
+        return readFile(getResource(resourceFile));
+    }
+
+    static bool compareVectorContent(const vector<string> &reference, const vector<string> &actual, uint32_t referenceOffset = 0);
 };
 
 

@@ -20,6 +20,7 @@ const char *const TEST_EXTRACTOR_CREATION = "Extractor creation";
 const char *const TEST_CREATE_EXTRACTOR_AND_EXTRACT_SMALL_TO_COUT = "Combined test for index creation and extraction with the small dataset, extracts to cout.";
 const char *const TEST_CREATE_EXTRACTOR_AND_EXTRACT_LARGE_TO_COUT = "Combined test for index creation and extraction with the larger dataset, extracts to cout.";
 const char *const TEST_CREATE_EXTRACTOR_AND_EXTRACT_CONCAT_TO_COUT = "Combined test for index creation and extraction with the concatenated dataset, extracts to cout.";
+const char *const TEST_PROCESS_DECOMPRESSED_DATA = "Test processDecompressedData() with some test data files (analogous to IndexerTest::TEST_CORRECT_BLOCK_LINE_COUNTING.)";
 const char *const TEST_EXTRACTOR_CHECKPREM_OVERWRITE_EXISTING = "Test fail on exsiting file with disabled overwrite.";
 const char *const TEST_EXTRACTOR_CHECKPREM_MISSING_NOTWRITABLE = "Test fail on non-writable result file with overwrite enabled.";
 const char *const TEST_EXTRACTOR_CHECKPREM_MISSING_PARENTNOTWRITABLE = "Test fail on non-writable output folder.";
@@ -48,15 +49,9 @@ void runRangedExtractionTest(const path &fastq,
     if (!ok)
         return;
 
-            CHECK_EQUAL(expectedLineCount, lines.size());
+            CHECK(expectedLineCount == lines.size());
 
-    u_int64_t differences = 0;
-    for (int i = 0; i < min(decompressedSourceContent.size() - firstLine, lines.size()); i++) {
-        if (decompressedSourceContent[i + firstLine] != lines[i]) {
-            differences++;
-        }
-    }
-            CHECK_EQUAL(0, differences);
+            CHECK(TestResourcesAndFunctions::compareVectorContent(decompressedSourceContent, lines, firstLine));
 }
 
 bool initializeComplexTest(const path &fastq,
@@ -71,6 +66,7 @@ bool initializeComplexTest(const path &fastq,
      */
     auto *indexer = new Indexer(make_shared<PathInputSource>(fastq), index, blockInterval, true, false, false, true);
             CHECK(indexer->checkPremises());
+    indexer->enableWriteOutOfDecompressedBlocksAndStatistics(index.parent_path());
     indexer->createIndex();
     bool success = indexer->wasSuccessful();
             CHECK(success);
@@ -119,30 +115,96 @@ SUITE (INDEXER_SUITE_TESTS) {
                 CHECK(extractor->checkPremises());
         delete extractor;
     }
+//
+//    TEST (TEST_EXTRACTOR_CHECKPREM_OVERWRITE_EXISTING) {
+//                CHECK(false);
+//    }
+//
+//    TEST (TEST_EXTRACTOR_CHECKPREM_MISSING_NOTWRITABLE) {
+//                CHECK(false);
+//    }
+//
+//    TEST (TEST_EXTRACTOR_CHECKPREM_MISSING_PARENTNOTWRITABLE) {
+//                CHECK(false);
+//    }
+//
+//    TEST (TEST_EXTRACTOR_EXTRACT_WITH_OUTFILE) {
+//        TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_EXTRACTOR_EXTRACT_WITH_OUTFILE);
+//
+//        res.getResource(TEST_FASTQ_SMALL);
+//
+//                CHECK(false);
+//    }
+//
+//    TEST (TEST_EXTRACTOR_EXTRACT_WITH_EXISTINGOUTFILE) {
+//        // Check, that the output file size matches!
+//                CHECK(false);
+//    }
 
-    TEST (TEST_EXTRACTOR_CHECKPREM_OVERWRITE_EXISTING) {
-                CHECK(false);
-    }
+    TEST (TEST_PROCESS_DECOMPRESSED_DATA) {
+        TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_PROCESS_DECOMPRESSED_DATA);
+        vector<string> _blockData;
+        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_0_complete"));
+        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_1_endopen"));
+        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_2_startendopen"));
+        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_5_empty"));
+        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_5_empty"));
+        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_3_startendopen"));
+        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_3.1_startendopen_nonewlines"));
+        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_4_startopen"));
+        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_5_empty"));
+        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_6_newlines"));
+        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_7_finalwonewlines"));
 
-    TEST (TEST_EXTRACTOR_CHECKPREM_MISSING_NOTWRITABLE) {
-                CHECK(false);
-    }
+        path fastq = res.getResource(TEST_FASTQ_LARGE);
+        path index = res.filePath("test2.fastq.gz.fqi");
 
-    TEST (TEST_EXTRACTOR_CHECKPREM_MISSING_PARENTNOTWRITABLE) {
-                CHECK(false);
-    }
+        vector<shared_ptr<IndexEntryV1>> indexEntries;
 
-    TEST (TEST_EXTRACTOR_EXTRACT_WITH_OUTFILE) {
-        TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_EXTRACTOR_EXTRACT_WITH_OUTFILE);
+        bool lastBlockEndedWithNewline = true;
+        Indexer indexer(make_shared<PathInputSource>(fastq), index, 1, true);
+        for (auto bd : _blockData) {
+            auto split = ZLibBasedFASTQProcessorBaseClass::splitStr(bd);
+            bool currentBlockEndedWithNewline;
+            u_int32_t numberOfLinesInBlock;
+            u_int64_t offset = 0;
+            auto entry = indexer.createIndexEntryFromBlockData(bd, split, offset, lastBlockEndedWithNewline,
+                                                               &currentBlockEndedWithNewline,
+                                                               &numberOfLinesInBlock);
+            indexEntries.emplace_back(entry);
+            lastBlockEndedWithNewline = currentBlockEndedWithNewline;
+        }
 
-        res.getResource(TEST_FASTQ_SMALL);
+        uint startingLines[]{0, 4, 8, 12, 16, 18};
+        int indexEntryID[]{0, 1, 2, 7, 9, 7};
+        int startingBlockIDs[]{0, 1, 2, 7, 8, 7};
+        int expectedLines[]{4, 4, 4, 4, 4, 2};
 
-                CHECK(false);
-    }
+        // The Extractor works a bit differently than the Indexer. In the Indexer, we decompress whole blocks, whereas
+        // in the Extractor, we decompress chunk-wise (technical reasons, the flush mode Z_BLOCK does not work). One
+        // problem here is, that the skip can be bigger than the decompressed chunk of data and this lead to problems
+        // in the past. To test this, we start with a "lower" index entry and add a skip factor for the LAST test!
 
-    TEST (TEST_EXTRACTOR_EXTRACT_WITH_EXISTINGOUTFILE) {
-        // Check, that the output file size matches!
-                CHECK(false);
+        // Please also note, that the last line of the test dataset has NO newline, which can also occur in some source
+        // files. This line will not be found by the tested method here but will be output with a WARNING at the end of
+        // the extraction process.
+
+        for (int i = 0; i < 6; i++) {
+            auto startingLine = startingLines[i];
+            auto lineCount = 4;
+            auto indexEntry = indexEntries[indexEntryID[i]];
+            Extractor extractor(make_shared<PathInputSource>(fastq), index, path("-"), false, startingLine, lineCount,
+                                4, true);
+            extractor.setSkip(startingLine - indexEntry->startingLineInEntry);
+            ostringstream outStream;
+
+            for (int j = startingBlockIDs[i]; j < _blockData.size(); j++) {
+                if (extractor.processDecompressedData(&outStream, _blockData[j], indexEntry->toIndexEntry()))
+                    extractor.setFirstPass(false);
+            }
+            auto split = ZLibBasedFASTQProcessorBaseClass::splitStr(outStream.str());
+                    CHECK(extractor.getStoredLines().size() == expectedLines[i]);
+        }
     }
 
     TEST (TEST_CREATE_EXTRACTOR_AND_EXTRACT_SMALL_TO_COUT) {
@@ -180,14 +242,20 @@ SUITE (INDEXER_SUITE_TESTS) {
         u_int64_t linesInFastq = 160000;
         vector<string> decompressedSourceContent;
 
-        if (!initializeComplexTest(fastq, index, extractedFastq, 4, linesInFastq, &decompressedSourceContent))
+//        Indexer *indexer = new Indexer(make_shared<PathInputSource>(fastq), index, 1, true, true, false, true);
+//        indexer->createIndex();
+//        delete indexer;
+//
+//                CHECK(exists(index));
+
+        if (!initializeComplexTest(fastq, index, extractedFastq, 1, linesInFastq, &decompressedSourceContent))
             return;
 
         runRangedExtractionTest(fastq, index, decompressedSourceContent, 0, 2740, 2740);
         runRangedExtractionTest(fastq, index, decompressedSourceContent, 0, 160000, 160000);
 
         runRangedExtractionTest(fastq, index, decompressedSourceContent, 2740, 160000, 157260);
-        runRangedExtractionTest(fastq, index, decompressedSourceContent, 14740, 4000, 4000);
+        runRangedExtractionTest(fastq, index, decompressedSourceContent, 14223, 4000, 4000);
         for (u_int64_t i = 0, j = 0; i < 150000; i += 17500, j++) {
             runRangedExtractionTest(fastq, index, decompressedSourceContent, 2740 + i, 4000 + j, 4000 + j);
         }

@@ -16,14 +16,14 @@ PathInputSource::~PathInputSource() {
 }
 
 bool PathInputSource::open() {
-    debug("Opening path input source from file " + this->source.string());
+//    debug("Opening path input source from file " + this->source.string());
     if (!fPointer.is_open())
         fPointer.open(source);
     return fPointer.is_open();
 }
 
 bool PathInputSource::close() {
-    debug("Closing path in put source.");
+//    debug("Closing path in put source.");
     if (fPointer.is_open())
         fPointer.close();
     return true;

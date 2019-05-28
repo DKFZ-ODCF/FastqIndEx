@@ -98,11 +98,11 @@ bool Extractor::extract() {
         out = &outfilestream;
     }
 
-        if (startingLine >= extractionMulitplier) {
-        startingLine -= extractionMulitplier;
-        skipLines = extractionMulitplier;
-        lineCount += extractionMulitplier;
-    }
+//    if (startingLine >= extractionMulitplier) {
+//        startingLine -= extractionMulitplier;
+//        skipLines = extractionMulitplier;
+//        lineCount += extractionMulitplier;
+//    }
 
     timerStart();
 
@@ -185,7 +185,7 @@ bool Extractor::extract() {
                 if (!decompressNextChunkOfData(checkForStreamEnd, Z_NO_FLUSH))
                     break;
 
-                if (!processDecompressedData(out, startingIndexLine))
+                if (!processDecompressedData(out, currentDecompressedBlock.str(), startingIndexLine))
                     continue;
 
                 // Tell the extractor, that the inner loop was called at least once, so we don't remove the first line of
@@ -195,6 +195,11 @@ bool Extractor::extract() {
             } while (zStream.avail_in != 0 && zlibResult != Z_STREAM_END);
             finalAbort = !(extractedLines < lineCount && !errorWasRaised);
         } while (!finalAbort && zlibResult != Z_STREAM_END);
+
+//        if (!incompleteLastLine.empty()) {
+//            cerr << "Warning: The file you extracted from does not end with a newline! Please check the source data.\n";
+//            storeOrOutputLine(out, &skipLines, incompleteLastLine);
+//        }
 
         storeLinesOfCurrentBlockForDebugMode();
 
@@ -242,10 +247,8 @@ bool Extractor::checkAndPrepareForNextConcatenatedPart(bool finalAbort) {
     return true;
 }
 
-bool Extractor::processDecompressedData(ostream *out, const shared_ptr<IndexEntry> &startingIndexLine) {
-    vector<string> splitLines;
-    string str = currentDecompressedBlock.str();
-    splitLines = splitStr(str);
+bool Extractor::processDecompressedData(ostream *out, string str, const shared_ptr<IndexEntry> &startingIndexLine) {
+    vector<string> splitLines = splitStr(str);
     totalSplitCount += splitLines.size();
 
     string curIncompleteLastLine;
@@ -254,8 +257,8 @@ bool Extractor::processDecompressedData(ostream *out, const shared_ptr<IndexEntr
     if (!splitLines.empty())
         lastSplitLine = splitLines[splitLines.size() - 1];
     char lastChar{0};
-    if (!lastSplitLine.empty())
-        lastChar = lastSplitLine.c_str()[lastSplitLine.size() - 1];
+    if (!str.empty())
+        lastChar = str[str.size() - 1];
     if (lastChar != '\n') {
         curIncompleteLastLine = lastSplitLine;
         if (!splitLines.empty())
@@ -268,35 +271,48 @@ bool Extractor::processDecompressedData(ostream *out, const shared_ptr<IndexEntr
         return false;
     }
 
-    // Two options. Extraction began earlier OR we are processing another chunk of data.
-    u_int64_t iStart = 0;
-    if (extractedLines == 0) {
-        if (startingIndexLine->offsetOfFirstValidLine > 0 && firstPass) {
-            if (!splitLines.empty()) splitLines.erase(splitLines.begin());
+    bool result = true;
+    if (skip < splitLines.size()) {
+
+        // Two options. Extraction began earlier OR we are processing another chunk of data.
+        u_int64_t iStart = 0;
+        if (extractedLines == 0) {
+            if (startingIndexLine->offsetOfFirstValidLine > 0) {
+                if (firstPass) {
+                    if (!splitLines.empty()) splitLines.erase(splitLines.begin());
+                    iStart = skip;
+                } else if (!incompleteLastLine.empty() && extractedLines < lineCount) {
+                    storeOrOutputLine(out, &skipLines, incompleteLastLine + splitLines[0]);
+                    extractedLines++;
+                    iStart = 1;
+                }
+            } else
+                iStart = skip;
+        } else {
+            if (!incompleteLastLine.empty() && extractedLines < lineCount) {
+                storeOrOutputLine(out, &skipLines, incompleteLastLine + splitLines[0]);
+                extractedLines++;
+                iStart = 1;
+            }
         }
-        iStart = skip;
-    } else {
-        if (!incompleteLastLine.empty() && extractedLines < lineCount) {
-            storeOrOutputLine(out, &skipLines, incompleteLastLine + splitLines[0]);
+        // iStart is 0 or 1
+        for (int i = iStart; i < splitLines.size() && extractedLines < lineCount; ++i) {
+            storeOrOutputLine(out, &skipLines, splitLines[i]);
             extractedLines++;
-            iStart = 1;
         }
-    }
-    // iStart is 0 or 1
-    for (int i = iStart; i < splitLines.size() && extractedLines < lineCount; ++i) {
-        storeOrOutputLine(out, &skipLines, splitLines[i]);
-        extractedLines++;
+    } else {
+        result = false;
     }
     incompleteLastLine = curIncompleteLastLine;
     if (skip > 0) skip -= min(splitLines.size(), skip);
 
-    return true;
+    return result;
 }
 
 void Extractor::storeOrOutputLine(ostream *outStream, uint64_t *skipLines, string line) {
     if (*skipLines > 0) {
         (*skipLines)--;
-        debug(string("skip line: ") + line);
+//        debug(string("skip line: ") + line);
     } else {
         if (enableDebugging)
             storedLines.emplace_back(line);

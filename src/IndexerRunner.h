@@ -65,6 +65,23 @@ public:
     unsigned char run() override;
 
     vector<string> getErrorMessages() override;
+
+    // Facade methods
+//    void enableDebugging() {
+//        this->indexer->enableDebugging();
+//    }
+
+//    void enableForbidWriteFQI() {
+//
+//    }
+
+    void enableWriteOutOfDecompressedBlocksAndStatistics(const path &location) {
+        this->indexer->enableWriteOutOfDecompressedBlocksAndStatistics(location);
+    }
+
+    void enableWriteOutOfPartialDecompressedBlocks(const path &location) {
+        this->indexer->enableWriteOutOfPartialDecompressedBlocks(location);
+    }
 };
 
 

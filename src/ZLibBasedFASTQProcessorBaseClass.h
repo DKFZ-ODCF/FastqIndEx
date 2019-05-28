@@ -109,8 +109,8 @@ public:
         while (std::getline(ss, item, delimiter)) {
             splittedStrings.push_back(item);
         }
-        if (str.c_str()[str.size() - 1] == delimiter)
-            splittedStrings.emplace_back("");
+//        if (str.c_str()[str.size() - 1] == delimiter)
+//            splittedStrings.emplace_back("");
 
         return splittedStrings;
     }

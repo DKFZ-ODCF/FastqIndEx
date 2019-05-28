@@ -139,6 +139,16 @@ IndexerRunner *Starter::assembleCmdLineParserForIndexAndParseOpts(int argc, cons
             cmdLineParser,
             false);
 
+    ValueArg<string> storeForDecompressedBlocksArg(
+            "L", "storagefordecompressedblocks",
+            string("Tell the Indexer to store decompressed blocks to the set location. This function should be used with car and is meant for debugging. The target folder must exist."),
+            false, "", "string", cmdLineParser);
+
+    ValueArg<string> storeForPartialDecompressedBlocksArg(
+            "l", "storageforpartialdecompressedblocks",
+            string("Tell the Indexer to store partial information for decompressed blocks to the set location. This function should be used with car and is meant for debugging. The target folder must exist."),
+            false, "", "string", cmdLineParser);
+
     vector<string> allowedMode{"index"};
     ValuesConstraint<string> allowedModesConstraint(allowedMode);
     UnlabeledValueArg<string> mode("mode", "mode is index", true, "", &allowedModesConstraint);
@@ -173,9 +183,17 @@ IndexerRunner *Starter::assembleCmdLineParserForIndexAndParseOpts(int argc, cons
     if (dbg)
         ErrorAccumulator::setVerbosity(3);
 
-    return new IndexerRunner(fastq, index, bi, dbg, fo,
-                             forbidIndexWriteoutSwitch.getValue(),
-                             disableFailsafeDistanceSwitch.getValue());
+    auto runner = new IndexerRunner(fastq, index, bi, dbg, fo,
+                                    forbidIndexWriteoutSwitch.getValue(),
+                                    disableFailsafeDistanceSwitch.getValue());
+
+    if (storeForDecompressedBlocksArg.isSet())
+        runner->enableWriteOutOfDecompressedBlocksAndStatistics(storeForDecompressedBlocksArg.getValue());
+    if(storeForPartialDecompressedBlocksArg.isSet()) {
+        cerr << "Setting location for partial decompressed block data file to: '" << storeForPartialDecompressedBlocksArg.getValue() << "'\n";
+        runner->enableWriteOutOfPartialDecompressedBlocks(storeForPartialDecompressedBlocksArg.getValue());
+    }
+    return runner;
 }
 
 ExtractorRunner *Starter::assembleCmdLineParserForExtractAndParseOpts(int argc, const char **argv) {
@@ -264,13 +282,18 @@ ExtractorRunner *Starter::assembleCmdLineParserForExtractAndParseOpts(int argc, 
     if (indexFile.getValue().empty())
         _indexFile = path(fastqFile.getValue() + ".fqi");
 
+    int _extractionMultiplier = extractionmultiplier.getValue();
+    if (_extractionMultiplier <= 0)
+        _extractionMultiplier = 0;
+
     return new ExtractorRunner(
             make_shared<PathInputSource>(argumentToPath(fastqFile)),
             _indexFile,
             argumentToPath(outFile),
             forceOverwrite.getValue(),
-            startingread.getValue() * extractionmultiplier.getValue(),
-            numberofreads.getValue() * extractionmultiplier.getValue(), 0,
+            startingread.getValue() * _extractionMultiplier,
+            numberofreads.getValue() * _extractionMultiplier,
+            _extractionMultiplier,
             debugSwitch.getValue()
     );
 }

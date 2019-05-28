@@ -48,7 +48,7 @@ SUITE (TEST_ZLIBBASE_SUITE) {
     TEST (TEST_SPLIT_STR) {
         auto text = string("one\ntwo\nthree\nfour\n5\n6\n7\n\n");
         vector<string> expectedVector{
-                "one", "two", "three", "four", "5", "6", "7", "", ""
+                "one", "two", "three", "four", "5", "6", "7", ""
         };
         vector<string> res = ZLibBasedFASTQProcessorBaseClass::splitStr(text);
                 CHECK_EQUAL(expectedVector.size(), res.size());

@@ -200,3 +200,36 @@ bool TestResourcesAndFunctions::createConcatenatedFile(const path &file, const p
     }
     return res;
 }
+
+vector<string> TestResourcesAndFunctions::readLinesOfFile(const path &file) {
+    ifstream strm(file);
+    vector<string> decompressedSourceContent;
+    string line;
+    while (std::getline(strm, line)) {
+        decompressedSourceContent.emplace_back(line);
+    }
+    return decompressedSourceContent;
+}
+
+string TestResourcesAndFunctions::readFile(const path &file) {
+    std::ifstream t(file);
+    std::string str;
+
+    t.seekg(0, std::ios::end);
+    str.reserve(t.tellg());
+    t.seekg(0, std::ios::beg);
+
+    str.assign((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
+    return str;
+}
+
+bool TestResourcesAndFunctions::compareVectorContent(const vector<string> &reference, const vector<string> &actual, uint32_t referenceOffset) {
+    int64_t firstDiff{-1};
+    for (int i = 0; i < std::min(reference.size() - referenceOffset, actual.size()); i++) {
+        if (reference[i + referenceOffset] != actual[i]) {
+            firstDiff = i;
+            break;
+        }
+    }
+    return firstDiff == -1;
+}

@@ -83,13 +83,31 @@ public:
     bool checkPremises();
 
     /**
+     * For debugging and testing , will be overriden by extract(). Sets the initial amount of lines which will be
+     * omitted.
+     * TODO Move to test-aware subclass.
+     */
+    void setSkip(uint skip) {
+        this->skip = skip;
+    }
+
+    /**
+     * For debugging and testing , will be overriden by extract(). Sets the initial amount of lines which will be
+     * omitted.
+     * TODO Move to test-aware subclass.
+     */
+    void setFirstPass(bool firstPass) {
+        this->firstPass = firstPass;
+    }
+
+    /**
      * For now directly to cout?
      * @param start
      * @param count
      */
     bool extract();
 
-    bool processDecompressedData(ostream *out, const shared_ptr<IndexEntry> &startingIndexLine);
+    bool processDecompressedData(ostream *out, string str, const shared_ptr<IndexEntry> &startingIndexLine);
 
     bool checkAndPrepareForNextConcatenatedPart(bool finalAbort);
 

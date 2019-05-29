@@ -31,7 +31,7 @@ private:
 
     u_int64_t lineCount;
 
-    uint extractionMulitplier;
+    uint extractionMultiplier;
 
     path resultFile;
 
@@ -55,10 +55,9 @@ private:
     // Keep track of all split lines. Merely for debugging
     u_int64_t totalSplitCount = 0;
 
-    /**
-     * Lines to skip, when the extraction starts. This is for a bugfix...
-     */
-    uint64_t skipLines = 0;
+    string *roundtripBuffer = nullptr;
+
+    uint roundtripBufferPosition = 0;
 
 public:
 
@@ -75,7 +74,7 @@ public:
                        bool forceOverwrite, u_int64_t startingLine, u_int64_t lineCount, uint extractionMulitplier,
                        bool enableDebugging);
 
-    virtual ~Extractor() = default;
+    virtual ~Extractor();;
 
     /**
      * Will call tryOpenAndReadHeader on the internal indexReader.
@@ -107,11 +106,21 @@ public:
      */
     bool extract();
 
-    bool processDecompressedData(ostream *out, string str, const shared_ptr<IndexEntry> &startingIndexLine);
+    /**
+     * Process a decompressed chunk (NOT a complete decompressed block!) of data.
+     *
+     * Will reset the firstPass variable, if called for the first time.
+     *
+     * @param out The stream to put the data to
+     * @param str The string of decompressed chunk data
+     * @param startingIndexLine The index entry which was used to step into the gzip file.
+     * @return true, if something was written out or false otherwise.
+     */
+    bool processDecompressedChunkOfData(ostream *out, string str, const shared_ptr<IndexEntry> &startingIndexLine);
 
     bool checkAndPrepareForNextConcatenatedPart(bool finalAbort);
 
-    void storeOrOutputLine(ostream *outStream, uint64_t *skipLines, string line);
+    void storeOrOutputLine(ostream *outStream, string line);
 
     void storeLinesOfCurrentBlockForDebugMode();
 

@@ -17,6 +17,10 @@
 using namespace std::experimental::filesystem;
 using std::experimental::filesystem::path;
 
+mutex TestResourcesAndFunctions::staticLock;
+
+vector<string> TestResourcesAndFunctions::testVectorWithSimulatedDecompressedBlockData;
+
 TestResourcesAndFunctions::TestResourcesAndFunctions(string testSuite, string testName) {
     this->testSuite = move(testSuite);
     this->testName = move(testName);
@@ -223,7 +227,8 @@ string TestResourcesAndFunctions::readFile(const path &file) {
     return str;
 }
 
-bool TestResourcesAndFunctions::compareVectorContent(const vector<string> &reference, const vector<string> &actual, uint32_t referenceOffset) {
+bool TestResourcesAndFunctions::compareVectorContent(const vector<string> &reference, const vector<string> &actual,
+                                                     uint32_t referenceOffset) {
     int64_t firstDiff{-1};
     for (int i = 0; i < std::min(reference.size() - referenceOffset, actual.size()); i++) {
         if (reference[i + referenceOffset] != actual[i]) {
@@ -232,4 +237,27 @@ bool TestResourcesAndFunctions::compareVectorContent(const vector<string> &refer
         }
     }
     return firstDiff == -1;
+}
+
+const vector<string> &TestResourcesAndFunctions::getTestVectorWithSimulatedBlockData() {
+    lock_guard<mutex> lock(TestResourcesAndFunctions::staticLock);
+
+    if (!testVectorWithSimulatedDecompressedBlockData.empty())
+        return testVectorWithSimulatedDecompressedBlockData;
+
+    vector<string> *v = &testVectorWithSimulatedDecompressedBlockData;
+
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_0_complete"));
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_1_endopen"));
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_2_startendopen"));
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_5_empty"));
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_5_empty"));
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_3_startendopen"));
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_3.1_startendopen_nonewlines"));
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_4_startopen"));
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_5_empty"));
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_6_newlines"));
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_7_finalwonewlines"));
+
+    return testVectorWithSimulatedDecompressedBlockData;
 }

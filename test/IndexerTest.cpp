@@ -83,19 +83,8 @@ SUITE (INDEXER_SUITE_TESTS) {
 
     TEST (TEST_CORRECT_BLOCK_LINE_COUNTING) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CORRECT_BLOCK_LINE_COUNTING);
-        vector<string> _blockData;
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_0_complete"));
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_1_endopen"));
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_2_startendopen"));
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_5_empty"));
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_5_empty"));
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_3_startendopen"));
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_3.1_startendopen_nonewlines"));
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_4_startopen"));
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_5_empty"));
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_6_newlines"));
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_7_finalwonewlines"));
-
+        vector<string> _blockData = TestResourcesAndFunctions::getTestVectorWithSimulatedBlockData();
+        
         // The vector contains IndexEntries with some expected values: line offset, starting line
         // This is more to keep things clear and easily readable.
         vector<IndexEntry> expectedIndexEntries;

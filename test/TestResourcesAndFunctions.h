@@ -32,6 +32,10 @@ private:
 
     mutex lock;
 
+    static mutex staticLock;
+
+    static vector<string> testVectorWithSimulatedDecompressedBlockData;
+
 public:
 
     TestResourcesAndFunctions(string testSuite, string testName);
@@ -56,7 +60,7 @@ public:
 
     path filePath(const string &filename);
 
-    path getResource(const string &filename);
+    static path getResource(const string &filename);
 
     path createEmptyFile(const string &filename);
 
@@ -96,11 +100,14 @@ public:
         return readLinesOfFile(getResource(resourceFile));
     }
 
-    string readResourceFile(const string &resourceFile) {
+    static string readResourceFile(const string &resourceFile) {
         return readFile(getResource(resourceFile));
     }
 
-    static bool compareVectorContent(const vector<string> &reference, const vector<string> &actual, uint32_t referenceOffset = 0);
+    static bool
+    compareVectorContent(const vector<string> &reference, const vector<string> &actual, uint32_t referenceOffset = 0);
+
+    static const vector<string> &getTestVectorWithSimulatedBlockData();
 };
 
 

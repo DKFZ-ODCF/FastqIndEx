@@ -20,7 +20,7 @@ const char *const TEST_EXTRACTOR_CREATION = "Extractor creation";
 const char *const TEST_CREATE_EXTRACTOR_AND_EXTRACT_SMALL_TO_COUT = "Combined test for index creation and extraction with the small dataset, extracts to cout.";
 const char *const TEST_CREATE_EXTRACTOR_AND_EXTRACT_LARGE_TO_COUT = "Combined test for index creation and extraction with the larger dataset, extracts to cout.";
 const char *const TEST_CREATE_EXTRACTOR_AND_EXTRACT_CONCAT_TO_COUT = "Combined test for index creation and extraction with the concatenated dataset, extracts to cout.";
-const char *const TEST_PROCESS_DECOMPRESSED_DATA = "Test processDecompressedData() with some test data files (analogous to IndexerTest::TEST_CORRECT_BLOCK_LINE_COUNTING.)";
+const char *const TEST_PROCESS_DECOMPRESSED_DATA = "Test processDecompressedChunkOfData() with some test data files (analogous to IndexerTest::TEST_CORRECT_BLOCK_LINE_COUNTING.)";
 const char *const TEST_EXTRACTOR_CHECKPREM_OVERWRITE_EXISTING = "Test fail on exsiting file with disabled overwrite.";
 const char *const TEST_EXTRACTOR_CHECKPREM_MISSING_NOTWRITABLE = "Test fail on non-writable result file with overwrite enabled.";
 const char *const TEST_EXTRACTOR_CHECKPREM_MISSING_PARENTNOTWRITABLE = "Test fail on non-writable output folder.";
@@ -143,18 +143,7 @@ SUITE (INDEXER_SUITE_TESTS) {
 
     TEST (TEST_PROCESS_DECOMPRESSED_DATA) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_PROCESS_DECOMPRESSED_DATA);
-        vector<string> _blockData;
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_0_complete"));
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_1_endopen"));
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_2_startendopen"));
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_5_empty"));
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_5_empty"));
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_3_startendopen"));
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_3.1_startendopen_nonewlines"));
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_4_startopen"));
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_5_empty"));
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_6_newlines"));
-        _blockData.emplace_back(res.readResourceFile("blockAndLineCalculations/block_7_finalwonewlines"));
+        vector<string> _blockData = TestResourcesAndFunctions::getTestVectorWithSimulatedBlockData();
 
         path fastq = res.getResource(TEST_FASTQ_LARGE);
         path index = res.filePath("test2.fastq.gz.fqi");
@@ -199,13 +188,24 @@ SUITE (INDEXER_SUITE_TESTS) {
             ostringstream outStream;
 
             for (int j = startingBlockIDs[i]; j < _blockData.size(); j++) {
-                if (extractor.processDecompressedData(&outStream, _blockData[j], indexEntry->toIndexEntry()))
-                    extractor.setFirstPass(false);
+                extractor.processDecompressedChunkOfData(&outStream, _blockData[j], indexEntry->toIndexEntry());
             }
             auto split = ZLibBasedFASTQProcessorBaseClass::splitStr(outStream.str());
                     CHECK(extractor.getStoredLines().size() == expectedLines[i]);
         }
     }
+
+    /**
+     * This test will check the case where an incomplete line was printed because the last incomplete line was ignored.
+     * Conditions:
+     * - Still first pass, no lines written yet
+     * - Found index entry starting line offset == 0
+     * - Skip is 0 after the last invocation of processDecompressedData
+     * - lastIncomplete line is filled
+     */
+//    TEST ("Test special case: skip in first pass is of splitLines.size() with incomplete last line.") {
+//
+//    }
 
     TEST (TEST_CREATE_EXTRACTOR_AND_EXTRACT_SMALL_TO_COUT) {
         // We won't test the indexing here as it is already tested in TEST_CREATE_INDEX_SMALL

@@ -11,6 +11,7 @@
 #include <mutex>
 #include <string>
 #include <cstdarg>
+#include <fstream>
 #include "TestConstants.h"
 
 using namespace std;
@@ -30,6 +31,10 @@ private:
     bool testPathCreationWasSuccessful = false;
 
     mutex lock;
+
+    static mutex staticLock;
+
+    static vector<string> testVectorWithSimulatedDecompressedBlockData;
 
 public:
 
@@ -55,7 +60,7 @@ public:
 
     path filePath(const string &filename);
 
-    path getResource(const string &filename);
+    static path getResource(const string &filename);
 
     path createEmptyFile(const string &filename);
 
@@ -86,6 +91,23 @@ public:
     static bool extractGZFile(const path &file, const path &extractedFile);
 
     static bool createConcatenatedFile(const path &file, const path &result, int repetitions);
+
+    static vector<string> readLinesOfFile(const path &file);
+
+    static string readFile(const path &file);
+
+    vector<string> readLinesOfResourceFile(const string &resourceFile) {
+        return readLinesOfFile(getResource(resourceFile));
+    }
+
+    static string readResourceFile(const string &resourceFile) {
+        return readFile(getResource(resourceFile));
+    }
+
+    static bool
+    compareVectorContent(const vector<string> &reference, const vector<string> &actual, uint32_t referenceOffset = 0);
+
+    static const vector<string> &getTestVectorWithSimulatedBlockData();
 };
 
 

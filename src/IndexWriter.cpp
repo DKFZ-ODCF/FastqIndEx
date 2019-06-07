@@ -64,7 +64,6 @@ bool IndexWriter::writeIndexHeader(const shared_ptr<IndexHeader> &header) {
 }
 
 bool IndexWriter::writeIndexEntry(const shared_ptr<IndexEntryV1> &entry) {
-    debug("Write index entry to index file.");
     if (!this->writerIsOpen) {
         // Throw assertion errors? Would actually be better right?
         addErrorMessage("Could not write index entry to index file, writer is not open.");

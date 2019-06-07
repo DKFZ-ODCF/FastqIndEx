@@ -17,15 +17,16 @@ ExtractorRunner::ExtractorRunner(
         bool forceOverwrite,
         u_int64_t startLine,
         u_int64_t lineCount,
+        uint extractionMulitplier,
         bool enableDebugging
-) :
-        ActualRunner(fastqfile, indexfile) {
+) : ActualRunner(fastqfile, indexfile) {
 
     this->startLine = startLine;
     this->lineCount = lineCount;
+    this->extractionMulitplier = extractionMulitplier;
     this->enableDebugging = enableDebugging;
     this->extractor.reset(
-            new Extractor(fastqfile, indexfile, resultfile, forceOverwrite, startLine, lineCount, enableDebugging)
+            new Extractor(fastqfile, indexfile, resultfile, forceOverwrite, startLine, lineCount, extractionMulitplier, enableDebugging)
     );
 }
 
@@ -41,7 +42,7 @@ bool ExtractorRunner::checkPremises() {
 }
 
 unsigned char ExtractorRunner::run() {
-    return extractor->extractReadsToCout() ? 0 : 1;
+    return extractor->extract() ? 0 : 1;
 }
 
 vector<string> ExtractorRunner::getErrorMessages() {

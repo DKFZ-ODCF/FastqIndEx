@@ -42,6 +42,10 @@ private:
 
     shared_ptr<IndexWriter> indexWriter;
 
+    bool forbidWriteFQI;
+
+    bool disableFailsafeDistance;
+
     /**
      * For debug and test purposes, used when debuggingEnabled is true
      * keeps the index header
@@ -53,6 +57,20 @@ private:
      * Keeps all generated index entries
      */
     vector<shared_ptr<IndexEntryV1>> storedEntries;
+
+    /**
+     * For debug and test purposes, used when decompressed blocks are processed. Will store them
+     * to a file next to the
+     */
+    bool writeOutOfDecompressedBlocksAndStatistics{false};
+
+    path storageForDecompressedBlocks;
+
+    bool writeOutOfPartialDecompressedBlocks{false};
+
+    path storageForPartialDecompressedBlocks;
+
+    ofstream partialBlockinfoStream;
 
     /**
      * Current bits for the next index entry.
@@ -71,7 +89,15 @@ private:
      */
     bool lastBlockEndedWithNewline = true;
 
+    /**
+     * Empty blocks occur a lot and will cause trouble, if they get written to an index file. To overcome this, we skip
+     * empty blocks until the next valid block.
+     */
+    bool postponeWrite = false;
+
     u_int64_t lineCountForNextIndexEntry{0};
+
+    u_int64_t numberOfConcatenatedFiles{1};
 
     long blockID{-1};                   // Number of the currently processed block.
 
@@ -96,8 +122,14 @@ public:
      * @param index The index for the FASTQ.
      * @param enableDebugging Store debug information or not.
      */
-    Indexer(const shared_ptr<InputSource> &fastqfile, const path &index, int blockInterval,
-            bool enableDebugging = false, bool forceOverwrite = false);
+    Indexer(const shared_ptr<InputSource> &fastqfile,
+            const path &index,
+            int blockInterval,
+            bool enableDebugging = false,
+            bool forceOverwrite = false,
+            bool forbidWriteFQI = false,
+            bool disableFailsafeDistance = false
+    );
 
     virtual ~Indexer() = default;
 
@@ -115,6 +147,8 @@ public:
     bool createIndex();
 
     void finalizeProcessingForCurrentBlock(stringstream &currentDecompressedBlock, z_stream *strm);
+
+    bool checkAndPrepareForNextConcatenatedPart();
 
     void storeLinesOfCurrentBlockForDebugMode(std::stringstream &currentDecompressedBlock);
 
@@ -139,7 +173,29 @@ public:
      */
     const vector<shared_ptr<IndexEntryV1>> &getStoredEntries() { return storedEntries; }
 
+    const uint64_t getNumberOfConcatenatedFiles() { return numberOfConcatenatedFiles; }
 
+    shared_ptr<IndexEntryV1> createIndexEntryFromBlockData(const string &currentBlockString,
+                                                           const vector<string> &lines,
+                                                           u_int64_t &blockOffsetInRawFile,
+                                                           bool lastBlockEndedWithNewline,
+                                                           bool *currentBlockEndedWithNewLine,
+                                                           u_int32_t *numberOfLinesInBlock);
+
+    void storeDictionaryForEntry(z_stream *strm, shared_ptr<IndexEntryV1> entry);
+
+    bool writeIndexEntryIfPossible(shared_ptr<IndexEntryV1> &entry, const vector<string> &lines, bool blockIsEmpty);
+
+    void enableWriteOutOfDecompressedBlocksAndStatistics(const path &location) {
+        this->writeOutOfDecompressedBlocksAndStatistics = true;
+        this->storageForDecompressedBlocks = location;
+    }
+
+
+    void enableWriteOutOfPartialDecompressedBlocks(const path &location) {
+        this->writeOutOfPartialDecompressedBlocks = true;
+        this->storageForPartialDecompressedBlocks = location.u8string() + string("/blockinfo.txt");
+    }
 };
 
 

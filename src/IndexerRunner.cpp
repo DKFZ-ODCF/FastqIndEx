@@ -15,10 +15,20 @@ IndexerRunner::IndexerRunner(
         const path &indexfile,
         int blockInterval,
         bool enableDebugging,
-        bool forceOverwrite
+        bool forceOverwrite,
+        bool forbidWriteFQI,
+        bool disableFailsafeDistance
 ) :
         ActualRunner(fastqfile, indexfile) {
-    this->indexer = new Indexer(this->fastqFile, this->indexFile, blockInterval, enableDebugging, forceOverwrite);
+    this->indexer = new Indexer(
+            this->fastqFile,
+            this->indexFile,
+            blockInterval,
+            enableDebugging,
+            forceOverwrite,
+            forbidWriteFQI,
+            disableFailsafeDistance
+    );
 }
 
 IndexerRunner::~IndexerRunner() {

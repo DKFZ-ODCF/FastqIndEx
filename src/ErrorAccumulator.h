@@ -40,13 +40,15 @@ public:
      */
     static void setVerbosity(int verbosity);
 
-    static void debug(string msg);
+    static bool verbosityIsSetToDebug();
 
-    static void info(string msg);
+    static void debug(const string& msg);
 
-    static void warning(string msg);
+    static void info(const string& msg);
 
-    static void severe(string msg);
+    static void warning(const string& msg);
+
+    static void severe(const string& msg);
 
     virtual vector<string> getErrorMessages();
 
@@ -61,6 +63,7 @@ public:
      * @return A new vector<string> with both vectors merged. The messages of l will be placed before the messages of r.
      */
     static vector<string> mergeToNewVector(const vector<string> &l, const vector<string> &r);
+
 };
 
 

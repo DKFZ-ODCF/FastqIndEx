@@ -32,6 +32,8 @@ public:
     unsigned char run() override;
 
     vector<string> getErrorMessages() override;
+
+    static void printIndexEntryToConsole(const shared_ptr<IndexEntry> &entry, u_int64_t entryNumber);
 };
 
 

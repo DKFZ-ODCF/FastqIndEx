@@ -48,15 +48,20 @@ unsigned char IndexStatsRunner::run() {
         for (int i = 0; i < toRead; i++) {
             auto entry = this->indexReader->readIndexEntry();
 
-            cout << "Entry number:      " << (i + start) << "\n";
-            cout << "\tEntry id:      " << entry->id << "\n";
-            cout << "\tRaw offset:    " << entry->offsetInRawFile << "\n";
-            cout << "\tStarting line: " << entry->startingLineInEntry << "\n";
-            cout << "\tLine offset:   " << entry->offsetOfFirstValidLine << "\n";
-            cout << "\tBits:          " << entry->bits << "\n";
+            printIndexEntryToConsole(entry, (i + start));
         }
         return 0;
     }
+}
+
+void IndexStatsRunner::printIndexEntryToConsole(const shared_ptr<IndexEntry> &entry, u_int64_t entryNumber) {
+    cout << "Entry number:    " << entryNumber << "\n";
+    cout << "  Entry id:      " << entry->id << "\n";
+    cout << "  Raw offset:    " << entry->offsetInRawFile << "\n";
+    cout << "  Starting line: " << entry->startingLineInEntry << "\n";
+    cout << "    Record (/4): " << (entry->startingLineInEntry / 4) << "\n";
+    cout << "  Line offset:   " << entry->offsetOfFirstValidLine << "\n";
+    cout << "  Bits:          " << entry->bits << "\n";
 }
 
 vector<string> IndexStatsRunner::getErrorMessages() {

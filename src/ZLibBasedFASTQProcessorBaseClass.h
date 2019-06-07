@@ -11,6 +11,7 @@
 #include "ErrorAccumulator.h"
 #include "IndexReader.h"
 #include "InputSource.h"
+#include "PathInputSource.h"
 #include <cstdio>
 #include <experimental/filesystem>
 #include <zlib.h>
@@ -108,8 +109,8 @@ public:
         while (std::getline(ss, item, delimiter)) {
             splittedStrings.push_back(item);
         }
-        if (str.c_str()[str.size() - 1] == delimiter)
-            splittedStrings.emplace_back("");
+//        if (str.c_str()[str.size() - 1] == delimiter)
+//            splittedStrings.emplace_back("");
 
         return splittedStrings;
     }
@@ -167,6 +168,8 @@ public:
     void checkAndResetSlidingWindow();
 
     bool decompressNextChunkOfData(bool checkForStreamEnd, int flushMode);
+
+    void clearCurrentCompressedBlock();
 };
 
 

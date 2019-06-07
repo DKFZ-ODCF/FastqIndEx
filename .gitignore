@@ -1,0 +1,16 @@
+.idea/workspace.xml
+*.a
+*.cmake
+*.cbp
+*.fastq
+*.fq
+CMakeCache.txt
+CMakeFiles
+Makefile
+Testing
+release
+debug
+cmake-build-*
+src/fastqindex
+test/testapp
+test/Testing

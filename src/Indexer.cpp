@@ -4,8 +4,9 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "Indexer.h"
 #include "ActualRunner.h"
+#include "Indexer.h"
+#include "IndexStatsRunner.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -46,15 +47,22 @@ Indexer::Indexer(
         const path &index,
         int blockInterval,
         bool enableDebugging,
-        bool forceOverwrite
+        bool forceOverwrite,
+        bool forbidWriteFQI,
+        bool disableFailsafeDistance
 ) :
         ZLibBasedFASTQProcessorBaseClass(fastqfile, index, enableDebugging),
         blockInterval(blockInterval) {
-    indexWriter = make_shared<IndexWriter>(index, forceOverwrite);
+    this->forbidWriteFQI = forbidWriteFQI;
+    this->disableFailsafeDistance = disableFailsafeDistance;
+    if (!forbidWriteFQI)
+        indexWriter = make_shared<IndexWriter>(index, forceOverwrite);
 }
 
 bool Indexer::checkPremises() {
-    return indexWriter->tryOpen();
+    if (!forbidWriteFQI)
+        return indexWriter->tryOpen();
+    return true;
 }
 
 shared_ptr<IndexHeader> Indexer::createHeader() {
@@ -90,7 +98,7 @@ bool Indexer::createIndex() {
     // If not already set, recalculate the interval for index entries.
     if (blockInterval == -1) {
         if (sizeOfFastq == -1) {
-            blockInterval = 512; // Like for 32GB files.
+            blockInterval = 2048; // Like for files > 128GB.
         } else {
             blockInterval = Indexer::calculateIndexBlockInterval(sizeOfFastq);
         }
@@ -100,21 +108,30 @@ bool Indexer::createIndex() {
     auto header = createHeader();
     if (enableDebugging)
         storedHeader = header;
-    if (!indexWriter->writeIndexHeader(header)) {
+
+    if (!forbidWriteFQI && !indexWriter->writeIndexHeader(header)) {
         finishedSuccessful = false;
         return false;
+    }
+    if (forbidWriteFQI) {
+        cerr << "The indexer will not write an index file!\n";
     }
 
     fastqfile->open();
 
     bool keepProcessing = true;
 
+    if (!initializeZStreamForInflate()) {
+        finishedSuccessful = false;
+        return false;
+    }
+
+    if (writeOutOfPartialDecompressedBlocks) {
+        partialBlockinfoStream.open(storageForPartialDecompressedBlocks);
+    }
+
     while (keepProcessing) {
 
-        if (!initializeZStreamForInflate()) {
-            finishedSuccessful = false;
-            return false;
-        }
         do {
             if (!fastqfile->canRead()) {
                 keepProcessing = false; // Happens, when input streams are used.
@@ -130,8 +147,15 @@ bool Indexer::createIndex() {
 
                 bool checkForStreamEnd = true;
 
-                if (!decompressNextChunkOfData(checkForStreamEnd, Z_BLOCK))
+                if (!decompressNextChunkOfData(checkForStreamEnd, Z_BLOCK)) {
+                    // In some cases, the data chunk after the initial block can be so small, that the Indexer will
+                    // instantly skip the part, because stream end is reached and NO index entry get written. To prevent
+                    // this, we check for stream end and finalize anyway. Then break.
+                    if (zlibResult == Z_STREAM_END) {
+                        finalizeProcessingForCurrentBlock(currentDecompressedBlock, &zStream);
+                    }
                     break;
+                }
 
                 if (checkStreamForBlockEnd()) {
                     finalizeProcessingForCurrentBlock(currentDecompressedBlock, &zStream);
@@ -145,33 +169,19 @@ bool Indexer::createIndex() {
 
         } while (!errorWasRaised && keepProcessing);
 
-        if (enableDebugging) {
-            storeLinesOfCurrentBlockForDebugMode(currentDecompressedBlock);
-        }
+        storeLinesOfCurrentBlockForDebugMode(currentDecompressedBlock);
 
         /**
          * We also want to process concatenated gzip files.
          */
         if (!keepProcessing) {
-//            || totalBytesIn < sizeOfFastq || totalBytesIn < fastqfile->getTotalReadBytes()
-            if (fastqfile->canRead()) {
-                debug("Stream end reached in concatenated file, resetting indexer for next gz block.");
-                // Clean up clean up and go on
-                initializeZStreamForInflate();
-                checkAndResetSlidingWindow();
-                memset(this->window, 0, WINDOW_SIZE);
-                memset(this->input, 0, CHUNK_SIZE);
-                this->zStream.avail_in = CHUNK_SIZE;
-                firstPass = true;
-                fastqfile->seek(totalBytesIn, true);
-                keepProcessing = true;
-
-                lastBlockEndedWithNewline = true;
-
-                currentDecompressedBlock.str("");
-                currentDecompressedBlock.clear();
-            }
+            keepProcessing = checkAndPrepareForNextConcatenatedPart();
         }
+    }
+
+    if (writeOutOfPartialDecompressedBlocks) {
+        partialBlockinfoStream.flush();
+        partialBlockinfoStream.close();
     }
 
     fastqfile->close();
@@ -183,8 +193,38 @@ bool Indexer::createIndex() {
     } else {
         cerr << "Finished indexing with the last entry for compressed block #" << lastStoredEntry->blockID
              << " starting with entry number " << lastStoredEntry->startingLineInEntry << "\n";
+        if (numberOfConcatenatedFiles > 1) {
+            cerr << " The source data consisted of " << numberOfConcatenatedFiles << " concatenated gzip streams.\n";
+        }
     }
     return finishedSuccessful;
+}
+
+bool Indexer::checkAndPrepareForNextConcatenatedPart() {
+    // The stream position needs to be set to the beginning of the new gzip stream. If reading from the data stream is
+    // possible afterwards, there might be another gzip stream and we will continue decompression.
+    fastqfile->seek(totalBytesIn, true);
+    if (!fastqfile->canRead())
+        return false;
+
+    // Clean up and go on
+    inflateEnd(&zStream);
+    if (!initializeZStreamForInflate()) {
+        finishedSuccessful = false;
+        return false;
+    }
+    checkAndResetSlidingWindow();
+    numberOfConcatenatedFiles++;
+    memset(window, 0, WINDOW_SIZE);
+    memset(input, 0, CHUNK_SIZE);
+    zStream.avail_in = CHUNK_SIZE;
+    firstPass = true;
+
+    lastBlockEndedWithNewline = true;
+
+    clearCurrentCompressedBlock();
+
+    return true;
 }
 
 /**
@@ -226,82 +266,190 @@ bool Indexer::createIndex() {
 void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompressedBlock, z_stream *strm) {
     u_int64_t blockOffset = offset;     // Store current blockOffsetInRawFile.
     offset = totalBytesIn;          // Set new blockOffsetInRawFile.
-    if (!firstPass) {
-        blockID++;
-
-        // String representation of currentDecompressedBlock. Might or might not start with a fresh line, we need to
-        // figure this out.
-        std::vector<string> lines;
-        string currentBlockString = currentDecompressedBlock.str();
-
-        lines = splitStr(currentBlockString);
-
-        u_int32_t sizeOfCurrentBlock = currentBlockString.size();
-        u_int32_t numberOfLinesInBlock = lines.size();
-
-        // Check the current block and see, if the last character is '\n'. If so, the blockOffsetInRawFile of the first
-        // line in the next IndexEntry will be 0. Otherwise, we need to find the blockOffsetInRawFile.
-        bool currentBlockEndedWithNewLine =
-                sizeOfCurrentBlock == 0 ? true : currentBlockString[sizeOfCurrentBlock - 1] == '\n';
-
-        // Find the first newline character to get the blockOffsetInRawFile of the line inside
-        ushort offsetOfFirstLine{0};
-        if (currentBlockString.empty()) {
-        } else if (!lastBlockEndedWithNewline) {
-            numberOfLinesInBlock--;  // If the last block ended with an incomplete line (and not '\n'), reduce this.
-            offsetOfFirstLine = lines[0].size() + 1;
-        } else if (lineCountForNextIndexEntry > 0) {
-            lineCountForNextIndexEntry--;
-        }
-
-        // Only store every n'th block.
-        // Create the index entry
-        auto entry = make_shared<IndexEntryV1>(
-                curBits,
-                blockID,
-                offsetOfFirstLine,
-                blockOffset,
-                lineCountForNextIndexEntry);
-
-        // Compared to the original zran example, which uses two memcpy operations to retrieve the dictionary, we
-        // use zlibs inflateGetDictionaryMethod. This looks more clean and works, whereas I could not get the
-        // original memcpy operations to work.
-        Bytef dictTest[WINDOW_SIZE];              // Build in later, around 60% decrease in size.
-        u_int64_t compressedBytes = WINDOW_SIZE;
-        compress2(dictTest, &compressedBytes, dictionaryForNextBlock, WINDOW_SIZE, 9);
-
-        u_int32_t copiedBytes = 0;
-        memcpy(entry->dictionary, dictionaryForNextBlock, WINDOW_SIZE);
-        inflateGetDictionary(strm, dictionaryForNextBlock, &copiedBytes);
-
-        // Only write back every nth entry. As we need the large window / dictionary of 32kb, we'll need to save
-        // some space here. Think of large NovaSeq FASTQ files with ~200GB! We can't store approximately 3.6m index
-        // entries which would be around 115GB for an index file.
-        if (blockID % blockInterval == 0) {
-            indexWriter->writeIndexEntry(entry);
-            lastStoredEntry = entry;
-            if (enableDebugging) {
-                storedEntries.emplace_back(entry);
-            }
-        }
-
-        if (enableDebugging) {
-            storeLinesOfCurrentBlockForDebugMode(currentDecompressedBlock);
-        }
-
-        // Keep some info for next entry.
-        lastBlockEndedWithNewline = currentBlockEndedWithNewLine;
-        lineCountForNextIndexEntry += numberOfLinesInBlock;
-
-        // This will pop up a clang-tidy warning, but as Mark Adler does it, I don't want to change it.
-        curBits = strm->data_type & 7;
+    if (firstPass) {
+        clearCurrentCompressedBlock();
+        return;
     }
 
-    currentDecompressedBlock.str("");
-    currentDecompressedBlock.clear();
+    blockID++;
+
+    // String representation of currentDecompressedBlock. Might or might not start with a fresh line, we need to
+    // figure this out.
+    u_int32_t numberOfLinesInBlock{0};
+    string currentBlockString = currentDecompressedBlock.str();
+    std::vector<string> lines = splitStr(currentBlockString);
+    bool currentBlockEndedWithNewLine{false};
+    bool blockIsEmpty = currentBlockString.empty();
+
+    if (writeOutOfDecompressedBlocksAndStatistics) {
+        path outfile =
+                storageForDecompressedBlocks.u8string() + string("/") + "decompressedblock_" + to_string(blockID) +
+                ".txt";
+        ofstream blockStream;
+        blockStream.open(outfile);
+        blockStream << currentBlockString;
+        blockStream.flush();
+        blockStream.close();
+    }
+
+
+    shared_ptr<IndexEntryV1> entry = createIndexEntryFromBlockData(
+            currentBlockString,
+            lines,
+            blockOffset,
+            lastBlockEndedWithNewline,
+            &currentBlockEndedWithNewLine,
+            &numberOfLinesInBlock
+    );
+
+    storeDictionaryForEntry(strm, entry);
+
+    bool written = writeIndexEntryIfPossible(entry, lines, blockIsEmpty);
+
+    if (writeOutOfPartialDecompressedBlocks) {
+
+        partialBlockinfoStream << "\n---- Block: " << blockID
+                               << "\n\tlNL: " << lastBlockEndedWithNewline
+                               << "\n\tcNL: " << currentBlockEndedWithNewLine
+                               << "\n\t#L:  " << numberOfLinesInBlock
+                               << "\n\toff: " << entry->offsetOfFirstValidLine
+                               << "\n\tsl:  " << entry->startingLineInEntry
+                               << "\n\tsts: " << (postponeWrite ? "Postponed" : written ? "Written" : "Skipped")
+                               << "\n";
+        if (blockIsEmpty) {
+            partialBlockinfoStream << "EMPTY BLOCK!\n";
+        } else if (currentBlockString.size() > 20) {
+            partialBlockinfoStream << "STARTING 20Byte:\n'" << currentBlockString.substr(0, 20);
+            partialBlockinfoStream << "'\nENDING 20Byte:\n'"
+                                   << currentBlockString.substr(currentBlockString.size() - 20, 20) << "'";
+        } else {
+            partialBlockinfoStream << "WHOLE BLOCK DATA:\n'" << currentBlockString << "'";
+        }
+        partialBlockinfoStream.flush();
+    }
+
+    storeLinesOfCurrentBlockForDebugMode(currentDecompressedBlock);
+
+    // Keep some info for next entry.
+    lastBlockEndedWithNewline = currentBlockEndedWithNewLine;
+
+    // This will pop up a clang-tidy warning, but as Mark Adler does it, I don't want to change it.
+    curBits = strm->data_type & 7;
+
+    clearCurrentCompressedBlock();
+}
+
+bool Indexer::writeIndexEntryIfPossible(shared_ptr<IndexEntryV1> &entry,
+                                        const vector<string> &lines,
+                                        bool blockIsEmpty) {
+
+    // Only write back every nth entry. As we need the large window / dictionary of 32kb, we'll need to save
+    // some space here. Think of large NovaSeq FASTQ files with ~200GB! We can't store approximately 3.6m index
+    // entries which would be around 115GB for an index file
+
+    // In addition to the block distance, we need to add a further constrant.
+    // E.g. in test files from here:
+    // https://trace.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?exp=SRX000001&cmd=search&m=downloads&s=seq
+    //  What I found out is, that the checked files contain very small compressed blocks each holding just a few bytes.
+    //  To encounter this, we introduce the failsafe distance when writing index entries. So not only the block distance
+    //  will be looked at but also the Byte distance to the last written index entry.
+    // Why?  In one exemplary case, the file size is approximately 145MB and it contains around 7,35 million compressed
+    //  blocks. This results in ca. 20Bytes per block. E.g. storing every 16th block with ~ 32kByte results in a
+    //  hopelessly huge index file.
+
+    auto blockOffset = entry->blockOffsetInRawFile;
+    u_int64_t offsetOfLastEntry = 0;
+    bool failsafeDistanceIsReached = true;
+    if (!disableFailsafeDistance) {
+        u_int64_t failsafeDistance = blockInterval * 16384;
+        if (lastStoredEntry.get() != nullptr)
+            offsetOfLastEntry = lastStoredEntry->blockOffsetInRawFile;
+        failsafeDistanceIsReached = (blockOffset - offsetOfLastEntry) > (failsafeDistance);
+    }
+
+    bool shouldWrite = postponeWrite ||  blockID == 0 || (blockID % blockInterval == 0 && failsafeDistanceIsReached);
+    if(blockIsEmpty && shouldWrite) {
+        postponeWrite = true;
+        shouldWrite = false;
+    }
+
+    if (shouldWrite) {
+        postponeWrite = false;
+        if (!forbidWriteFQI)
+            indexWriter->writeIndexEntry(entry);
+        lastStoredEntry = entry;
+        if (enableDebugging) {
+            storedEntries.emplace_back(entry);
+//            if (lines.size() >= 2) {
+//                cerr << "Storing entry with last lines:\n\t" <<
+//                     lines[0] << "\n\t" << lines[1] << "\n\t";
+//            }
+        }
+    }
+    return shouldWrite;
+}
+
+void Indexer::storeDictionaryForEntry(z_stream *strm, shared_ptr<IndexEntryV1> entry) {
+    // Compared to the original zran example, which uses two memcpy operations to retrieve the dictionary, we
+    // use zlibs inflateGetDictionaryMethod. This looks more clean and works, whereas I could not get the
+    // original memcpy operations to work.
+    //        Bytef dictTest[WINDOW_SIZE];              // Build in later, around 60% decrease in size.
+    //        u_int64_t compressedBytes = WINDOW_SIZE;
+    //        compress2(dictTest, &compressedBytes, dictionaryForNextBlock, WINDOW_SIZE, 9);
+
+    u_int32_t copiedBytes = 0;
+    memcpy(entry->dictionary, dictionaryForNextBlock, WINDOW_SIZE);
+    inflateGetDictionary(strm, dictionaryForNextBlock, &copiedBytes);
+}
+
+shared_ptr<IndexEntryV1> Indexer::createIndexEntryFromBlockData(const string &currentBlockString,
+                                                                const vector<string> &lines,
+                                                                u_int64_t &blockOffsetInRawFile,
+                                                                bool lastBlockEndedWithNewline,
+                                                                bool *currentBlockEndedWithNewLine,
+                                                                u_int32_t *numberOfLinesInBlock) {
+    u_int32_t sizeOfCurrentBlock = currentBlockString.size();
+    *numberOfLinesInBlock = lines.size();
+
+    // Check the current block and see, if the last character is '\n'. If so, the blockOffsetInRawFile of the first
+    // line in the next IndexEntry will be 0. Otherwise, we need to find the blockOffsetInRawFile.
+    *currentBlockEndedWithNewLine =
+            sizeOfCurrentBlock == 0 ? lastBlockEndedWithNewline : currentBlockString[sizeOfCurrentBlock - 1] == '\n';
+    bool hasAnyLineBreaks = false;
+    auto currentBlockCString = currentBlockString.c_str();
+    for (int i = 0; i < currentBlockString.size(); i++) {
+        if (currentBlockCString[i] == '\n') {
+            hasAnyLineBreaks = true;
+            break;
+        }
+    }
+
+    // Find the first newline character to get the blockOffsetInRawFile of the line inside
+    ushort offsetOfFirstLine{0};
+    if (currentBlockString.empty()) {
+    } else if (!lastBlockEndedWithNewline) {
+        (*numberOfLinesInBlock)--;  // If the last block ended with an incomplete line (and not '\n'), reduce this.
+        if (hasAnyLineBreaks)   // See case 3.1 in testlayout. a block with a \n at any position
+            offsetOfFirstLine = lines[0].size() + 1;
+    }
+    //!*currentBlockEndedWithNewLine &&
+    // Only store every n'th block.
+    // Create the index entry
+    auto entry = make_shared<IndexEntryV1>(
+            curBits,
+            blockID,
+            offsetOfFirstLine,
+            blockOffsetInRawFile,
+            lineCountForNextIndexEntry);
+
+    lineCountForNextIndexEntry += *numberOfLinesInBlock;
+
+    return entry;
 }
 
 void Indexer::storeLinesOfCurrentBlockForDebugMode(std::stringstream &currentDecompressedBlock) {
+    if (!enableDebugging) return;
+
     string str = currentDecompressedBlock.str();
     std::vector<string> lines = splitStr(str);
 
@@ -319,7 +467,10 @@ void Indexer::storeLinesOfCurrentBlockForDebugMode(std::stringstream &currentDec
 }
 
 vector<string> Indexer::getErrorMessages() {
-    vector<string> l = ErrorAccumulator::getErrorMessages();
-    vector<string> r = indexWriter->getErrorMessages();
-    return mergeToNewVector(l, r);
+    if (!forbidWriteFQI) {
+        vector<string> l = ErrorAccumulator::getErrorMessages();
+        vector<string> r = indexWriter->getErrorMessages();
+        return mergeToNewVector(l, r);
+    }
+    return ErrorAccumulator::getErrorMessages();
 }

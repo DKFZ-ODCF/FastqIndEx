@@ -23,6 +23,8 @@ protected:
 
     u_int64_t lineCount;
 
+    uint extractionMulitplier;
+
     bool enableDebugging;
 
     shared_ptr<Extractor> extractor;
@@ -45,6 +47,7 @@ public:
             bool forceOverwrite,
             u_int64_t startLine,
             u_int64_t lineCount,
+            uint extractionMulitplier,
             bool enableDebugging = false
     );
 

@@ -46,7 +46,9 @@ public:
             const path &indexfile,
             int blockInterval = -1,
             bool enableDebugging = false,
-            bool forceOverwrite = false
+            bool forceOverwrite = false,
+            bool forbidWriteFQI = false,
+            bool disableFailsafeDistance = false
     );
 
     virtual ~IndexerRunner();
@@ -63,6 +65,23 @@ public:
     unsigned char run() override;
 
     vector<string> getErrorMessages() override;
+
+    // Facade methods
+//    void enableDebugging() {
+//        this->indexer->enableDebugging();
+//    }
+
+//    void enableForbidWriteFQI() {
+//
+//    }
+
+    void enableWriteOutOfDecompressedBlocksAndStatistics(const path &location) {
+        this->indexer->enableWriteOutOfDecompressedBlocksAndStatistics(location);
+    }
+
+    void enableWriteOutOfPartialDecompressedBlocks(const path &location) {
+        this->indexer->enableWriteOutOfPartialDecompressedBlocks(location);
+    }
 };
 
 

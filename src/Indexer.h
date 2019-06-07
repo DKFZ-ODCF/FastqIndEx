@@ -46,6 +46,8 @@ private:
 
     bool disableFailsafeDistance;
 
+    bool compressDictionaries{true};
+
     /**
      * For debug and test purposes, used when debuggingEnabled is true
      * keeps the index header

@@ -12,8 +12,10 @@
 const unsigned int IndexWriter::INDEX_WRITER_VERSION = 1;
 
 
-IndexWriter::IndexWriter(const path &indexFile, bool forceOverwrite) : IndexProcessor(indexFile) {
+IndexWriter::IndexWriter(const path &indexFile, bool forceOverwrite, bool compressionIsActive)
+        : IndexProcessor(indexFile) {
     this->forceOverwrite = forceOverwrite;
+    this->compressionIsActive = compressionIsActive;
 }
 
 bool IndexWriter::tryOpen() {
@@ -29,8 +31,9 @@ bool IndexWriter::tryOpen() {
         addErrorMessage("Could not get a lock for index file: " + indexFile.string());
         return false;
     }
-    this->outputStream = make_shared<ofstream>(indexFile);
-    (*this->outputStream).write("", 0);
+    auto o = ofstream();
+    this->outputStream.open(indexFile, ios_base::out | ios_base::in | ios_base::binary);
+    this->outputStream.write("", 0);
 
     if (!exists(indexFile)) {
         addErrorMessage("Could not create index file: " + indexFile.string());
@@ -56,7 +59,7 @@ bool IndexWriter::writeIndexHeader(const shared_ptr<IndexHeader> &header) {
         return false;
     }
 
-    outputStream->write((char *) header.get(), sizeof(IndexHeader));
+    outputStream.write((char *) header.get(), sizeof(IndexHeader));
 
     this->headerWasWritten = true;
 
@@ -76,20 +79,31 @@ bool IndexWriter::writeIndexEntry(const shared_ptr<IndexEntryV1> &entry) {
         return false;
     }
 
-    outputStream->write((char *) entry.get(), sizeof(IndexEntryV1));
+    numberOfWrittenEntries++;
+
+    if (entry->compressedDictionarySize == 0) // No compression
+        outputStream.write((char *) entry.get(), sizeof(IndexEntryV1));
+    else {
+        int headerSize = sizeof(IndexEntryV1) - sizeof(entry->dictionary);
+        outputStream.write((char *) entry.get(), headerSize);
+        outputStream.write((char *) entry.get() + headerSize, entry->compressedDictionarySize);
+    }
 
     return true;
 }
 
 void IndexWriter::flush() {
     if (this->outputStream) {
-        this->outputStream->flush();
+        this->outputStream.flush();
     }
 }
 
 IndexWriter::~IndexWriter() {
-    if (this->outputStream) {
+    if (this->outputStream.is_open()) {
         flush(); // Without flush, the file size was 0, even after closing the stream.
-        this->outputStream->close();
+        outputStream.seekp(16, ios_base::beg);
+        outputStream.write((const char*)&numberOfWrittenEntries, 8);
+        flush();
+        this->outputStream.close();
     }
 }

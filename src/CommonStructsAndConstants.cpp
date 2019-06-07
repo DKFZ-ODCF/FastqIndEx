@@ -24,7 +24,9 @@ bool IndexHeader::operator==(const IndexHeader &rhs) const {
     return indexWriterVersion == rhs.indexWriterVersion &&
            blockInterval == rhs.blockInterval &&
            sizeOfIndexEntry == rhs.sizeOfIndexEntry &&
-           magicNumber == rhs.magicNumber;
+           magicNumber == rhs.magicNumber &&
+           dictionariesAreCompressed == rhs.dictionariesAreCompressed &&
+           linesInIndexedFile == rhs.linesInIndexedFile;
 }
 
 /**

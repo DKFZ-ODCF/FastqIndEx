@@ -57,7 +57,7 @@ SUITE (SUITE_INDEXWRITER_TESTS) {
         path index = res.filePath(INDEX_FILENAME);
         auto iw = make_shared<IndexWriter>(index);
                 CHECK(iw->tryOpen());
-        auto header = make_shared<IndexHeader>(1, sizeof(IndexEntryV1), 1);
+        auto header = make_shared<IndexHeader>(1, sizeof(IndexEntryV1), 1, true);
         bool writeOk = iw->writeIndexHeader(header);
                 CHECK(writeOk);
                 CHECK(exists(index));
@@ -71,7 +71,7 @@ SUITE (SUITE_INDEXWRITER_TESTS) {
         auto iw = make_shared<IndexWriter>(index);
                 CHECK(iw->tryOpen());
 
-        auto header = make_shared<IndexHeader>(1, sizeof(IndexEntryV1), 1);
+        auto header = make_shared<IndexHeader>(1, sizeof(IndexEntryV1), 1, true);
                 CHECK(iw->writeIndexHeader(header));
                 CHECK(!iw->writeIndexHeader(header));
     }
@@ -90,7 +90,7 @@ SUITE (SUITE_INDEXWRITER_TESTS) {
         path index = res.filePath(INDEX_FILENAME);
         auto iw = make_shared<IndexWriter>(index);
                 CHECK(iw->tryOpen());
-        auto header = make_shared<IndexHeader>(1, sizeof(IndexEntryV1), 1);
+        auto header = make_shared<IndexHeader>(1, sizeof(IndexEntryV1), 1, true);
         bool writeOk = iw->writeIndexHeader(header);
         auto entry = make_shared<IndexEntryV1>(0, 0, 0, 0, 0);
         bool writeOk1 = iw->writeIndexEntry(entry);

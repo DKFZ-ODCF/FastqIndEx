@@ -81,14 +81,28 @@ bool IndexReader::tryOpenAndReadHeader() {
         return false;
     }
 
-    if (0 != (fileSize - headerSize) % sizeOfIndexEntry) {
+    if (this->readHeader.dictionariesAreCompressed) {
+        // We could only check, if there is at least one entry.
+    } else if (0 != (fileSize - headerSize) % sizeOfIndexEntry) {
         addErrorMessage("Cannot read index file, there is a mismatch between stored index version and content size.");
         this->inputStream->close();
         this->unlock();
         return false;
     }
 
-    this->indicesLeft = (fileSize - headerSize) / sizeOfIndexEntry;
+    if (this->readHeader.numberOfEntries > 0) { // Easy case, it is stored.
+        this->indicesLeft = this->readHeader.numberOfEntries;
+    } else if(!this->readHeader.dictionariesAreCompressed){
+        this->indicesLeft = (fileSize - headerSize) / sizeOfIndexEntry;
+    }
+
+    if(this->indicesLeft == 0) {
+        addErrorMessage("Could not properly determine the amount of indices in this file.");
+        this->inputStream->close();
+        this->unlock();
+        return false;
+    }
+
     this->indicesCount = indicesLeft;
 
     this->readerIsOpen = true;
@@ -160,10 +174,15 @@ shared_ptr<IndexEntryV1> IndexReader::readIndexEntryV1() {
     }
 
     auto entry = make_shared<IndexEntryV1>();
-    inputStream->read((char *) entry.get(), sizeof(IndexEntryV1));
+    int headerSize = sizeof(IndexEntryV1) - sizeof(entry->dictionary);
+    inputStream->read((char *) entry.get(), headerSize);
+    if (entry->compressedDictionarySize == 0) { // No compression
+        inputStream->read((char *) entry.get() + headerSize, sizeof(entry->dictionary));
+    } else {
+        memset((char *) entry->dictionary, 0, WINDOW_SIZE); // Set to 0 first, so we won't have any garbage issues.
+        inputStream->read((char *) entry.get() + headerSize, entry->compressedDictionarySize);
+    }
     indicesLeft--;
 
     return entry;
 }
-
-

@@ -84,7 +84,7 @@ SUITE (INDEXER_SUITE_TESTS) {
     TEST (TEST_CORRECT_BLOCK_LINE_COUNTING) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CORRECT_BLOCK_LINE_COUNTING);
         vector<string> _blockData = TestResourcesAndFunctions::getTestVectorWithSimulatedBlockData();
-        
+
         // The vector contains IndexEntries with some expected values: line offset, starting line
         // This is more to keep things clear and easily readable.
         vector<IndexEntry> expectedIndexEntries;
@@ -284,9 +284,10 @@ SUITE (INDEXER_SUITE_TESTS) {
         path fastq = res.getResource(string(TEST_FASTQ_LARGE));
         path index = res.filePath("test2.fastq.gz.fqi");
         ifstream fqStream(fastq);
-        IndexerRunner runner(shared_ptr<InputSource>(new StreamInputSource(&fqStream)), index, -1, false, false, false,
-                             true);
-                CHECK(runner.run() == 0);
+        auto runner = new IndexerRunner(shared_ptr<InputSource>(new StreamInputSource(&fqStream)), index,
+                                        -1, false, false, false, true);
+                CHECK(runner->run() == 0);
+        delete runner;
                 CHECK(file_size(index) > 0);
     }
 

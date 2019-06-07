@@ -105,7 +105,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 //                CHECK(header.get() != nullptr);
                 CHECK_EQUAL(1, header.indexWriterVersion);
                 CHECK_EQUAL(67305985, header.magicNumber);
-                CHECK_ARRAY_EQUAL(test, header.reserved, 62);
+                CHECK_ARRAY_EQUAL(test, header.reserved, 59);
     }
 
     TEST (TEST_READ_INDEX_FROM_NEWLY_OPENED_FILE) {
@@ -193,7 +193,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
     TEST (TEST_COMBINED_READ_AND_WRITE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_END_OF_FILE);
         path idx = res.filePath(INDEX_FILENAME);
-        auto header = make_shared<IndexHeader>(1, sizeof(IndexEntryV1), 2);
+        auto header = make_shared<IndexHeader>(1, sizeof(IndexEntryV1), 2, true);
         auto entry0 = make_shared<IndexEntryV1>(10, 1, 0, 0, 1);
         auto entry1 = make_shared<IndexEntryV1>(10, 3, 0, 0, 0);
         auto entry2 = make_shared<IndexEntryV1>(10, 5, 0, 0, 1);

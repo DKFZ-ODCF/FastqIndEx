@@ -69,15 +69,33 @@ struct IndexHeader {
     u_int32_t blockInterval{0};
 
     /**
+     * This value is not available when a header is created in write mode. It will be written at the end of indexing
+     * process. However, the indexer and the extractor will work without it.
+     */
+    u_int64_t numberOfEntries{0};
+
+    /**
+     * Stores the amount of lines in the indexed file. This value is also written after the indexing is done.
+     * However, the indexer and the extractor will work without it.
+     */
+    u_int64_t linesInIndexedFile{0};
+
+    /**
+     * Tell the IndexReader, if the entries are compressed. (1-byte padded to 8 bytes!)
+     */
+    bool dictionariesAreCompressed{false};
+
+    /**
      * Reserved space for information which might be added in
      * the future.
      */
-    u_int64_t reserved[62]{0};
+    u_int64_t reserved[59]{0};
 
-    explicit IndexHeader(u_int32_t binaryVersion, u_int32_t sizeOfIndexEntry, u_int32_t blockInterval) {
+    explicit IndexHeader(u_int32_t binaryVersion, u_int32_t sizeOfIndexEntry, u_int32_t blockInterval, bool dictionariesAreCompressed) {
         this->indexWriterVersion = binaryVersion;
         this->sizeOfIndexEntry = sizeOfIndexEntry;
         this->blockInterval = blockInterval;
+        this->dictionariesAreCompressed = dictionariesAreCompressed;
     }
 
     IndexHeader() = default;
@@ -159,11 +177,18 @@ struct IndexEntryV1 : public VirtualIndexEntry {
     u_int32_t offsetOfFirstValidLine{0};
 
     unsigned char bits{0};
-//
-//    /**
-//     * Size of the compressed dictionary data in Byte. See below.
-//     */
-//    u_int64_t compressedDictionarySize{0};
+
+    unsigned char reserved{0};
+
+    /**
+     * Size of the compressed dictionary data in Byte. See below.
+     *
+     * If the value is 0, no compression was applied. Otherwise it shows the amount of compressed bytes.
+     *
+     * We know, that the WINDOW_SIZE is 32k, so the compressed dictionary size will be less than 65k. An unsigned int 16
+     * will allow us to store this and keep our byte-padding
+     */
+    u_int16_t compressedDictionarySize{0};
 
     /**
      * The dictionary is a chunk of uncompressed data from the data block before the block to which this entry points.

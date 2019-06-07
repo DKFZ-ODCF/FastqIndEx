@@ -10,6 +10,8 @@
 
 #include "ActualRunner.h"
 #include "Indexer.h"
+#include "InputSource.h"
+#include "PathInputSource.h"
 
 /**
  * The IndexRunner will, once started, create an index for the  FASTQ file by utilizing the Indexer class. As of now,
@@ -21,11 +23,33 @@ class IndexerRunner : public ActualRunner {
 
 private:
 
-    Indexer* indexer = nullptr;
+    Indexer *indexer = nullptr;
 
 public:
 
-    IndexerRunner(const path &fastqfile, const path &indexfile, int blockInterval = -1, bool enableDebugging = false, bool forceOverwrite = false);
+    IndexerRunner(
+            const path &fastqfile,
+            const path &indexfile,
+            int blockInterval = -1,
+            bool enableDebugging = false,
+            bool forceOverwrite = false
+    ) : IndexerRunner(
+            shared_ptr<InputSource>(new PathInputSource(fastqfile)),
+            indexfile,
+            blockInterval,
+            enableDebugging,
+            forceOverwrite
+    ) {};
+
+    IndexerRunner(
+            const shared_ptr<InputSource> &fastqfile,
+            const path &indexfile,
+            int blockInterval = -1,
+            bool enableDebugging = false,
+            bool forceOverwrite = false,
+            bool forbidWriteFQI = false,
+            bool disableFailsafeDistance = false
+    );
 
     virtual ~IndexerRunner();
 
@@ -33,9 +57,31 @@ public:
 
     bool checkPremises() override;
 
+    /**
+     * The Indexer may use a piped input file, thus this will return true for the IndexerRunner!
+     */
+    bool allowsReadFromStreamedSource() override;
+
     unsigned char run() override;
 
     vector<string> getErrorMessages() override;
+
+    // Facade methods
+//    void enableDebugging() {
+//        this->indexer->enableDebugging();
+//    }
+
+//    void enableForbidWriteFQI() {
+//
+//    }
+
+    void enableWriteOutOfDecompressedBlocksAndStatistics(const path &location) {
+        this->indexer->enableWriteOutOfDecompressedBlocksAndStatistics(location);
+    }
+
+    void enableWriteOutOfPartialDecompressedBlocks(const path &location) {
+        this->indexer->enableWriteOutOfPartialDecompressedBlocks(location);
+    }
 };
 
 

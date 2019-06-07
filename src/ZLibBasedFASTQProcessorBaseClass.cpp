@@ -4,12 +4,17 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
+#include <zlib.h>
+#include <unistd.h>
+#include <iostream>
+#include <experimental/filesystem>
+#include "PathInputSource.h"
 #include <cstdio>
 #include "Extractor.h"
 #include "ZLibBasedFASTQProcessorBaseClass.h"
 
 ZLibBasedFASTQProcessorBaseClass::ZLibBasedFASTQProcessorBaseClass(
-        path fastq,
+        shared_ptr<InputSource> fastq,
         path index,
         const bool enableDebugging) :
         enableDebugging(enableDebugging) {
@@ -36,13 +41,16 @@ bool ZLibBasedFASTQProcessorBaseClass::initializeZStream(int mode) {
     return true;
 }
 
-bool ZLibBasedFASTQProcessorBaseClass::readCompressedDataFromStream(FILE *inputFile) {
+bool ZLibBasedFASTQProcessorBaseClass::readCompressedDataFromInputSource() {
     /* get some compressed data from input file */
-    zStream.avail_in = std::fread((void *) input, 1, CHUNK_SIZE, inputFile);
-    if (std::ferror(inputFile)) {
+    int result = this->fastqfile->read(input, CHUNK_SIZE);
+
+    if (result == -1) {
         this->addErrorMessage("There was an error during fread.");
         return false;
-    }
+    } else
+        zStream.avail_in = (uInt) result;
+
     if (zStream.avail_in == 0) {
         this->addErrorMessage("There was no data available in the stream");
         return false;
@@ -97,7 +105,7 @@ bool ZLibBasedFASTQProcessorBaseClass::decompressNextChunkOfData(bool checkForSt
     totalBytesIn += readBytes;
     totalBytesOut += writtenBytes;
 
-    // The window buffer used by inflate will be filled at somehwere between 0 <= n <= WINDOW_SIZE
+    // The window buffer used by inflate will be filled at somewhere between 0 <= n <= WINDOW_SIZE
     // as we work with a string append method, we need to copy the read data to a fresh buffer first.
     Bytef cleansedWindowForCout[CLEAN_WINDOW_SIZE]{0}; // +1 for a definitely 0-terminated c-string!
     std::memcpy(cleansedWindowForCout, window + windowPositionBeforeInflate, writtenBytes);
@@ -106,6 +114,7 @@ bool ZLibBasedFASTQProcessorBaseClass::decompressNextChunkOfData(bool checkForSt
         zlibResult = Z_DATA_ERROR;
     }
     if (zlibResult == Z_MEM_ERROR || zlibResult == Z_DATA_ERROR) {
+        cerr << "Zlib data or memory error occurred: " << zlibResult << "\n";
         errorWasRaised = true;
         return false;
     }
@@ -115,4 +124,9 @@ bool ZLibBasedFASTQProcessorBaseClass::decompressNextChunkOfData(bool checkForSt
 
     currentDecompressedBlock << cleansedWindowForCout;
     return true;
+}
+
+void ZLibBasedFASTQProcessorBaseClass::clearCurrentCompressedBlock() {
+    currentDecompressedBlock.str("");
+    currentDecompressedBlock.clear();
 }

@@ -89,6 +89,7 @@ bool IndexReader::tryOpenAndReadHeader() {
     }
 
     this->indicesLeft = (fileSize - headerSize) / sizeOfIndexEntry;
+    this->indicesCount = indicesLeft;
 
     this->readerIsOpen = true;
 

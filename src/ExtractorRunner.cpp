@@ -8,18 +8,26 @@
 #include "ExtractorRunner.h"
 #include "IndexReader.h"
 #include "Extractor.h"
+#include "PathInputSource.h"
 
-ExtractorRunner::ExtractorRunner(const path &fastqfile,
-                                 const path &indexfile,
-                                 u_int64_t startLine,
-                                 u_int64_t lineCount,
-                                 bool enableDebugging) :
-        ActualRunner(fastqfile, indexfile) {
+ExtractorRunner::ExtractorRunner(
+        const shared_ptr<PathInputSource> &fastqfile,
+        const path &indexfile,
+        const path &resultfile,
+        bool forceOverwrite,
+        u_int64_t startLine,
+        u_int64_t lineCount,
+        uint extractionMulitplier,
+        bool enableDebugging
+) : ActualRunner(fastqfile, indexfile) {
 
     this->startLine = startLine;
     this->lineCount = lineCount;
+    this->extractionMulitplier = extractionMulitplier;
     this->enableDebugging = enableDebugging;
-    this->extractor.reset(new Extractor(fastqFile, indexFile, startLine, lineCount, enableDebugging));
+    this->extractor.reset(
+            new Extractor(fastqfile, indexfile, resultfile, forceOverwrite, startLine, lineCount, extractionMulitplier, enableDebugging)
+    );
 }
 
 /**
@@ -34,7 +42,7 @@ bool ExtractorRunner::checkPremises() {
 }
 
 unsigned char ExtractorRunner::run() {
-    extractor->extractReadsToCout();
+    return extractor->extract() ? 0 : 1;
 }
 
 vector<string> ExtractorRunner::getErrorMessages() {

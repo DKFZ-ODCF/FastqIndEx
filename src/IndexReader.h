@@ -45,6 +45,7 @@ private:
      */
     u_int64_t indicesLeft{0};
 
+    u_int64_t indicesCount{0};
     /**
      * Putting this into a smart pointer always raised: "Assertion `px != 0' failed" during object construction. I do
      * not know, why this happened, but I do a workaround by not using a smart pointer (or any pointer).
@@ -108,6 +109,15 @@ public:
     IndexHeader getIndexHeader() { return readHeader; }
 
     u_int64_t getIndicesLeft() { return indicesLeft; }
+
+    bool setPosition(uint64_t indexEntryID) {
+        this->inputStream->seekg(sizeof(IndexHeader) + readHeader.sizeOfIndexEntry * indexEntryID);
+        if (indexEntryID > indicesCount)
+            indicesLeft = 0;
+        else
+            indicesLeft = indicesCount - indexEntryID;
+        return !(this->inputStream->eof() || this->inputStream->bad() || this->inputStream->fail());
+    }
 
 };
 

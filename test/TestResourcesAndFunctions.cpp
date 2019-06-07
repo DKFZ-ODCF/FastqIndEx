@@ -12,9 +12,14 @@
 #include <cstdio>
 #include <sys/stat.h>
 #include <iostream>
+#include <UnitTest++/UnitTest++.h>
 
 using namespace std::experimental::filesystem;
 using std::experimental::filesystem::path;
+
+mutex TestResourcesAndFunctions::staticLock;
+
+vector<string> TestResourcesAndFunctions::testVectorWithSimulatedDecompressedBlockData;
 
 TestResourcesAndFunctions::TestResourcesAndFunctions(string testSuite, string testName) {
     this->testSuite = move(testSuite);
@@ -102,4 +107,157 @@ void TestResourcesAndFunctions::CreateEmptyFile(const path &_path) {
     ofstream stream(_path);
     stream << "";
     stream.close();
+}
+
+std::string TestResourcesAndFunctions::format(const std::string &format, ...) {
+    va_list args;
+    va_start(args, format);
+    size_t len = std::vsnprintf(nullptr, 0, format.c_str(), args);
+    va_end(args);
+    std::vector<char> vec(len + 1);
+    va_start(args, format);
+    std::vsnprintf(&vec[0], len + 1, format.c_str(), args);
+    va_end(args);
+    return &vec[0];
+}
+
+path TestResourcesAndFunctions::getPathOfFQIBinary() {
+    path pTestApp(TEST_BINARY);
+    path pSrcApplication(pTestApp.parent_path().parent_path().string() + "/src");
+    path pFastqIndex(pSrcApplication.string() + "/fastqindex");
+    return pFastqIndex;
+}
+
+bool TestResourcesAndFunctions::runCommand(const string &command) {
+    return std::system(command.c_str()) == 0;
+}
+
+/**
+ * No test for this, tested with integration tests.
+ */
+bool TestResourcesAndFunctions::runIndexerBinary(const path &fastq, const path &index, bool pipeFastq) {
+    if (!pipeFastq) {
+        return runCommand(
+                format(R"("%s" index "-f=%s" "-i=%s")",
+                       getPathOfFQIBinary().string().c_str(),
+                       fastq.string().c_str(),
+                       index.string().c_str()
+                )
+        );
+    } else {
+        return runCommand(
+                format(R"(cat "%s" | "%s" index -f=- -i="%s")",
+                       fastq.string().c_str(),
+                       getPathOfFQIBinary().string().c_str(),
+                       index.string().c_str()
+                )
+        );
+    }
+}
+
+/**
+ * No test for this, tested with integration tests.
+ */
+bool TestResourcesAndFunctions::runExtractorBinary(const path &fastq, const path &index) {
+    return runCommand(
+            format(R"("%s" extract "-f=%s" "-i=%s")",
+                   getPathOfFQIBinary().string().c_str(),
+                   fastq.string().c_str(),
+                   index.string().c_str())
+    );
+}
+
+/**
+ * No test for this, tested within other tests.
+ */
+bool TestResourcesAndFunctions::extractGZFile(const path &file, const path &extractedFile) {
+    return runCommand(
+            format(string(R"(gunzip -c "%s" > "%s")"), file.string().c_str(), extractedFile.string().c_str())
+    );
+}
+
+/**
+ * No test for this, tested within other tests.
+ */
+bool TestResourcesAndFunctions::createConcatenatedFile(const path &file, const path &result, int repetitions) {
+            CHECK(repetitions > 0);
+    bool res = true;
+    /**
+     * First time, create a fresh file.
+     */
+    res &= runCommand(
+            format(R"(cat "%s" > "%s")",
+                   file.string().c_str(),
+                   result.string().c_str()
+            )
+    );
+    /**
+     * Second to n-time append gz.
+     */
+    for (int i = 1; i < repetitions; i++) {
+        res &= runCommand(
+                format(R"(cat "%s" >> "%s")",
+                       file.string().c_str(),
+                       result.string().c_str()
+                )
+        );
+    }
+    return res;
+}
+
+vector<string> TestResourcesAndFunctions::readLinesOfFile(const path &file) {
+    ifstream strm(file);
+    vector<string> decompressedSourceContent;
+    string line;
+    while (std::getline(strm, line)) {
+        decompressedSourceContent.emplace_back(line);
+    }
+    return decompressedSourceContent;
+}
+
+string TestResourcesAndFunctions::readFile(const path &file) {
+    std::ifstream t(file);
+    std::string str;
+
+    t.seekg(0, std::ios::end);
+    str.reserve(t.tellg());
+    t.seekg(0, std::ios::beg);
+
+    str.assign((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
+    return str;
+}
+
+bool TestResourcesAndFunctions::compareVectorContent(const vector<string> &reference, const vector<string> &actual,
+                                                     uint32_t referenceOffset) {
+    int64_t firstDiff{-1};
+    for (int i = 0; i < std::min(reference.size() - referenceOffset, actual.size()); i++) {
+        if (reference[i + referenceOffset] != actual[i]) {
+            firstDiff = i;
+            break;
+        }
+    }
+    return firstDiff == -1;
+}
+
+const vector<string> &TestResourcesAndFunctions::getTestVectorWithSimulatedBlockData() {
+    lock_guard<mutex> lock(TestResourcesAndFunctions::staticLock);
+
+    if (!testVectorWithSimulatedDecompressedBlockData.empty())
+        return testVectorWithSimulatedDecompressedBlockData;
+
+    vector<string> *v = &testVectorWithSimulatedDecompressedBlockData;
+
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_0_complete"));
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_1_endopen"));
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_2_startendopen"));
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_5_empty"));
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_5_empty"));
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_3_startendopen"));
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_3.1_startendopen_nonewlines"));
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_4_startopen"));
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_5_empty"));
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_6_newlines"));
+    v->emplace_back(readResourceFile("blockAndLineCalculations/block_7_finalwonewlines"));
+
+    return testVectorWithSimulatedDecompressedBlockData;
 }

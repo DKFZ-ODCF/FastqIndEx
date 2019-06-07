@@ -195,7 +195,6 @@ struct IndexEntryV1 : public VirtualIndexEntry {
         return !(rhs == *this);
     }
 
-
     shared_ptr<IndexEntry> toIndexEntry();
 };
 

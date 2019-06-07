@@ -53,10 +53,10 @@ path writeTestFile(TestResourcesAndFunctions *res, size_t size) {
 SUITE (SUITE_INDEXREADER_TESTS) {
     TEST (TEST_READER_CREATION_WITH_EXISTING_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READER_CREATION_WITH_EXISTING_FILE);
-        path idx = res.getResource("test.fastq.gz.fqi_v1");
+        path idx = res.getResource(TEST_INDEX_SMALL);
         auto ir = make_shared<IndexReader>(idx);
                 CHECK(ir->tryOpenAndReadHeader());
-                CHECK(ir->getIndexHeader());
+                CHECK(ir->getErrorMessages().empty());
                 CHECK_EQUAL(ir->getIndicesLeft(), 1);
     }
 
@@ -94,7 +94,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 
     TEST (TEST_READ_HEADER_FROM_NEWLY_OPENED_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_HEADER_FROM_NEWLY_OPENED_FILE);
-        path idx = res.getResource("test.fastq.gz.fqi_v1");
+        path idx = res.getResource(TEST_INDEX_SMALL);
         auto ir = make_shared<IndexReader>(idx);
                 CHECK(ir->tryOpenAndReadHeader());
 
@@ -102,7 +102,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 
         u_int64_t test[62] = {0};
 
-                CHECK(header);
+//                CHECK(header.get() != nullptr);
                 CHECK_EQUAL(1, header.indexWriterVersion);
                 CHECK_EQUAL(67305985, header.magicNumber);
                 CHECK_ARRAY_EQUAL(test, header.reserved, 62);
@@ -110,7 +110,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 
     TEST (TEST_READ_INDEX_FROM_NEWLY_OPENED_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_NEWLY_OPENED_FILE);
-        path idx = res.getResource("test.fastq.gz.fqi_v1");
+        path idx = res.getResource(TEST_INDEX_SMALL);
 
         auto ir = make_shared<IndexReader>(idx);
                 CHECK(ir->tryOpenAndReadHeader());
@@ -121,14 +121,14 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 
     TEST (TEST_READ_INDEX_FROM_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_FILE);
-        path idx = res.getResource("test2.fastq.gz.fqi_v1");
+        path idx = res.getResource(TEST_INDEX_LARGE);
 
         auto ir = make_shared<IndexReader>(idx);
                 CHECK(ir->tryOpenAndReadHeader());
 
         auto header = ir->getIndexHeader();
 
-                CHECK(header);
+//                CHECK(header);
 
         Bytef emptyWindow[WINDOW_SIZE]{0};
 
@@ -151,13 +151,13 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 
     TEST (TEST_READ_SEVERAL_ENTRIES_FROM_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_SEVERAL_ENTRIES_FROM_FILE);
-        path idx = res.getResource("test2.fastq.gz.fqi_v1");
+        path idx = res.getResource(TEST_INDEX_LARGE);
         auto ir = make_shared<IndexReader>(idx);
                 CHECK(ir->tryOpenAndReadHeader());
 
         auto header = ir->getIndexHeader();
 
-                CHECK(header);
+//                CHECK(header);
                 CHECK(ir->readIndexEntryV1());
                 CHECK(ir->readIndexEntryV1());
                 CHECK(ir->readIndexEntryV1());
@@ -174,13 +174,13 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 
     TEST (TEST_READ_INDEX_FROM_END_OF_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_END_OF_FILE);
-        path idx = res.getResource("test.fastq.gz.fqi_v1");
+        path idx = res.getResource(TEST_INDEX_SMALL);
         auto ir = make_shared<IndexReader>(idx);
                 CHECK(ir->tryOpenAndReadHeader());
 
         auto header = ir->getIndexHeader();
 
-                CHECK(header);
+//                CHECK(header);
                 CHECK_EQUAL(1, ir->getIndicesLeft());
         auto entry1 = ir->readIndexEntryV1();
                 CHECK_EQUAL(0, ir->getIndicesLeft());

@@ -13,7 +13,7 @@ declare -i maxlines=$(cat $extractedFastq.lineCount)
 declare -i diffs=0
 
 echo $maxlines
-while [[ $count < $maxlines ]]; do
+while [[ $count -lt $maxlines ]]; do
 	original=$(tail -n +$count $extractedFastq | head -n 1)
 	extracted=$(fastqindex extract -f=$FASTQ -i=$INDEX -n=1 -e=1 -s=$(( $count - 1)) )
 	[[ "$extracted" != "$original" ]] && diffs=$(( $diffs + 1 ))

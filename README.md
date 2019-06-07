@@ -24,6 +24,8 @@ choice and run it.
 
 ### Download + Compile
 
+#### Resolve dependencies
+
 FastqIndEx has the following dependencies, which should be met before building it:
 
 | Dependency    | Version  / Git Hash | Conda | Remarks |
@@ -34,9 +36,24 @@ FastqIndEx has the following dependencies, which should be met before building i
 | zlib          | 1.2.11              | yes   |         |
 | UnitTest++    | bc5d87f             | no    |         |
 
-#### Compilation with manual download and installation of dependencies
+##### Use Conda to manage your dependencies
 
-##### g++/gcc
+* Install Miniconda / Anaconda
+* The conda recipe is contained in env/environmenty.yml, use conda-env 
+  to import it.
+* Download and install UnitTest++ like described in the next section, 
+  it is not available in Conda.
+
+**<span style="color:ffffa0;">If you use an IDE like CLion, make sure to 
+activate the environment before running the IDE.</span>**
+
+**<span style="color:ffffa0;">Also make sure to use the right compilers
+and tools. They are named a bit differently in Conda. CLion recognizes
+them, if you use the environment like mentioned.</span>**
+
+##### Compilation with manual download and installation of dependencies
+
+###### g++/gcc
 
 Before you run cmake, you might need to set
 
@@ -47,7 +64,7 @@ export CXX=/usr/local/bin/g++
 
 to the proper locations of your gcc/g++ binaries. 
 
-##### CMake, zlib...
+###### CMake, zlib...
 
 ``` Bash
 wget https://github.com/Kitware/CMake/releases/download/v3.13.4/cmake-3.13.4.tar.gz
@@ -59,7 +76,7 @@ tar -xvzf zlib-1.2.11.tar.gz
 cd zlib-1.2.11 && ./configure && make
 ```
 
-##### UnitTest++
+###### UnitTest++
 
 ``` Bash
 git clone https://github.com/unittest-cpp/unittest-cpp.git
@@ -71,22 +88,16 @@ cmake --build . --target all
 cmake --build . --target install
 ```
 
-#### Use Conda to manage your dependencies
-
-* Install Miniconda / Anaconda
-* The conda recipe is contained in env/environmenty.yml, use conda-env 
-  to import it.
-* Download and install UnitTest++ like above, it is not available in 
-  Conda.
-
-**<span style="color:ffffa0;">If you use an IDE like CLion, make sure to 
-activate the environment before running the IDE.</span>**
-
-**<span style="color:ffffa0;">Also make sure to use the right compilers
-and tools. They are named a bit differently in Conda. CLion recognizes
-them, if you use the environment like mentioned.</span>**
-
 #### FastqIndEx
+
+First, you need to clone the FastqIndEx Git repository. You can do this
+by executing:
+
+``` bash
+cd ~/Projects           # Or any other desired location, we'll stick to this
+git clone https://github.com/DKFZ-ODCF/FastqIndEx.git
+git checkout master     # Or any other version you like
+```
 
 To compile it, create a CMake build directory and run CMake afterwards:
 
@@ -123,21 +134,64 @@ To run the tests, run the test binary like:
 (cd build/test && ./testapp)
 ```
 
-The tests take around 10sec on my machine.
+If you want, you can add the release or debug directory to your PATH
+variable. E.g. in your local .bashrc file add the following:
+
+``` bash
+# This assumes, that you cloned the repo to ~/Projects/FastqIndEx and 
+# created the release sub directory like described above.
+export PATH=~/Projects/FastqIndEx/release/src:$PATH
+```
 
 ## General Usage
 
 ### Index
 
 ``` Bash
-fastqindex index -f=test4.fastq.gz -i=test4.fastq.gz.fqi
+# Index from a file
+fastqindex index -f=test2.fastq.gz -i=test2.fastq.gz.fqi
+
+# Index from a pipe
+cat test2.fastq.gz | fastqindex -f=- -i=test2.fastq.fqi
 ```
+
+There are more options available like:
+
+| Option        | Description         |
+| ---           |---                  |
+| -b            | Defines, that an index entry will be written to the index file for every nth compressed block. Value needs to be in range from [1 .. n]. By default, the block distance will be determined by the application. |
+| -w            | Allow the application to overwrite the index file. By default, this is not allowed. |
+
+Please call the application with 
+``` bash
+fastqindex index
+```
+to see more options.
 
 ### Extract
 
 ``` Bash
-fastqindex extract -f=test4.fastq.gz -i=test4.fastq.gz.fqi
+# Extract to a file, note, that this command produces an uncompressed file!
+fastqindex extract -f=test2.fastq.gz -i=test2.fastq.fqi -o=extracted.fastq
+
+# Or to stdout / the console, this is also uncompressed data!
+fastqindex extract -f=test2.fastq.gz -i=test2.fastq.fqi -o=- 
 ```
+
+There are more options available here as well like:
+
+| Option        | Description         |
+| ---           |---                  |
+| -s            | Defines the first line (multiplied by extractionmultiplier) which. By default this aligns to each read, assuming a read has a size of four lines. |
+| -n            | Defines the number of reads which should be extracted. The size of each read is defined by extractionmultiplier. |
+| -e            | Defines a multiplier by which the startingline parameter will be mulitplied. For FASTQ files this is 4 (record size), but you could use 1 for e.g. regular text files. |
+| -w            | Allow the application to overwrite the index file. By default, this is not allowed. |
+
+Please call the application with 
+``` bash
+fastqindex extract
+```
+to see more options.
 
 ## Code stability and safety
 

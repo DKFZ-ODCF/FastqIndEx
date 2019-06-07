@@ -12,12 +12,10 @@ const u_int64_t StreamInputSource::getTotalReadBytes() {
 }
 
 bool StreamInputSource::open() {
-    debug("Opening stream input source");
     return true;
 }
 
 bool StreamInputSource::close() {
-    debug("Closing stream input source");
     return true;
 }
 

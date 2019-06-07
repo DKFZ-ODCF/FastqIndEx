@@ -59,6 +59,20 @@ private:
     vector<shared_ptr<IndexEntryV1>> storedEntries;
 
     /**
+     * For debug and test purposes, used when decompressed blocks are processed. Will store them
+     * to a file next to the
+     */
+    bool writeOutOfDecompressedBlocksAndStatistics{false};
+
+    path storageForDecompressedBlocks;
+
+    bool writeOutOfPartialDecompressedBlocks{false};
+
+    path storageForPartialDecompressedBlocks;
+
+    ofstream partialBlockinfoStream;
+
+    /**
      * Current bits for the next index entry.
      */
     int curBits{0};
@@ -74,6 +88,12 @@ private:
      * If false, we have to look for the byte blockOffsetInRawFile.
      */
     bool lastBlockEndedWithNewline = true;
+
+    /**
+     * Empty blocks occur a lot and will cause trouble, if they get written to an index file. To overcome this, we skip
+     * empty blocks until the next valid block.
+     */
+    bool postponeWrite = false;
 
     u_int64_t lineCountForNextIndexEntry{0};
 
@@ -155,6 +175,27 @@ public:
 
     const uint64_t getNumberOfConcatenatedFiles() { return numberOfConcatenatedFiles; }
 
+    shared_ptr<IndexEntryV1> createIndexEntryFromBlockData(const string &currentBlockString,
+                                                           const vector<string> &lines,
+                                                           u_int64_t &blockOffsetInRawFile,
+                                                           bool lastBlockEndedWithNewline,
+                                                           bool *currentBlockEndedWithNewLine,
+                                                           u_int32_t *numberOfLinesInBlock);
+
+    void storeDictionaryForEntry(z_stream *strm, shared_ptr<IndexEntryV1> entry);
+
+    bool writeIndexEntryIfPossible(shared_ptr<IndexEntryV1> &entry, const vector<string> &lines, bool blockIsEmpty);
+
+    void enableWriteOutOfDecompressedBlocksAndStatistics(const path &location) {
+        this->writeOutOfDecompressedBlocksAndStatistics = true;
+        this->storageForDecompressedBlocks = location;
+    }
+
+
+    void enableWriteOutOfPartialDecompressedBlocks(const path &location) {
+        this->writeOutOfPartialDecompressedBlocks = true;
+        this->storageForPartialDecompressedBlocks = location.u8string() + string("/blockinfo.txt");
+    }
 };
 
 

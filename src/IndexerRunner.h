@@ -48,7 +48,8 @@ public:
             bool enableDebugging = false,
             bool forceOverwrite = false,
             bool forbidWriteFQI = false,
-            bool disableFailsafeDistance = false
+            bool disableFailsafeDistance = false,
+            bool compressDictionaries = true
     );
 
     virtual ~IndexerRunner();

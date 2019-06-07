@@ -74,7 +74,14 @@ bool IndexReader::tryOpenAndReadHeader() {
         return false;
     }
 
-    if (headerSize + sizeOfIndexEntry > fileSize) {
+    if(this-readHeader.dictionariesAreCompressed ) {
+        if(fileSize <= headerSize) {
+            addErrorMessage("Cannot read index file, it is too small.");
+            this->inputStream->close();
+            this->unlock();
+            return false;
+        }
+    } else if (headerSize + sizeOfIndexEntry > fileSize) {
         addErrorMessage("Cannot read index file, it is too small.");
         this->inputStream->close();
         this->unlock();

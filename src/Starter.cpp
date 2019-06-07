@@ -109,8 +109,8 @@ IndexerRunner *Starter::assembleCmdLineParserForIndexAndParseOpts(int argc, cons
     ValueArg<int> verbosity(
             "v",
             "verbosity",
-            string("Sets the verbosity of the application in the range of 0 (default, less) to 3 (debug, max). ")+
-                   "Invalid values will be ignored and the default of 0 will apply. -D automatically sets the level to 3.",
+            string("Sets the verbosity of the application in the range of 0 (default, less) to 3 (debug, max). ") +
+            "Invalid values will be ignored and the default of 0 will apply. -D automatically sets the level to 3.",
             false,
             0,
             "int", cmdLineParser);
@@ -120,6 +120,11 @@ IndexerRunner *Starter::assembleCmdLineParserForIndexAndParseOpts(int argc, cons
             "forceoverwrite",
             "Allow the indexer to overwrite an existing index file.",
             cmdLineParser);
+
+    SwitchArg dictCompressionSwitch(
+            "c", "enabledictionarycompression",
+            string("Enable compression of the stored dictionaries. This will be done with gzip."),
+            cmdLineParser, true);
 
     SwitchArg debugSwitch(
             "D", "enabledebugging",
@@ -189,7 +194,8 @@ IndexerRunner *Starter::assembleCmdLineParserForIndexAndParseOpts(int argc, cons
 
     auto runner = new IndexerRunner(fastq, index, bi, dbg, fo,
                                     forbidIndexWriteoutSwitch.getValue(),
-                                    disableFailsafeDistanceSwitch.getValue());
+                                    disableFailsafeDistanceSwitch.getValue(),
+                                    dictCompressionSwitch.getValue());
 
     if (storeForDecompressedBlocksArg.isSet())
         runner->enableWriteOutOfDecompressedBlocksAndStatistics(storeForDecompressedBlocksArg.getValue());

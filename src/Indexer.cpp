@@ -49,14 +49,17 @@ Indexer::Indexer(
         bool enableDebugging,
         bool forceOverwrite,
         bool forbidWriteFQI,
-        bool disableFailsafeDistance
+        bool disableFailsafeDistance,
+        bool compressDictionaries
 ) :
         ZLibBasedFASTQProcessorBaseClass(fastqfile, index, enableDebugging),
         blockInterval(blockInterval) {
     this->forbidWriteFQI = forbidWriteFQI;
     this->disableFailsafeDistance = disableFailsafeDistance;
+    this->forceOverwrite = forceOverwrite;
+    this->compressDictionaries = compressDictionaries;
     if (!forbidWriteFQI)
-        indexWriter = make_shared<IndexWriter>(index, forceOverwrite);
+        indexWriter = make_shared<IndexWriter>(index, forceOverwrite, compressDictionaries);
 }
 
 bool Indexer::checkPremises() {

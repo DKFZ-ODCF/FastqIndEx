@@ -14,7 +14,7 @@ const u_char MAGIC_NUMBER_RAW[4] = {1, 2, 3, 4};
  * Magic number to identify FastqIndEx index files.
  * Basically (((uint) 4) << 24) + (((uint) 3) << 16) + (((uint) 2) << 8) + 1;
  */
-const uint MAGIC_NUMBER = ((uint)*MAGIC_NUMBER_RAW);
+const uint MAGIC_NUMBER = *((uint *) MAGIC_NUMBER_RAW);
 
 /**
  * Created by CLion
@@ -78,5 +78,6 @@ shared_ptr<IndexEntry> IndexEntryV1::toIndexEntry() {
             this->startingLineInEntry
     );
     memcpy(indexLine->window, this->dictionary, sizeof(this->dictionary));
+    indexLine->compressedDictionarySize = this->compressedDictionarySize;
     return indexLine;
 }

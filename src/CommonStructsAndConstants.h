@@ -81,9 +81,11 @@ struct IndexHeader {
     u_int64_t linesInIndexedFile{0};
 
     /**
-     * Tell the IndexReader, if the entries are compressed. (1-byte padded to 8 bytes!)
+     * Tell the IndexReader, if the entries are compressed. (1-byte padded to 8 bytes!) The value looks weird without
+     * the followup value when you look it up in written fqi files. C++ does not do a clean write in this case.
      */
     bool dictionariesAreCompressed{false};
+    Bytef placeholder[7]{0};
 
     /**
      * Reserved space for information which might be added in

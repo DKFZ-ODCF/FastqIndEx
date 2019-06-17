@@ -122,8 +122,10 @@ IndexerRunner *Starter::assembleCmdLineParserForIndexAndParseOpts(int argc, cons
             cmdLineParser);
 
     SwitchArg dictCompressionSwitch(
-            "c", "enabledictionarycompression",
-            string("Enable compression of the stored dictionaries. This will be done with gzip."),
+            "c", "disabledictionarycompression",
+            string("Disable compression of the stored dictionaries. By default, the stored dictionaries will") +
+                   " be compressed using zlib and this will usually decrease the index size to 1/3rd to 1/4th "
+                   "compared to an uncompressed index.",
             cmdLineParser, true);
 
     SwitchArg debugSwitch(

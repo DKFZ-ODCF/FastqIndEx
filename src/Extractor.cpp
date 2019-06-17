@@ -145,7 +145,16 @@ bool Extractor::extract() {
         // This will pop up a clang-tidy warning, but as Mark Adler does it, I don't want to change it.
         zlibResult = inflatePrime(&zStream, startBits, ret >> (8 - startBits));
     }
-    zlibResult = inflateSetDictionary(&zStream, startingIndexLine->window, WINDOW_SIZE);
+    if(startingIndexLine->compressedDictionarySize > 0) {
+        // Decompress!
+        Bytef uncompressedDictionary[WINDOW_SIZE]{0};
+        uLongf destLen = WINDOW_SIZE;
+        uLong sourceLen = startingIndexLine->compressedDictionarySize;
+        auto result = uncompress2(uncompressedDictionary, &destLen, startingIndexLine->window, &sourceLen);
+        zlibResult = inflateSetDictionary(&zStream, uncompressedDictionary, WINDOW_SIZE);
+    } else {
+        zlibResult = inflateSetDictionary(&zStream, startingIndexLine->window, WINDOW_SIZE);
+    }
 
     if (errorWasRaised) {
         addErrorMessage(string("zlib reported an error: ") + zStream.msg);

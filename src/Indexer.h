@@ -44,7 +44,11 @@ private:
 
     bool forbidWriteFQI;
 
+    bool forceOverwrite{false};
+
     bool disableFailsafeDistance;
+
+    bool compressDictionaries{true};
 
     /**
      * For debug and test purposes, used when debuggingEnabled is true
@@ -128,10 +132,15 @@ public:
             bool enableDebugging = false,
             bool forceOverwrite = false,
             bool forbidWriteFQI = false,
-            bool disableFailsafeDistance = false
+            bool disableFailsafeDistance = false,
+            bool compressDictionaries = true
     );
 
     virtual ~Indexer() = default;
+
+    void setDictionaryCompression(bool value) {
+        this->compressDictionaries = value;
+    }
 
     bool checkPremises();
 

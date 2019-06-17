@@ -49,14 +49,17 @@ Indexer::Indexer(
         bool enableDebugging,
         bool forceOverwrite,
         bool forbidWriteFQI,
-        bool disableFailsafeDistance
+        bool disableFailsafeDistance,
+        bool compressDictionaries
 ) :
         ZLibBasedFASTQProcessorBaseClass(fastqfile, index, enableDebugging),
         blockInterval(blockInterval) {
     this->forbidWriteFQI = forbidWriteFQI;
     this->disableFailsafeDistance = disableFailsafeDistance;
+    this->forceOverwrite = forceOverwrite;
+    this->compressDictionaries = compressDictionaries;
     if (!forbidWriteFQI)
-        indexWriter = make_shared<IndexWriter>(index, forceOverwrite);
+        indexWriter = make_shared<IndexWriter>(index, forceOverwrite, compressDictionaries);
 }
 
 bool Indexer::checkPremises() {
@@ -66,7 +69,8 @@ bool Indexer::checkPremises() {
 }
 
 shared_ptr<IndexHeader> Indexer::createHeader() {
-    auto header = make_shared<IndexHeader>(Indexer::INDEXER_VERSION, sizeof(IndexEntryV1), blockInterval);
+    auto header = make_shared<IndexHeader>(Indexer::INDEXER_VERSION, sizeof(IndexEntryV1), blockInterval,
+                                           compressDictionaries);
     return header;
 }
 
@@ -367,35 +371,38 @@ bool Indexer::writeIndexEntryIfPossible(shared_ptr<IndexEntryV1> &entry,
         failsafeDistanceIsReached = (blockOffset - offsetOfLastEntry) > (failsafeDistance);
     }
 
-    bool shouldWrite = postponeWrite ||  blockID == 0 || (blockID % blockInterval == 0 && failsafeDistanceIsReached);
-    if(blockIsEmpty && shouldWrite) {
+    bool shouldWrite = postponeWrite || blockID == 0 || (blockID % blockInterval == 0 && failsafeDistanceIsReached);
+    if (blockIsEmpty && shouldWrite) {
         postponeWrite = true;
         shouldWrite = false;
     }
 
-    if (shouldWrite) {
-        postponeWrite = false;
-        if (!forbidWriteFQI)
-            indexWriter->writeIndexEntry(entry);
-        lastStoredEntry = entry;
-        if (enableDebugging) {
-            storedEntries.emplace_back(entry);
-//            if (lines.size() >= 2) {
-//                cerr << "Storing entry with last lines:\n\t" <<
-//                     lines[0] << "\n\t" << lines[1] << "\n\t";
-//            }
-        }
+    if (!shouldWrite) return shouldWrite;
+
+    // Now, if we store the entry and dictionary compression is enable, do exactly that!
+    if (compressDictionaries) {
+        Bytef compressedDictionary[WINDOW_SIZE]{0};              // Around 60% decrease in size.
+        u_int64_t compressedBytes = WINDOW_SIZE;
+        auto result = compress2(compressedDictionary, &compressedBytes, entry->dictionary, WINDOW_SIZE, 9);
+        entry->compressedDictionarySize = (u_int16_t) compressedBytes;
+        memset(entry->dictionary, 0, WINDOW_SIZE);
+        memcpy(entry->dictionary, compressedDictionary, compressedBytes);
     }
-    return shouldWrite;
+
+    postponeWrite = false;
+    if (!forbidWriteFQI)
+        indexWriter->writeIndexEntry(entry);
+    lastStoredEntry = entry;
+    if (enableDebugging) {
+        storedEntries.emplace_back(entry);
+    }
+    return true;
 }
 
 void Indexer::storeDictionaryForEntry(z_stream *strm, shared_ptr<IndexEntryV1> entry) {
     // Compared to the original zran example, which uses two memcpy operations to retrieve the dictionary, we
     // use zlibs inflateGetDictionaryMethod. This looks more clean and works, whereas I could not get the
     // original memcpy operations to work.
-    //        Bytef dictTest[WINDOW_SIZE];              // Build in later, around 60% decrease in size.
-    //        u_int64_t compressedBytes = WINDOW_SIZE;
-    //        compress2(dictTest, &compressedBytes, dictionaryForNextBlock, WINDOW_SIZE, 9);
 
     u_int32_t copiedBytes = 0;
     memcpy(entry->dictionary, dictionaryForNextBlock, WINDOW_SIZE);

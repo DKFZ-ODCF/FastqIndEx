@@ -17,7 +17,8 @@ IndexerRunner::IndexerRunner(
         bool enableDebugging,
         bool forceOverwrite,
         bool forbidWriteFQI,
-        bool disableFailsafeDistance
+        bool disableFailsafeDistance,
+        bool compressDictionaries
 ) :
         ActualRunner(fastqfile, indexfile) {
     this->indexer = new Indexer(
@@ -27,7 +28,8 @@ IndexerRunner::IndexerRunner(
             enableDebugging,
             forceOverwrite,
             forbidWriteFQI,
-            disableFailsafeDistance
+            disableFailsafeDistance,
+            compressDictionaries
     );
 }
 

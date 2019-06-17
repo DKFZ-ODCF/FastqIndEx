@@ -10,6 +10,7 @@
 #include "CommonStructsAndConstants.h"
 #include "IndexProcessor.h"
 #include <experimental/filesystem>
+#include <fstream>
 
 using namespace std;
 using std::experimental::filesystem::path;
@@ -28,13 +29,17 @@ private:
 
     bool forceOverwrite = false;
 
-    shared_ptr<std::ofstream> outputStream;
+    bool compressionIsActive = true;
+
+    u_int64_t numberOfWrittenEntries{0};
+
+    std::fstream outputStream = std::fstream();
 
 public:
 
     static const unsigned int INDEX_WRITER_VERSION;
 
-    explicit IndexWriter(const path &indexFile, bool forceOverwrite = false);
+    explicit IndexWriter(const path &indexFile, bool forceOverwrite = false, bool compressionIsActive = true);
 
     virtual ~IndexWriter();
 

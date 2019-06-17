@@ -16,14 +16,17 @@ const char *TEST_INDEX_COMPARE_ENTRIES = "IndexEntryComparison";
 
 SUITE (SUITE_COMMONSTRUCTS_TESTS) {
     TEST (TEST_INDEX_HEADER_CONSTRUCT1) {
-        IndexHeader indexHeader(1, sizeof(IndexEntryV1), 2);
+        IndexHeader indexHeader(1, sizeof(IndexEntryV1), 2, true);
         // Apply sanity checks for the size of the IndexHeader
                 CHECK_EQUAL(512, sizeof(IndexHeader));
                 CHECK_EQUAL(4, sizeof(indexHeader.indexWriterVersion));
                 CHECK_EQUAL(4, sizeof(indexHeader.sizeOfIndexEntry));
                 CHECK_EQUAL(4, sizeof(indexHeader.magicNumber));
                 CHECK_EQUAL(4, sizeof(indexHeader.blockInterval));
-                CHECK_EQUAL(62 * 8, sizeof(indexHeader.reserved));
+                CHECK_EQUAL(8, sizeof(indexHeader.numberOfEntries));
+                CHECK_EQUAL(8, sizeof(indexHeader.linesInIndexedFile));
+                CHECK_EQUAL(1, sizeof(indexHeader.dictionariesAreCompressed));
+                CHECK_EQUAL(59 * 8, sizeof(indexHeader.reserved));
 
         // Check content
                 CHECK_EQUAL(MAGIC_NUMBER, indexHeader.magicNumber);
@@ -73,14 +76,14 @@ SUITE (SUITE_COMMONSTRUCTS_TESTS) {
     }
 
     TEST (TEST_INDEX_COMPARE_HEADERS) {
-        IndexHeader h1(1, sizeof(IndexEntryV1), 1);
-        IndexHeader h2(1, sizeof(IndexEntryV1), 1);
+        IndexHeader h1(1, sizeof(IndexEntryV1), 1, true);
+        IndexHeader h2(1, sizeof(IndexEntryV1), 1, true);
                 CHECK(h1 == h2);
 
-        IndexHeader h3(2, sizeof(IndexEntryV1), 1);
+        IndexHeader h3(2, sizeof(IndexEntryV1), 1, true);
                 CHECK(h1 != h3);
                 CHECK(h2 != h3);
-        IndexHeader h4(1, sizeof(IndexEntryV1), 2);
+        IndexHeader h4(1, sizeof(IndexEntryV1), 2, true);
                 CHECK(h1 != h4);
                 CHECK(h2 != h4);
     }

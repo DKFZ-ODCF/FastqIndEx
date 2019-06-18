@@ -20,7 +20,7 @@ SUITE (SUITE_EXTRACTORRUNNER_TESTS) {
         path fastq = res.createEmptyFile("fastq.fastq");
         path index = res.createEmptyFile("fastq.fastq.fqi");
 
-        ExtractorRunner r(make_shared<PathInputSource>(fastq), index, "-", false, 0, 100, 0, false);
+        ExtractorRunner r(make_shared<PathInputSource>(fastq), index, "-", false, ExtractMode::lines, 0, 100, 0, false);
                 CHECK(!r.checkPremises()); // Index is empty. Won't work!
                 CHECK(!r.isCLIOptionsPrinter());
                 CHECK(r.isExtractor());
@@ -34,7 +34,7 @@ SUITE (SUITE_EXTRACTORRUNNER_TESTS) {
         path fastq = res.getResource(TEST_FASTQ_SMALL);
         path index = res.getResource(TEST_INDEX_SMALL);
 
-        ExtractorRunner r(make_shared<PathInputSource>(fastq), index, "-", false, 0, 100, 0, false);
+        ExtractorRunner r(make_shared<PathInputSource>(fastq), index, "-", false, ExtractMode::lines, 0, 100, 0, false);
         bool premisesMet = r.checkPremises();
                 CHECK(premisesMet);
                 CHECK(!r.isCLIOptionsPrinter());

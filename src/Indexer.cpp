@@ -59,7 +59,7 @@ Indexer::Indexer(
     this->forceOverwrite = forceOverwrite;
     this->compressDictionaries = compressDictionaries;
     if (!forbidWriteFQI)
-        indexWriter = new IndexWriter(index, forceOverwrite, compressDictionaries);
+        indexWriter = make_shared<IndexWriter>(index, forceOverwrite, compressDictionaries);
 }
 
 bool Indexer::checkPremises() {
@@ -205,8 +205,8 @@ bool Indexer::createIndex() {
             cerr << " The source data consisted of " << numberOfConcatenatedFiles << " concatenated gzip streams.\n";
         }
     }
-    delete indexWriter;
-    indexWriter = nullptr;
+
+    indexWriter->finalize();
     return finishedSuccessful;
 }
 

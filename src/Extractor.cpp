@@ -21,18 +21,12 @@ using namespace std::chrono;
 
 using experimental::filesystem::path;
 
-Extractor::Extractor(
-        const shared_ptr<PathInputSource> &fastqfile,
-        const path &indexfile,
-        const path &resultfile,
-        bool forceOverwrite,
-        u_int64_t startingLine,
-        u_int64_t lineCount,
-        uint extractionMulitplier,
-        bool enableDebugging
-) : ZLibBasedFASTQProcessorBaseClass(fastqfile, indexfile, enableDebugging),
-    startingLine(startingLine),
-    lineCount(lineCount) {
+Extractor::Extractor(const shared_ptr<PathInputSource> &fastqfile, const path &indexfile,
+                     const path &resultfile, bool forceOverwrite,
+                     ExtractMode mode, u_int64_t start, u_int64_t count, uint extractionMulitplier,
+                     bool enableDebugging) :
+        ZLibBasedFASTQProcessorBaseClass(fastqfile, indexfile, enableDebugging),
+        mode(mode), start(start), count(count) {
     this->indexReader = make_shared<IndexReader>(indexfile);
     this->resultFile = resultfile;
     this->forceOverwrite = forceOverwrite;
@@ -52,10 +46,16 @@ Extractor::Extractor(
 Extractor::~Extractor() { delete[] roundtripBuffer; }
 
 bool Extractor::checkPremises() {
-    if (lineCount == 0) {
+    if (mode == ExtractMode::lines && count == 0) {
         addErrorMessage("Can't extract a line count of 0 lines. The value needs to be a positive number.");
         return false;
     }
+
+    if (mode == ExtractMode::segment && start >= count) {
+        addErrorMessage("The specified segment exceeds the segment count.");
+        return false;
+    }
+
     if (useFile) {
         if (!forceOverwrite && exists(resultFile)) {
             addErrorMessage(
@@ -71,7 +71,19 @@ bool Extractor::checkPremises() {
             return false;
         }
     }
-    return this->indexReader->tryOpenAndReadHeader();
+    bool couldOpen = this->indexReader->tryOpenAndReadHeader();
+
+    if (!couldOpen)
+        return false;
+
+    // Check line counts and extraction multiplier!
+    auto totalLines = indexReader->getIndexHeader().linesInIndexedFile;
+    if (totalLines % extractionMultiplier != 0) {
+        addErrorMessage(string("The total number of lines cannot be divided fully by the extraction multiplier.") +
+                        "The total number of lines in the source files must be a multiple of the extraction multiplier.");
+        return false;
+    }
+    return true;
 }
 
 high_resolution_clock::time_point measurement;
@@ -90,6 +102,25 @@ void timerRestart(const string &message) {
     timerStart();
 }
 
+void Extractor::calculateStartingLineAndLineCount() {
+    if (mode == ExtractMode::lines) {
+        startingLine = start;
+        lineCount = count;
+    } else if (mode == ExtractMode::segment) {
+        auto totalLines = indexReader->getIndexHeader().linesInIndexedFile;
+        auto totalRecords = totalLines / extractionMultiplier;
+        auto recordsPerSegment = totalRecords / count;
+        auto leftoverRecords = totalRecords % count;
+        auto recordsInLastSegment = recordsPerSegment + leftoverRecords;
+
+        lineCount = recordsPerSegment * extractionMultiplier;
+        startingLine = start * lineCount;
+        if(start == count - 1) { // Last segment
+            lineCount = recordsInLastSegment * extractionMultiplier;
+        }
+    }
+}
+
 bool Extractor::extract() {
     auto resultFileStream = shared_ptr<ofstream>(nullptr);
     ofstream outfilestream;
@@ -102,6 +133,8 @@ bool Extractor::extract() {
     }
 
     timerStart();
+
+    calculateStartingLineAndLineCount();
 
     shared_ptr<IndexEntry> previousEntry = indexReader->readIndexEntry();
     shared_ptr<IndexEntry> startingIndexLine = previousEntry;
@@ -145,7 +178,7 @@ bool Extractor::extract() {
         // This will pop up a clang-tidy warning, but as Mark Adler does it, I don't want to change it.
         zlibResult = inflatePrime(&zStream, startBits, ret >> (8 - startBits));
     }
-    if(startingIndexLine->compressedDictionarySize > 0) {
+    if (startingIndexLine->compressedDictionarySize > 0) {
         // Decompress!
         Bytef uncompressedDictionary[WINDOW_SIZE]{0};
         uLongf destLen = WINDOW_SIZE;

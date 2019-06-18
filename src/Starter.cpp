@@ -255,18 +255,34 @@ ExtractorRunner *Starter::assembleCmdLineParserForExtractAndParseOpts(int argc, 
 //            false);
 //    cmdLineParser.add(disablefastqchecks);
 
-    ValueArg<int> startingread(
+    ValueArg<u_int64_t > startingread(
             "s", "startingread",
             "Defines the first line (multiplied by extractionmultiplier) which should be extracted.",
             false,
             0, "int", cmdLineParser);
 
-    ValueArg<int> numberofreads(
+    ValueArg<u_int64_t > numberofreads(
             "n", "numberofreads",
             string("Defines the number of reads which should be extracted. The size of each read is defined by ") +
             "extractionmultiplier.",
             false,
             10, "int", cmdLineParser);
+
+    ValueArg<uint> segmentIdentifierArg(
+                "S", "segment",
+                string("Defines the segment which shall be extracted from the file. This will turn on segment ") +
+                "extraction mode and FastqIndEx will ignore startringread and numberofreads. The extractionmultiplier" +
+                "parameter will still be used.",
+                false,
+                0, "uint", cmdLineParser);
+
+    ValueArg<uint> segmentCountArg(
+            "N", "segmentcount",
+            string("Defines the number of segments for segment extraction mode. The file is virtually divided into") +
+            "N segments and you can select the extracted segment using S. Internally, this will be matched to proper"
+            "line (record) numbers.",
+            false,
+            16, "uint", cmdLineParser);
 
     ValueArg<int> verbosity(
             "v",
@@ -300,13 +316,26 @@ ExtractorRunner *Starter::assembleCmdLineParserForExtractAndParseOpts(int argc, 
     if (_extractionMultiplier <= 0)
         _extractionMultiplier = 0;
 
+    u_int64_t start{0}, count{0};
+    ExtractMode extractMode = ExtractMode::lines;
+    if(segmentIdentifierArg.isSet()) {
+        // Enable segment extraction mode
+        start = segmentIdentifierArg.getValue();
+        count = segmentCountArg.getValue();
+        extractMode = ExtractMode::segment;
+    } else {
+        start = startingread.getValue() * _extractionMultiplier;
+        count = numberofreads.getValue() * _extractionMultiplier;
+    }
+
     return new ExtractorRunner(
             make_shared<PathInputSource>(argumentToPath(fastqFile)),
             _indexFile,
             argumentToPath(outFile),
             forceOverwrite.getValue(),
-            startingread.getValue() * _extractionMultiplier,
-            numberofreads.getValue() * _extractionMultiplier,
+            extractMode,
+            start,
+            count,
             _extractionMultiplier,
             debugSwitch.getValue()
     );

@@ -19,6 +19,8 @@ using std::experimental::filesystem::path;
 class IndexWriter : public IndexProcessor {
 private:
 
+    mutex iwMutex;
+
     /**
      * You are not allowed to write an index twice.
      * You are also not allowed to write an entry before the index.
@@ -61,6 +63,8 @@ public:
     void flush();
 
     bool close();
+
+    void finalize();
 };
 
 

@@ -103,6 +103,8 @@ IndexWriter::~IndexWriter() {
         flush(); // Without flush, the file size was 0, even after closing the stream.
         outputStream.seekp(16, ios_base::beg);
         outputStream.write((const char*)&numberOfWrittenEntries, 8);
+        outputStream.seekp(24, ios_base::beg);
+        outputStream.write((const char*)&numberOfLinesInFile, 8);
         flush();
         this->outputStream.close();
     }

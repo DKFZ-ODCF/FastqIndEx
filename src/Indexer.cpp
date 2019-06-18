@@ -59,7 +59,7 @@ Indexer::Indexer(
     this->forceOverwrite = forceOverwrite;
     this->compressDictionaries = compressDictionaries;
     if (!forbidWriteFQI)
-        indexWriter = make_shared<IndexWriter>(index, forceOverwrite, compressDictionaries);
+        indexWriter = new IndexWriter(index, forceOverwrite, compressDictionaries);
 }
 
 bool Indexer::checkPremises() {
@@ -191,16 +191,22 @@ bool Indexer::createIndex() {
     fastqfile->close();
     inflateEnd(&zStream);
 
+    // Set line info for index file, which will be written, when the index writer is deleted.
+    indexWriter->setNumberOfLinesInFile(this->lineCountForNextIndexEntry);
+
     finishedSuccessful = !errorWasRaised;
     if (errorWasRaised) {
         addErrorMessage("There were errors during index creation. Index file is corrupt.");
     } else {
         cerr << "Finished indexing with the last entry for compressed block #" << lastStoredEntry->blockID
-             << " starting with entry number " << lastStoredEntry->startingLineInEntry << "\n";
+             << " starting with line number " << lastStoredEntry->startingLineInEntry << "\n"
+             << " The indexed file contains " << this->lineCountForNextIndexEntry << " lines\n";
         if (numberOfConcatenatedFiles > 1) {
             cerr << " The source data consisted of " << numberOfConcatenatedFiles << " concatenated gzip streams.\n";
         }
     }
+    delete indexWriter;
+    indexWriter = nullptr;
     return finishedSuccessful;
 }
 

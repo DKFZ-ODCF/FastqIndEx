@@ -33,6 +33,11 @@ private:
 
     u_int64_t numberOfWrittenEntries{0};
 
+    /**
+     * Must be set after the the index process via setNumberOfLinesInFile
+     */
+    u_int64_t numberOfLinesInFile{0};
+
     std::fstream outputStream = std::fstream();
 
 public:
@@ -42,6 +47,10 @@ public:
     explicit IndexWriter(const path &indexFile, bool forceOverwrite = false, bool compressionIsActive = true);
 
     virtual ~IndexWriter();
+
+    void setNumberOfLinesInFile(u_int64_t numberOfLinesInFile) {
+        this->numberOfLinesInFile = numberOfLinesInFile;
+    }
 
     bool tryOpen();
 

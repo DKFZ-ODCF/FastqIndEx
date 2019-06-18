@@ -31,10 +31,17 @@ unsigned char IndexStatsRunner::run() {
     cout << "\tMagic number:     " << header.magicNumber << "\n";
     cout << "\tWriter version:   " << header.indexWriterVersion << "\n";
     cout << "\tBlock Interval:   " << header.blockInterval << "\n";
-    cout << "\tIndex entry size: " << header.sizeOfIndexEntry << "\n";
+    if (header.dictionariesAreCompressed) {
+        cout << "\tIndex entry size: <n/a:Dictionary compression is active>\n";
+    } else {
+        cout << "\tIndex entry size: " << header.sizeOfIndexEntry << " Byte\n";
+    }
     cout << "\tIndex entries:    " << indicesLeft << "\n";
+    cout << "\tLines in file:    " << header.linesInIndexedFile << "\n";
 
-    this->indexReader->setPosition(start);
+    for (int i = 0; i < start; i++)
+        this->indexReader->readIndexEntry();
+
     int toRead = this->indexReader->getIndicesLeft();
     if (amount > 0) {
         toRead = amount;
@@ -44,7 +51,6 @@ unsigned char IndexStatsRunner::run() {
         cout << "Starting index id exceeds entry count.\n";
         return 1;
     } else {
-
         for (int i = 0; i < toRead; i++) {
             auto entry = this->indexReader->readIndexEntry();
 

@@ -40,7 +40,7 @@ private:
 
     long numberOfFoundEntries = 0;
 
-    shared_ptr<IndexWriter> indexWriter;
+    IndexWriter *indexWriter;
 
     bool forbidWriteFQI;
 

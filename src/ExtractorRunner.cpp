@@ -15,18 +15,20 @@ ExtractorRunner::ExtractorRunner(
         const path &indexfile,
         const path &resultfile,
         bool forceOverwrite,
-        u_int64_t startLine,
-        u_int64_t lineCount,
-        uint extractionMulitplier,
+        ExtractMode mode,
+        u_int64_t start,
+        u_int64_t count,
+        uint extractionMultiplier,
         bool enableDebugging
 ) : ActualRunner(fastqfile, indexfile) {
 
-    this->startLine = startLine;
-    this->lineCount = lineCount;
-    this->extractionMulitplier = extractionMulitplier;
+    this->start = start;
+    this->count = count;
+    this->extractionMultiplier = extractionMultiplier;
     this->enableDebugging = enableDebugging;
     this->extractor.reset(
-            new Extractor(fastqfile, indexfile, resultfile, forceOverwrite, startLine, lineCount, extractionMulitplier, enableDebugging)
+            new Extractor(fastqfile, indexfile, resultfile, forceOverwrite, mode, start, count,
+                          extractionMultiplier, enableDebugging)
     );
 }
 

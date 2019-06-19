@@ -110,15 +110,6 @@ public:
 
     u_int64_t getIndicesLeft() { return indicesLeft; }
 
-    bool setPosition(uint64_t indexEntryID) {
-        this->inputStream->seekg(sizeof(IndexHeader) + readHeader.sizeOfIndexEntry * indexEntryID);
-        if (indexEntryID > indicesCount)
-            indicesLeft = 0;
-        else
-            indicesLeft = indicesCount - indexEntryID;
-        return !(this->inputStream->eof() || this->inputStream->bad() || this->inputStream->fail());
-    }
-
 };
 
 

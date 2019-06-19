@@ -19,6 +19,8 @@ using std::experimental::filesystem::path;
 class IndexWriter : public IndexProcessor {
 private:
 
+    mutex iwMutex;
+
     /**
      * You are not allowed to write an index twice.
      * You are also not allowed to write an entry before the index.
@@ -33,6 +35,11 @@ private:
 
     u_int64_t numberOfWrittenEntries{0};
 
+    /**
+     * Must be set after the the index process via setNumberOfLinesInFile
+     */
+    u_int64_t numberOfLinesInFile{0};
+
     std::fstream outputStream = std::fstream();
 
 public:
@@ -43,6 +50,10 @@ public:
 
     virtual ~IndexWriter();
 
+    void setNumberOfLinesInFile(u_int64_t numberOfLinesInFile) {
+        this->numberOfLinesInFile = numberOfLinesInFile;
+    }
+
     bool tryOpen();
 
     bool writeIndexHeader(const shared_ptr<IndexHeader> &header);
@@ -52,6 +63,8 @@ public:
     void flush();
 
     bool close();
+
+    void finalize();
 };
 
 

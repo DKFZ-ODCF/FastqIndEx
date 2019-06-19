@@ -11,8 +11,7 @@
 
 int main(int argc, const char *argv[]) {
     Starter *starter = Starter::getInstance();
-    shared_ptr<Runner> runner;
-    runner = starter->createRunner(argc, argv);
+    shared_ptr<Runner> runner = starter->createRunner(argc, argv);
 
     int exitCode = 0;
     if (!runner->checkPremises()) {

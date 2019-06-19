@@ -18,6 +18,11 @@
 using namespace std;
 using experimental::filesystem::path;
 
+enum ExtractMode {
+    lines,
+    segment
+};
+
 class Extractor : public ZLibBasedFASTQProcessorBaseClass {
 
 private:
@@ -27,9 +32,21 @@ private:
      */
     shared_ptr<IndexReader> indexReader = shared_ptr<IndexReader>(nullptr);
 
-    u_int64_t startingLine;
+    ExtractMode mode;
 
-    u_int64_t lineCount;
+    /**
+     * Either the segment to extract OR the starting line. This will be used to set startingLine upon extract.
+     */
+    u_int64_t start;
+
+    /**
+     * Either the number of segments OR the line count. This will be used to set startingLine AND lineCount upon extract.
+     */
+    u_int64_t count;
+
+    u_int64_t startingLine{0};
+
+    u_int64_t lineCount{0};
 
     uint extractionMultiplier;
 
@@ -66,15 +83,27 @@ public:
      * @param indexfile         The index file for this file
      * @param resultfile        The result file or
      * @param forceOverwrite    If the resultfile exists, we can overwrite it with this flag
-     * @param startingLine      Start extraction from this line
-     * @param lineCount         Extract a maximum of lineCount lines
+     * @param mode              Extraction mode, currently either lines or segment
+     * @param start             Start extraction from this line or extract this segment
+     * @param count             Extract a maximum of lineCount lines OR define the number of total segments
      * @param enableDebugging   Used for interactive debugging and unit tests
      */
     explicit Extractor(const shared_ptr<PathInputSource> &fastqfile, const path &indexfile, const path &resultfile,
-                       bool forceOverwrite, u_int64_t startingLine, u_int64_t lineCount, uint extractionMulitplier,
+                       bool forceOverwrite,
+                       ExtractMode mode, u_int64_t start, u_int64_t count, uint extractionMulitplier,
                        bool enableDebugging);
 
     virtual ~Extractor();;
+
+    ExtractMode getExtractMode() { return mode; }
+
+    u_int64_t getStart() { return start; }
+
+    u_int64_t getCount() { return count; }
+
+    u_int64_t getStartingLine() { return startingLine; }
+
+    u_int64_t getLineCount() { return lineCount; }
 
     /**
      * Will call tryOpenAndReadHeader on the internal indexReader.
@@ -98,6 +127,11 @@ public:
     void setFirstPass(bool firstPass) {
         this->firstPass = firstPass;
     }
+
+    /**
+     * Calculates the starting line and the line count based on the start, count and mode settings.
+     */
+    void calculateStartingLineAndLineCount();
 
     /**
      * For now directly to cout?

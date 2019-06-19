@@ -18,7 +18,13 @@ IndexWriter::IndexWriter(const path &indexFile, bool forceOverwrite, bool compre
     this->compressionIsActive = compressionIsActive;
 }
 
+IndexWriter::~IndexWriter() {
+    lock_guard<mutex> lock(iwMutex);
+    finalize();
+}
+
 bool IndexWriter::tryOpen() {
+    lock_guard<mutex> lock(iwMutex);
     if (writerIsOpen)
         return true;
 
@@ -47,6 +53,7 @@ bool IndexWriter::tryOpen() {
 }
 
 bool IndexWriter::writeIndexHeader(const shared_ptr<IndexHeader> &header) {
+    lock_guard<mutex> lock(iwMutex);
     if (!this->writerIsOpen) {
         // Throw assertion errors? Would actually be better right?
         addErrorMessage("Could not write header to index file, writer is not open.");
@@ -67,6 +74,7 @@ bool IndexWriter::writeIndexHeader(const shared_ptr<IndexHeader> &header) {
 }
 
 bool IndexWriter::writeIndexEntry(const shared_ptr<IndexEntryV1> &entry) {
+    lock_guard<mutex> lock(iwMutex);
     if (!this->writerIsOpen) {
         // Throw assertion errors? Would actually be better right?
         addErrorMessage("Could not write index entry to index file, writer is not open.");
@@ -93,16 +101,21 @@ bool IndexWriter::writeIndexEntry(const shared_ptr<IndexEntryV1> &entry) {
 }
 
 void IndexWriter::flush() {
+    lock_guard<mutex> lock(iwMutex);
     if (this->outputStream) {
         this->outputStream.flush();
     }
 }
 
-IndexWriter::~IndexWriter() {
+void IndexWriter::finalize() {
+    lock_guard<mutex> lock(iwMutex);
     if (this->outputStream.is_open()) {
+        this->writerIsOpen = false;
         flush(); // Without flush, the file size was 0, even after closing the stream.
         outputStream.seekp(16, ios_base::beg);
         outputStream.write((const char*)&numberOfWrittenEntries, 8);
+        outputStream.seekp(24, ios_base::beg);
+        outputStream.write((const char*)&numberOfLinesInFile, 8);
         flush();
         this->outputStream.close();
     }

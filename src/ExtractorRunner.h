@@ -19,11 +19,13 @@
 class ExtractorRunner : public ActualRunner {
 protected:
 
-    u_int64_t startLine;
+    ExtractMode mode;
 
-    u_int64_t lineCount;
+    u_int64_t start;
 
-    uint extractionMulitplier;
+    u_int64_t count;
+
+    uint extractionMultiplier;
 
     bool enableDebugging;
 
@@ -36,8 +38,9 @@ public:
      * @param indexfile         The index which is used for extraction.
      * @param resultfile        The file which shall be written or - for stdout.
      * @param forceOverwrite    Overwrite an existing resultfile, if the result is written to a file.
-     * @param startLine         Extract, starting from line starLine on.
-     * @param lineCount         Extract lineCount lines.
+     * @param mode              Mode of operation (either line or segment based)
+     * @param start             Sets the either the starting line to extract from OR the segment to extract.
+     * @param count             Either sets the count of lines OR the number of segments in total.
      * @param enableDebugging   Used for debugging with e.g. an IDE and for unit tests.
      */
     ExtractorRunner(
@@ -45,9 +48,10 @@ public:
             const path &indexfile,
             const path &resultfile,
             bool forceOverwrite,
-            u_int64_t startLine,
-            u_int64_t lineCount,
-            uint extractionMulitplier,
+            ExtractMode mode,
+            u_int64_t start,
+            u_int64_t count,
+            uint extractionMultiplier,
             bool enableDebugging = false
     );
 

@@ -193,6 +193,40 @@ fastqindex extract
 ```
 to see more options.
 
+## FQI format description
+
+FQI files are binary files which look like:
+
+```
+|HEADER|ENTRY 0|ENTRY 1|ENTRY 2|ENTRY ...|
+```
+
+The V1 header is exactly 512 Byte wide and can be described like:
+
+``` bash
+|                                                                              (IndexHeader)                                                                             | 
+|    (u_int32_t)     |    (u_int32_t)   | (u_int32_t) |  (u_int32_t)  |   (u_int64_t)   |     (u_int64_t)    |           (bool)          |   (u_char)  | (u_int64_t)[59] |
+| indexWriterVersion | sizeOfIndexEntry | magicNumber | blockInterval | numberOfEntries | linesInIndexedFile | dictionariesAreCompressed | placeholder |     reserved    |
+```
+
+The V1 index entry has an extracted width of 32800 Byte index entry can be described like:
+
+```bash
+|                                                                          IndexEntry                                                                         |
+|   (u_int64_t)   |      (u_int64_t)     |     (u_int64_t)     |      (u_int32_t)       | (u_int32_t) | (u_char) |        (u_int16_t)       | (u_char)[32768] |
+|     blockID     | blockOffsetInRawFile | startingLineInEntry | offsetOfFirstValidLine |     bits    | reserved | compressedDictionarySize |    dictionary   |
+```
+
+If compression is enabled, this looks a bit different (note the last field differs then and depends on compressedDictionarySize!), when it is stored in the fqi file:
+
+```bash
+|                                                                                   IndexEntry                                                                                   |
+|   (u_int64_t)   |      (u_int64_t)     |     (u_int64_t)     |      (u_int32_t)       | (u_int32_t) | (u_char) |        (u_int16_t)       | (u_char)[compressedDictionarySize] |
+|     blockID     | blockOffsetInRawFile | startingLineInEntry | offsetOfFirstValidLine |     bits    | reserved | compressedDictionarySize |             dictionary             |
+```
+
+If compression is enabled, you need to read out the IndexEntry without the dictionary first. 
+
 ## Code stability and safety
 
 There are several things we consider and do to make usage of FastqIndEx

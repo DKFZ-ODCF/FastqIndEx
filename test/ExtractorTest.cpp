@@ -26,7 +26,7 @@ const char *const TEST_EXTRACTOR_CHECKPREM_MISSING_NOTWRITABLE = "Test fail on n
 const char *const TEST_EXTRACTOR_CHECKPREM_MISSING_PARENTNOTWRITABLE = "Test fail on non-writable output folder.";
 const char *const TEST_EXTRACTOR_EXTRACT_WITH_OUTFILE = "Text extract to an output file.";
 const char *const TEST_EXTRACTOR_EXTRACT_WITH_EXISTINGOUTFILE = "Text extract to an output file which already exists.";
-
+const char *const TEST_EXTRACT_SEGMENTS = "Test segment extraction mode.";
 
 void runRangedExtractionTest(const path &fastq,
                              const path &index,
@@ -34,8 +34,8 @@ void runRangedExtractionTest(const path &fastq,
                              const u_int64_t firstLine,
                              const u_int64_t lineCount,
                              const u_int64_t expectedLineCount) {
-    auto *extractor = new Extractor(make_shared<PathInputSource>(fastq), index, "-", false, firstLine, lineCount, 4,
-                                    true);
+    auto *extractor = new Extractor(make_shared<PathInputSource>(fastq), index, "-", false,
+                                    ExtractMode::lines, firstLine, lineCount, 4, true);
     bool ok = extractor->extract();
             CHECK(ok);
     if (!ok) {
@@ -79,7 +79,8 @@ bool initializeComplexTest(const path &fastq,
      * Check premises first. As we are going to run more than one test, we'll delete this instantly and use new
      * instances everytime.
      */
-    auto *extractor = new Extractor(make_shared<PathInputSource>(fastq), index, "-", false, 0, 10, 4, true);
+    auto *extractor = new Extractor(make_shared<PathInputSource>(fastq), index, "-", false, ExtractMode::lines, 0, 10,
+                                    4, true);
     bool premisesMet = extractor->checkPremises();
             CHECK(premisesMet);
     delete extractor;
@@ -111,7 +112,8 @@ SUITE (INDEXER_SUITE_TESTS) {
         path fastq = res.getResource(TEST_FASTQ_SMALL);
         path index = res.getResource(TEST_INDEX_SMALL);
 
-        auto *extractor = new Extractor(make_shared<PathInputSource>(fastq), index, "-", false, 0, 10, 4, true);
+        auto *extractor = new Extractor(make_shared<PathInputSource>(fastq), index, "-", false,
+                                        ExtractMode::lines, 0, 10, 4, true);
                 CHECK(extractor->checkPremises());
         delete extractor;
     }
@@ -182,8 +184,9 @@ SUITE (INDEXER_SUITE_TESTS) {
             auto startingLine = startingLines[i];
             auto lineCount = 4;
             auto indexEntry = indexEntries[indexEntryID[i]];
-            Extractor extractor(make_shared<PathInputSource>(fastq), index, path("-"), false, startingLine, lineCount,
-                                4, true);
+            Extractor extractor(make_shared<PathInputSource>(fastq), index, path("-"), false,
+                                ExtractMode::lines, startingLine, lineCount, 4, true);
+            extractor.calculateStartingLineAndLineCount(); // Needs to be done, otherwise startingLine and linecount are not set.
             extractor.setSkip(startingLine - indexEntry->startingLineInEntry);
             ostringstream outStream;
 
@@ -289,4 +292,44 @@ SUITE (INDEXER_SUITE_TESTS) {
         runRangedExtractionTest(fastqConcat, index, decompressedSourceContent, 16000, 4000, 0);
     }
 
+//    TEST (TEST_EXTRACT_SEGMENTS) {
+//        TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_CREATE_EXTRACTOR_AND_EXTRACT_CONCAT_TO_COUT);
+//
+//        path fastq = res.getResource(TEST_FASTQ_LARGE);
+//        path index = res.filePath(TEST_INDEX_LARGE);
+//        path extract = res.filePath(TEST_FASTQ_LARGE);
+//
+//        uint segments = 24;
+//        uint linesInSourceFASTQ = 160000;
+//        u_int64_t expectedStartingLines[]{
+//                0, 6664, 13328, 19992, 26656, 33320,
+//                39984, 46648, 53312, 59976, 66640, 73304,
+//                79968, 86632, 93296, 99960, 106624, 113288,
+//                119952, 126616, 133280, 139944, 146608, 153272
+//        };
+//        u_int64_t expectedLineCount[]{
+//                6664, 6664, 6664, 6664, 6664, 6664,
+//                6664, 6664, 6664, 6664, 6664, 6664,
+//                6664, 6664, 6664, 6664, 6664, 6664,
+//                6664, 6664, 6664, 6664, 6664, 6728,
+//        };
+//
+//        auto indexer = new Indexer(make_shared<PathInputSource>(fastq), index, 4, true, true, false, false, true);
+//                CHECK(indexer->createIndex() == true);
+//        delete indexer;
+//
+//        for (int segment = 0; segment < segments; segment++) {
+//            Extractor extractor(make_shared<PathInputSource>(fastq), index, extract, true,
+//                                ExtractMode::segment, segment, segments, 4, true);
+//
+//                    CHECK(extractor.checkPremises() == true);
+//
+//            extractor.calculateStartingLineAndLineCount();
+//                    CHECK(extractor.getExtractMode() == ExtractMode::segment);
+//                    CHECK(extractor.getStart() == segment);
+//                    CHECK(extractor.getCount() == segments);
+//                    CHECK(extractor.getStartingLine() == expectedStartingLines[segment]);
+//                    CHECK(extractor.getLineCount() == expectedLineCount[segment]);
+//        }
+//    }
 }

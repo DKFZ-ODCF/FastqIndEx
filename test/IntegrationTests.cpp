@@ -4,10 +4,10 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "../src/Indexer.h"
-#include "../src/IndexerRunner.h"
-#include "../src/IndexReader.h"
-#include "../src/Runner.h"
+#include "../src/process/index/Indexer.h"
+#include "../src/process/extract/IndexReader.h"
+#include "../src/runners/IndexerRunner.h"
+#include "../src/runners/Runner.h"
 #include "../src/Starter.h"
 #include "TestConstants.h"
 #include "TestResourcesAndFunctions.h"

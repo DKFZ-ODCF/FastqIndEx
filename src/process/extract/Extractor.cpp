@@ -5,9 +5,9 @@
  */
 
 #include "Extractor.h"
-#include "ZLibBasedFASTQProcessorBaseClass.h"
-#include "PathInputSource.h"
-#include "IndexStatsRunner.h"
+#include "../base/ZLibBasedFASTQProcessorBaseClass.h"
+#include "../io/PathInputSource.h"
+#include "../../runners/IndexStatsRunner.h"
 #include <chrono>
 #include <cstdio>
 #include <experimental/filesystem>

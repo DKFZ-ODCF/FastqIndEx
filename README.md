@@ -30,6 +30,7 @@ FastqIndEx has the following dependencies, which should be met before building i
 
 | Dependency    | Version  / Git Hash | Conda | Remarks |
 | ---           |---                  | ---   | ---     |
+| AWS SDK       | 1.7.125             | no    |         |
 | CMake         | 3.13.x              | yes   |         |
 | gcc           | 7.2                 | yes   |         |
 | tclap         | 1.2.1               | yes   |         |
@@ -88,6 +89,10 @@ cmake --build . --target all
 cmake --build . --target install
 ```
 
+##### AWS S3
+
+Get the AWS SDK from the Amazon website and install like you want it.
+
 #### FastqIndEx
 
 First, you need to clone the FastqIndEx Git repository. You can do this
@@ -109,6 +114,12 @@ cmake -G "Unix Makefiles" \
     -D "UnitTest++_DIR":PATH=/path/to/unittest-cpp/lib/cmake/UnitTest++ \ # If necessary
     -D ZLIB_LIBRARY=/path/to/zlib-1.2.11/libz.a \                         # If necessary
     -D ZLIB_INCLUDE_DIR=/path/to/zlib-1.2.11 \                            # If necessary
+    -D AWSSDK_DIR:PATH=<aws installation>/lib64/cmake/AWSSDK                          \  # For S3 support, you need to do this.                          
+    -D aws-cpp-sdk-core_DIR:PATH=<aws installation>/lib64/cmake/aws-cpp-sdk-core      \                    
+    -D aws-c-event-stream_DIR:PATH=<aws installation>/lib64/aws-c-event-stream/cmake  \                        
+    -D aws-c-common_DIR:PATH=<aws installation>/lib64/aws-c-common/cmake              \            
+    -D aws-checksums_DIR:PATH=<aws installation>/lib64/aws-checksums/cmake            \            
+    -D aws-cpp-sdk-s3_DIR:PATH=<aws installation>/lib64/cmake/aws-cpp-sdk-s3          \                
     -DCMAKE_BUILD_TYPE=Release                                            # Or =Debug, if you plan to develop 
     ..
 cd ..
@@ -282,6 +293,7 @@ To overcome these problems:
 
 ## Further links
 
+* [AWS](https://docs.aws.amazon.com/sdk-for-cpp/v1/developer-guide/setup.html)
 * [CMake](https://cmake.org/)
 * [CMake Tutorial 1](https://preshing.com/20170511/how-to-build-a-cmake-based-project/)
 * [CMake Tutorial 2](http://wiki.ogre3d.org/Getting+Started+With+CMake)

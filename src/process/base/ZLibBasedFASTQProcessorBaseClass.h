@@ -7,11 +7,11 @@
 #ifndef FASTQINDEX_ZLIBHELPER_H
 #define FASTQINDEX_ZLIBHELPER_H
 
-#include "CommonStructsAndConstants.h"
-#include "ErrorAccumulator.h"
-#include "IndexReader.h"
-#include "InputSource.h"
-#include "PathInputSource.h"
+#include "../../common/CommonStructsAndConstants.h"
+#include "../../common/ErrorAccumulator.h"
+#include "../extract/IndexReader.h"
+#include "../io/InputSource.h"
+#include "../io/PathInputSource.h"
 #include <cstdio>
 #include <experimental/filesystem>
 #include <zlib.h>

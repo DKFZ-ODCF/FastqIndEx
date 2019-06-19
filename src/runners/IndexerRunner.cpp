@@ -6,7 +6,7 @@
 
 #include <iostream>
 #include "IndexerRunner.h"
-#include "Indexer.h"
+#include "../process/index/Indexer.h"
 
 using namespace std;
 

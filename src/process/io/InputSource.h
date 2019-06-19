@@ -9,7 +9,7 @@
 
 #include <experimental/filesystem>
 #include <zlib.h>
-#include "ErrorAccumulator.h"
+#include "../../common/ErrorAccumulator.h"
 
 using namespace std;
 using namespace std::experimental::filesystem;

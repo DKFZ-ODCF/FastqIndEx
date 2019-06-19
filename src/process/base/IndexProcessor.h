@@ -7,7 +7,7 @@
 #ifndef FASTQINDEX_INDEXPROCESSOR_H
 #define FASTQINDEX_INDEXPROCESSOR_H
 
-#include "ErrorAccumulator.h"
+#include "../../common/ErrorAccumulator.h"
 #include <mutex>
 #include <shared_mutex>
 #include <experimental/filesystem>

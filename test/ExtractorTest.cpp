@@ -4,11 +4,11 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "../src/Runner.h"
-#include "../src/Extractor.h"
-#include "../src/ExtractorRunner.h"
-#include "../src/Indexer.h"
-#include "../src/PathInputSource.h"
+#include "../src/runners/Runner.h"
+#include "../src/runners/ExtractorRunner.h"
+#include "../src/process/extract/Extractor.h"
+#include "../src/process/index/Indexer.h"
+#include "../src/process/io/PathInputSource.h"
 #include "TestResourcesAndFunctions.h"
 #include <fstream>
 #include <iostream>

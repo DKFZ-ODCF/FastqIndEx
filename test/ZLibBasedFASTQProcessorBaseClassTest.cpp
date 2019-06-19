@@ -4,9 +4,9 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "../src/InputSource.h"
-#include "../src/PathInputSource.h"
-#include "../src/ZLibBasedFASTQProcessorBaseClass.h"
+#include "../src/process/io/InputSource.h"
+#include "../src/process/io/PathInputSource.h"
+#include "../src/process/base/ZLibBasedFASTQProcessorBaseClass.h"
 #include "TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
 #include <zlib.h>

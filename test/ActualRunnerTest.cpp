@@ -4,11 +4,11 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "../src/ActualRunner.h"
-#include "../src/ErrorMessages.h"
-#include "../src/ExtractorRunner.h"
-#include "../src/IndexerRunner.h"
-#include "../src/StreamInputSource.h"
+#include "../src/runners/ActualRunner.h"
+#include "../src/common/ErrorMessages.h"
+#include "../src/runners/ExtractorRunner.h"
+#include "../src/runners/IndexerRunner.h"
+#include "../src/process/io/StreamInputSource.h"
 #include "TestConstants.h"
 #include "TestResourcesAndFunctions.h"
 #include <experimental/filesystem>

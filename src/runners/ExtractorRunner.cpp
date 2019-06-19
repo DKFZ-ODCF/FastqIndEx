@@ -6,9 +6,9 @@
 
 #include <iostream>
 #include "ExtractorRunner.h"
-#include "IndexReader.h"
-#include "Extractor.h"
-#include "PathInputSource.h"
+#include "../process/extract/IndexReader.h"
+#include "../process/extract/Extractor.h"
+#include "../process/io/PathInputSource.h"
 
 ExtractorRunner::ExtractorRunner(
         const shared_ptr<PathInputSource> &fastqfile,

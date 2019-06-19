@@ -4,8 +4,8 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "../src/ExtractorRunner.h"
-#include "../src/PathInputSource.h"
+#include "../src/runners/ExtractorRunner.h"
+#include "../src/process/io/PathInputSource.h"
 #include "TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
 

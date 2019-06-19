@@ -5,7 +5,7 @@
  */
 
 #include "IndexReader.h"
-#include "IndexWriter.h"
+#include "../index/IndexWriter.h"
 #include <experimental/filesystem>
 #include <fstream>
 

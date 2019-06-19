@@ -13,24 +13,24 @@ add_executable(fastqindex main.cpp main.h)
 
 add_library(
         fastqindexlib
-        ActualRunner.cpp ActualRunner.h
-        CommonStructsAndConstants.cpp CommonStructsAndConstants.h
-        ErrorAccumulator.cpp ErrorAccumulator.h
-        ErrorMessages.cpp ErrorMessages.h
-        Extractor.cpp Extractor.h
-        ExtractorRunner.cpp ExtractorRunner.h
-        IndexerRunner.cpp IndexerRunner.h
-        Indexer.cpp Indexer.h
-        IndexReader.cpp IndexReader.h
-        IndexWriter.cpp IndexWriter.h
-        IndexProcessor.cpp IndexProcessor.h
-        InputSource.cpp InputSource.h
-        StreamInputSource.cpp StreamInputSource.h
-        PathInputSource.cpp PathInputSource.h
-        Runner.cpp Runner.h
+        runners/ActualRunner.cpp runners/ActualRunner.h
+        common/CommonStructsAndConstants.cpp common/CommonStructsAndConstants.h
+        common/ErrorAccumulator.cpp common/ErrorAccumulator.h
+        common/ErrorMessages.cpp common/ErrorMessages.h
+        process/extract/Extractor.cpp process/extract/Extractor.h
+        runners/ExtractorRunner.cpp runners/ExtractorRunner.h
+        runners/IndexerRunner.cpp runners/IndexerRunner.h
+        process/index/Indexer.cpp process/index/Indexer.h
+        process/extract/IndexReader.cpp process/extract/IndexReader.h
+        process/index/IndexWriter.cpp process/index/IndexWriter.h
+        process/base/IndexProcessor.cpp process/base/IndexProcessor.h
+        process/io/InputSource.cpp process/io/InputSource.h
+        process/io/StreamInputSource.cpp process/io/StreamInputSource.h
+        process/io/PathInputSource.cpp process/io/PathInputSource.h
+        runners/Runner.cpp runners/Runner.h
         Starter.cpp Starter.h
-        ZLibBasedFASTQProcessorBaseClass.cpp ZLibBasedFASTQProcessorBaseClass.h
-        IndexStatsRunner.cpp IndexStatsRunner.h)
+        process/base/ZLibBasedFASTQProcessorBaseClass.cpp process/base/ZLibBasedFASTQProcessorBaseClass.h
+        runners/IndexStatsRunner.cpp runners/IndexStatsRunner.h)
 
 target_link_libraries(
         fastqindexlib

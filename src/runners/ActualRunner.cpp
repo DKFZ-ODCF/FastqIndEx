@@ -6,9 +6,9 @@
 
 #include <iostream>
 #include "ActualRunner.h"
-#include "../src/ErrorMessages.h"
-#include "StreamInputSource.h"
-#include "PathInputSource.h"
+#include "../common/ErrorMessages.h"
+#include "../process/io/StreamInputSource.h"
+#include "../process/io/PathInputSource.h"
 #include <error.h>
 #include <experimental/filesystem>
 

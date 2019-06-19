@@ -4,9 +4,9 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "ActualRunner.h"
+#include "../../runners/ActualRunner.h"
 #include "Indexer.h"
-#include "IndexStatsRunner.h"
+#include "../../runners/IndexStatsRunner.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

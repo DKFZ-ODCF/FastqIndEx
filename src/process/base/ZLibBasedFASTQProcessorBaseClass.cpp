@@ -4,14 +4,14 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include <zlib.h>
-#include <unistd.h>
-#include <iostream>
-#include <experimental/filesystem>
-#include "PathInputSource.h"
-#include <cstdio>
-#include "Extractor.h"
+#include "../io/PathInputSource.h"
+#include "../extract/Extractor.h"
 #include "ZLibBasedFASTQProcessorBaseClass.h"
+#include <cstdio>
+#include <experimental/filesystem>
+#include <iostream>
+#include <unistd.h>
+#include <zlib.h>
 
 ZLibBasedFASTQProcessorBaseClass::ZLibBasedFASTQProcessorBaseClass(
         shared_ptr<InputSource> fastq,

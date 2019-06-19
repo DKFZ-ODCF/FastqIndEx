@@ -4,9 +4,9 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "../src/IndexerRunner.h"
-#include "../src/PathInputSource.h"
-#include "../src/Runner.h"
+#include "../src/process/io/PathInputSource.h"
+#include "../src/runners/IndexerRunner.h"
+#include "../src/runners/Runner.h"
 #include "TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
 

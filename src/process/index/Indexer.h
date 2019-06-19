@@ -7,10 +7,10 @@
 #ifndef FASTQINDEX_INDEXER_H
 #define FASTQINDEX_INDEXER_H
 
-#include "CommonStructsAndConstants.h"
-#include "ErrorAccumulator.h"
+#include "../../common/CommonStructsAndConstants.h"
+#include "../../common/ErrorAccumulator.h"
 #include "IndexWriter.h"
-#include "ZLibBasedFASTQProcessorBaseClass.h"
+#include "../base/ZLibBasedFASTQProcessorBaseClass.h"
 #include <zlib.h>
 #include <string>
 

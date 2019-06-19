@@ -32,6 +32,8 @@ if (CONDA_DEFAULT_ENV)
     message("   include: ${ZLIB_INCLUDE_DIR}")
 endif (CONDA_DEFAULT_ENV)
 
+find_package(AWSSDK REQUIRED COMPONENTS s3)
+
 include_directories(BEFORE ${ZLIB_INCLUDE_DIR})
 
 # See https://stackoverflow.com/questions/25213659/how-to-use-tclap-in-cmake-project

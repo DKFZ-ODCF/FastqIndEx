@@ -7,7 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include "IndexWriter.h"
-#include "ErrorAccumulator.h"
+#include "../../common/ErrorAccumulator.h"
 
 const unsigned int IndexWriter::INDEX_WRITER_VERSION = 1;
 

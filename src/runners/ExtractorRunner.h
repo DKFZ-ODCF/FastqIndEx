@@ -8,8 +8,8 @@
 #define FASTQINDEX_EXTRACTORRUNNER_H
 
 #include "ActualRunner.h"
-#include "Extractor.h"
-#include "PathInputSource.h"
+#include "../process/extract/Extractor.h"
+#include "../process/io/PathInputSource.h"
 
 /**
  * The ExtractorRunner will, once started, read in the IndexHeader of an FASTQ index file and, based on the encoded

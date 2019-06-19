@@ -7,7 +7,7 @@
 #ifndef FASTQINDEX_ACTUALRUNNER_H
 #define FASTQINDEX_ACTUALRUNNER_H
 
-#include "InputSource.h"
+#include "../process/io/InputSource.h"
 #include "Runner.h"
 #include <experimental/filesystem>
 #include <string>

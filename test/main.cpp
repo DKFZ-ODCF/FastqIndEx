@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include "TestConstants.h"
 #include "UnitTest++/UnitTest++.h"
-#include "../src/ErrorAccumulator.h"
+#include "../src/common/ErrorAccumulator.h"
 
 using namespace std;
 

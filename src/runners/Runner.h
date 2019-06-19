@@ -9,7 +9,7 @@
 
 #include <string>
 #include <vector>
-#include "ErrorAccumulator.h"
+#include "../common/ErrorAccumulator.h"
 
 using namespace std;
 

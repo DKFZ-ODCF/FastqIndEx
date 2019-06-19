@@ -7,11 +7,11 @@
 #ifndef FASTQINDEX_EXTRACTORV1_H
 #define FASTQINDEX_EXTRACTORV1_H
 
-#include "CommonStructsAndConstants.h"
-#include "ErrorAccumulator.h"
+#include "../../common/CommonStructsAndConstants.h"
+#include "../../common/ErrorAccumulator.h"
 #include "IndexReader.h"
-#include "ZLibBasedFASTQProcessorBaseClass.h"
-#include "PathInputSource.h"
+#include "../base/ZLibBasedFASTQProcessorBaseClass.h"
+#include "../io/PathInputSource.h"
 #include <experimental/filesystem>
 #include <zlib.h>
 

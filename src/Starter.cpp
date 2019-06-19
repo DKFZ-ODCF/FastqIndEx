@@ -4,12 +4,12 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "ExtractorRunner.h"
-#include "IndexerRunner.h"
-#include "InputSource.h"
-#include "PathInputSource.h"
+#include "runners/ExtractorRunner.h"
+#include "runners/IndexerRunner.h"
+#include "process/io/InputSource.h"
+#include "process/io/PathInputSource.h"
+#include "process/io/StreamInputSource.h"
 #include "Starter.h"
-#include "StreamInputSource.h"
 #include <cstring>
 #include <tclap/CmdLine.h>
 

@@ -9,9 +9,9 @@
 
 
 #include "ActualRunner.h"
-#include "Indexer.h"
-#include "InputSource.h"
-#include "PathInputSource.h"
+#include "../process/index/Indexer.h"
+#include "../process/io/InputSource.h"
+#include "../process/io/PathInputSource.h"
 
 /**
  * The IndexRunner will, once started, create an index for the  FASTQ file by utilizing the Indexer class. As of now,

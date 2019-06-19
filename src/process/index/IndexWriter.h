@@ -7,8 +7,8 @@
 #ifndef FASTQINDEX_INDEXWRITER_H
 #define FASTQINDEX_INDEXWRITER_H
 
-#include "CommonStructsAndConstants.h"
-#include "IndexProcessor.h"
+#include "../../common/CommonStructsAndConstants.h"
+#include "../base/IndexProcessor.h"
 #include <experimental/filesystem>
 #include <fstream>
 

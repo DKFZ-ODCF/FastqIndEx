@@ -4,8 +4,8 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "../src/IndexReader.h"
-#include "../src/IndexWriter.h"
+#include "../src/process/extract/IndexReader.h"
+#include "../src/process/index/IndexWriter.h"
 #include "TestResourcesAndFunctions.h"
 #include "TestConstants.h"
 #include <UnitTest++/UnitTest++.h>

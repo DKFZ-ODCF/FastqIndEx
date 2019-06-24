@@ -1,13 +1,15 @@
-//
-// Created by heinold on 07.02.19.
-//
+/**
+ * Copyright (c) 2019 DKFZ - ODCF
+ *
+ * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
+ */
 
 #ifndef FASTQINDEX_ERRORACCUMULATOR_H
 #define FASTQINDEX_ERRORACCUMULATOR_H
 
+#include <iostream>
 #include <string>
 #include <vector>
-#include <iostream>
 
 using std::vector;
 using std::string;
@@ -42,17 +44,22 @@ public:
 
     static bool verbosityIsSetToDebug();
 
-    static void debug(const string& msg);
+    static void debug(const string &msg);
 
-    static void info(const string& msg);
+    static void info(const string &msg);
 
-    static void warning(const string& msg);
+    static void warning(const string &msg);
 
-    static void severe(const string& msg);
+    static void severe(const string &msg);
 
     virtual vector<string> getErrorMessages();
 
-    const void addErrorMessage(const string &message);
+    /**
+     * This would actually be a perfect example for a variadic function but handling variadic functions is tricky as
+     * the 'va_...()' macros don't know about the number of passed arguments.
+     */
+    const void addErrorMessage(const string &part0, const string &part1 = "", const string &part2 = "",
+                               const string &part3 = "", const string &part4 = "", const string &part5 = "");
 
     /**
      * This method can be used, if two vectors should be merged. Note, that we always copy the content of the two source

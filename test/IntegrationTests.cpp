@@ -8,7 +8,7 @@
 #include "../src/process/extract/IndexReader.h"
 #include "../src/runners/IndexerRunner.h"
 #include "../src/runners/Runner.h"
-#include "../src/Starter.h"
+#include "../src/startup/Starter.h"
 #include "TestConstants.h"
 #include "TestResourcesAndFunctions.h"
 #include <fstream>

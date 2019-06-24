@@ -6,7 +6,7 @@
 
 #include "../src/runners/ExtractorRunner.h"
 #include "../src/runners/IndexerRunner.h"
-#include "../src/Starter.h"
+#include "../src/startup/Starter.h"
 #include "../src/process/io/PathInputSource.h"
 #include "TestConstants.h"
 

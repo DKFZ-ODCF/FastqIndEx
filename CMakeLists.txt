@@ -6,20 +6,28 @@
 cmake_minimum_required(VERSION 3.13)
 
 set(CMAKE_CXX_STANDARD 17)
-SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fPIC -pedantic -ansi -Winit-self -Wmissing-declarations -Wextra -Winit-self -Wold-style-cast -Woverloaded-virtual -Wuninitialized")
+# -pedantic -ansi -Winit-self -Wmissing-declarations -Wextra -Winit-self -Wold-style-cast -Woverloaded-virtual -Wuninitialized
+SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fPIC")
 SET(CMAKE_C_FLAGS_DEBUG "-O0 -g -fPIC")
 
-set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++ -static-libgcc ")
+set(CMAKE_EXE_LINKER_FLAGS " -static-libstdc++ -static-libgcc")
+#add_definitions(" -DCURL_STATICLIB")
+#set(CURL_STATICLIB true)
+#set(CMAKE_EXE_LINKER_FLAGS -static)
 
 #-Wall
 # See https://stackoverflow.com/questions/14446495/cmake-project-structure-with-unit-tests
 project(FASTQIndEx)
+find_package(AWSSDK REQUIRED s3 config)
 
+# General libraries
 # Make cmake aware of an existing conda environment and try to load zlib and tclap from there.
 set(CONDA_DEFAULT_ENV $ENV{CONDA_DEFAULT_ENV})
 set(CONDA_PREFIX $ENV{CONDA_PREFIX})
 set(TCLAP_INCLUDE_DIR ../tclap-1.2.1/include)
+set(SIMPLEINI_INCLUDE_DIR ../simpleini_4.17/)  # Download and place next to FastqIndEx
 
+# Conda overrides - Really, use conda if possible!
 if (CONDA_DEFAULT_ENV)
     set(ZLIB_LIBRARY "${CONDA_PREFIX}/lib/libz.a")
     set(ZLIB_INCLUDE_DIR "${CONDA_PREFIX}/include")
@@ -32,20 +40,29 @@ if (CONDA_DEFAULT_ENV)
     message("   include: ${ZLIB_INCLUDE_DIR}")
 endif (CONDA_DEFAULT_ENV)
 
-find_package(AWSSDK REQUIRED COMPONENTS s3)
+## Amazon S3 Libraries
+message(STATUS "AWSSDK_LIB_DIR ${AWSSDK_LIB_DIR}")
+message(STATUS "AWSSDK_BIN_DIR ${AWSSDK_BIN_DIR}")
+message(STATUS "AWSSDK_INCLUDE_DIR ${AWSSDK_INCLUDE_DIR}")
+# https://github.com/aws/aws-sdk-cpp/issues/838
+SET(SERVICE "s3")
+AWSSDK_DETERMINE_LIBS_TO_LINK(SERVICE OUTPUT)
+message(STATUS "All linked libs: ${OUTPUT}")
+message("All AWS libs: ${AWSSDK_LINK_LIBRARIES}")
 
-include_directories(BEFORE ${ZLIB_INCLUDE_DIR})
+link_directories("${AWSSDK_LIB_DIR}")
+include_directories(BEFORE ${AWSSDK_INCLUDE_DIR})
 
 # See https://stackoverflow.com/questions/25213659/how-to-use-tclap-in-cmake-project
 # As you can see, we use tclap-1.2.1, download this version and extract to the project root directory, if you do not
 # use Conda.
 include_directories(BEFORE ${TCLAP_INCLUDE_DIR})
+include_directories(BEFORE ${ZLIB_INCLUDE_DIR})
+include_directories(BEFORE ${SIMPLEINI_INCLUDE_DIR})
 
 find_package(ZLIB 1.2.11 REQUIRED)
-
 
 add_subdirectory(src)
 
 enable_testing()
 add_subdirectory(test)
-

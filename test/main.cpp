@@ -7,9 +7,11 @@
 #include <cstring>
 #include <iostream>
 #include <unistd.h>
+#include <mutex>
 #include "TestConstants.h"
 #include "UnitTest++/UnitTest++.h"
 #include "../src/common/ErrorAccumulator.h"
+#include <chrono>
 
 using namespace std;
 
@@ -25,6 +27,13 @@ bool exitIntentionally = false;
 // See https://github.com/unittest-cpp/unittest-cpp/wiki/Writing-and-Running-Your-First-Test
 TEST (SANITY_TEST) {
             CHECK_EQUAL(1, 1);
+}
+
+TEST (SANITY_MT_TEST) {
+    timed_mutex mtx;
+    mtx.lock();
+    CHECK(!mtx.try_lock());
+    CHECK(!mtx.try_lock_until(std::chrono::steady_clock::now() + std::chrono::milliseconds(200)));
 }
 
 /**

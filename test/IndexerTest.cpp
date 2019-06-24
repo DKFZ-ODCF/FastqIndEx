@@ -6,6 +6,8 @@
 
 #include "../src/process/extract/IndexReader.h"
 #include "../src/process/index/Indexer.h"
+#include "../src/common/IOHelper.h"
+#include "../src/common/StringHelper.h"
 #include "../src/process/io/PathInputSource.h"
 #include "../src/process/io/StreamInputSource.h"
 #include "../src/runners/IndexerRunner.h"
@@ -111,7 +113,7 @@ SUITE (INDEXER_SUITE_TESTS) {
 
         for (int i = 0; i < _blockData.size(); i++) {
             auto blockData = _blockData[i];
-            auto split = ZLibBasedFASTQProcessorBaseClass::splitStr(blockData);
+            auto split = StringHelper::splitStr(blockData);
             auto expectedNumberOfLines = expectedNumberOfLinesInBlock[i];
             auto expectedFirstLineOffset = expectedIndexEntries[i].offsetOfFirstValidLine;
             auto expectedStartingLine = expectedIndexEntries[i].startingLineInEntry;

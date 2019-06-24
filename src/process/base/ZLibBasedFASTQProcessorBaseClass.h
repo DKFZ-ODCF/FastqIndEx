@@ -102,19 +102,6 @@ protected:
 
 public:
 
-    static vector<string> splitStr(const string &str, char delimiter = '\n') {
-        std::stringstream ss(str);
-        std::string item;
-        std::vector<std::string> splittedStrings;
-        while (std::getline(ss, item, delimiter)) {
-            splittedStrings.push_back(item);
-        }
-//        if (str.c_str()[str.size() - 1] == delimiter)
-//            splittedStrings.emplace_back("");
-
-        return splittedStrings;
-    }
-
     shared_ptr<InputSource> getFastq() { return fastqfile; }
 
     path getIndex() { return indexfile; }

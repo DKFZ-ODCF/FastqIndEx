@@ -5,10 +5,13 @@
 #
 cmake_minimum_required(VERSION 3.13)
 
+#add_definitions(" -DCURL_STATICLIB")
+#set(CURL_STATICLIB true)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+#set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++ -static-libgcc -lcrypto -lssl -lz -lcurl")
 
-set(CMAKE_EXE_LINKER_FLAGS -static)
+#set(CMAKE_EXE_LINKER_FLAGS -static)
 
 # See: https://github.com/unittest-cpp/unittest-cpp/wiki
 find_package(UnitTest++ REQUIRED)
@@ -30,11 +33,14 @@ add_executable(
         IndexProcessorTest.cpp
         IndexReaderTest.cpp
         IndexWriterTest.cpp
+        IOHelperTest.cpp
         IntegrationTests.cpp
         ExtractorRunnerTest.cpp
         ExtractorTest.cpp
         ShowStopperRunnerTest.cpp
         StarterTest.cpp
+        StringHelperTest.cpp
+        S3ConfigTest.cpp
         TestResourcesAndFunctions.cpp TestResourcesAndFunctions.h
         TestResourcesAndFunctionsTest.cpp
         TestConstants.cpp TestConstants.h

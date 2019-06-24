@@ -5,7 +5,10 @@
  */
 
 #include "ErrorAccumulator.h"
+#include <fstream>
 #include <iostream>
+#include <string>
+#include <sstream>
 
 using namespace std;
 
@@ -21,27 +24,32 @@ void ErrorAccumulator::setVerbosity(int verbosity) {
 
 bool ErrorAccumulator::verbosityIsSetToDebug() { return verbosity >= 3; }
 
-void ErrorAccumulator::debug(const string& msg) {
+void ErrorAccumulator::debug(const string &msg) {
     if (verbosityIsSetToDebug()) cerr << msg << "\n";
 }
 
-void ErrorAccumulator::info(const string& msg) {
+void ErrorAccumulator::info(const string &msg) {
     if (verbosity >= 2) cerr << msg << "\n";
 }
 
-void ErrorAccumulator::warning(const string& msg) {
+void ErrorAccumulator::warning(const string &msg) {
     if (verbosity >= 1) cerr << msg << "\n";
 }
 
-void ErrorAccumulator::severe(const string& msg) {
+void ErrorAccumulator::severe(const string &msg) {
     if (verbosity >= 0) cerr << msg << "\n";
 }
 
 vector<string> ErrorAccumulator::getErrorMessages() { return errorMessages; }
 
-const void ErrorAccumulator::addErrorMessage(const string &message) {
-    ErrorAccumulator::debug(message);
-    errorMessages.emplace_back(message);
+const void ErrorAccumulator::addErrorMessage(const string &part0, const string &part1, const string &part2,
+                                             const string &part3, const string &part4, const string &part5) {
+    ostringstream stream(part0);
+    stream << part0 << part1 << part2 << part3 << part4 << part5;
+
+    string msg = stream.str();
+    ErrorAccumulator::debug(msg);
+    errorMessages.emplace_back(msg);
 }
 
 vector<string> ErrorAccumulator::mergeToNewVector(const vector<string> &l, const vector<string> &r) {

@@ -5,9 +5,11 @@
  */
 
 #include "Extractor.h"
+#include "../../common/IOHelper.h"
+#include "../../common/StringHelper.h"
+#include "../../runners/IndexStatsRunner.h"
 #include "../base/ZLibBasedFASTQProcessorBaseClass.h"
 #include "../io/PathInputSource.h"
-#include "../../runners/IndexStatsRunner.h"
 #include <chrono>
 #include <cstdio>
 #include <experimental/filesystem>
@@ -21,7 +23,7 @@ using namespace std::chrono;
 
 using experimental::filesystem::path;
 
-Extractor::Extractor(const shared_ptr<PathInputSource> &fastqfile, const path &indexfile,
+Extractor::Extractor(const shared_ptr<InputSource> &fastqfile, const path &indexfile,
                      const path &resultfile, bool forceOverwrite,
                      ExtractMode mode, u_int64_t start, u_int64_t count, uint extractionMulitplier,
                      bool enableDebugging) :
@@ -284,7 +286,7 @@ bool
 Extractor::processDecompressedChunkOfData(ostream *out, string str, const shared_ptr<IndexEntry> &startingIndexLine) {
     if (extractedLines >= lineCount)
         return false;
-    vector<string> splitLines = splitStr(str);
+    vector<string> splitLines = StringHelper::splitStr(str);
     totalSplitCount += splitLines.size();
 
     // In the case, that we invoke this method the first time, the index entry

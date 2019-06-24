@@ -4,9 +4,11 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "../../runners/ActualRunner.h"
 #include "Indexer.h"
+#include "../../runners/ActualRunner.h"
 #include "../../runners/IndexStatsRunner.h"
+#include "../../common/IOHelper.h"
+#include "../../common/StringHelper.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -287,7 +289,7 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
     // figure this out.
     u_int32_t numberOfLinesInBlock{0};
     string currentBlockString = currentDecompressedBlock.str();
-    std::vector<string> lines = splitStr(currentBlockString);
+    std::vector<string> lines = StringHelper::splitStr(currentBlockString);
     bool currentBlockEndedWithNewLine{false};
     bool blockIsEmpty = currentBlockString.empty();
 
@@ -464,7 +466,7 @@ void Indexer::storeLinesOfCurrentBlockForDebugMode(std::stringstream &currentDec
     if (!enableDebugging) return;
 
     string str = currentDecompressedBlock.str();
-    std::vector<string> lines = splitStr(str);
+    std::vector<string> lines = StringHelper::splitStr(str);
 
     if (lines.empty()) return;
 

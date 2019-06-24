@@ -107,6 +107,16 @@ git checkout master     # Or any other version you like
 To compile it, create a CMake build directory and run CMake afterwards:
 
 ``` Bash
+AWS_DIR="/data/michael/Projekte/aws-sdk-cpp/install_shared"
+cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -D "UnitTest++_DIR":PATH="/data/michael/Projekte/unittest-cpp/install/lib/cmake/UnitTest++" \
+    -D "AWSSDK_DIR":PATH="${AWS_DIR}/lib64/cmake/AWSSDK" \
+    -D "aws-cpp-sdk-core_DIR":PATH="${AWS_DIR}/lib64/cmake/aws-cpp-sdk-core" \
+    -D "aws-c-event-stream_DIR":PATH="${AWS_DIR}/lib64/aws-c-event-stream/cmake" \
+    -D "aws-c-common_DIR":PATH="${AWS_DIR}/lib64/aws-c-common/cmake" \
+    -D "aws-checksums_DIR":PATH="${AWS_DIR}/lib64/aws-checksums/cmake" \
+    -D "aws-cpp-sdk-s3_DIR":PATH="${AWS_DIR}/lib64/cmake/aws-cpp-sdk-s3" ..
+
+
 cd FastqIndEx
 mkdir release                                                             # Or also debug, in case you want to develop
 cd release

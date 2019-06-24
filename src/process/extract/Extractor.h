@@ -88,12 +88,12 @@ public:
      * @param count             Extract a maximum of lineCount lines OR define the number of total segments
      * @param enableDebugging   Used for interactive debugging and unit tests
      */
-    explicit Extractor(const shared_ptr<PathInputSource> &fastqfile, const path &indexfile, const path &resultfile,
+    explicit Extractor(const shared_ptr<InputSource> &fastqfile, const path &indexfile, const path &resultfile,
                        bool forceOverwrite,
                        ExtractMode mode, u_int64_t start, u_int64_t count, uint extractionMulitplier,
                        bool enableDebugging);
 
-    virtual ~Extractor();;
+    virtual ~Extractor();
 
     ExtractMode getExtractMode() { return mode; }
 

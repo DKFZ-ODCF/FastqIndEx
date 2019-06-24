@@ -60,9 +60,9 @@ public:
 
     uint64_t size() override;
 
-    bool isFileSource() override;;
+    bool isFileSource() override;
 
-    bool isStreamSource() override;;
+    bool isStreamSource() override;
 
     int read(Bytef *targetBuffer, int numberOfBytes) override;
 

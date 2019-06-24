@@ -19,7 +19,7 @@ IndexWriter::IndexWriter(const path &indexFile, bool forceOverwrite, bool compre
 }
 
 IndexWriter::~IndexWriter() {
-    lock_guard<mutex> lock(iwMutex);
+//    lock_guard<mutex> lock(iwMutex);
     finalize();
 }
 
@@ -111,12 +111,15 @@ void IndexWriter::finalize() {
     lock_guard<mutex> lock(iwMutex);
     if (this->outputStream.is_open()) {
         this->writerIsOpen = false;
-        flush(); // Without flush, the file size was 0, even after closing the stream.
+        // Without flush, the file size was 0, even after closing the stream.
+        // Important: I do not work with reentrant locks here! Don't call the flush() method above or you'll encounter
+        // a nice deadlock.
+        outputStream.flush();
         outputStream.seekp(16, ios_base::beg);
         outputStream.write((const char*)&numberOfWrittenEntries, 8);
         outputStream.seekp(24, ios_base::beg);
         outputStream.write((const char*)&numberOfLinesInFile, 8);
-        flush();
+        outputStream.flush();
         this->outputStream.close();
     }
 }

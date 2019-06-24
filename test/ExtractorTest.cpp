@@ -4,11 +4,13 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "../src/runners/Runner.h"
-#include "../src/runners/ExtractorRunner.h"
+#include "../src/common/IOHelper.h"
+#include "../src/common/StringHelper.h"
 #include "../src/process/extract/Extractor.h"
 #include "../src/process/index/Indexer.h"
 #include "../src/process/io/PathInputSource.h"
+#include "../src/runners/ExtractorRunner.h"
+#include "../src/runners/Runner.h"
 #include "TestResourcesAndFunctions.h"
 #include <fstream>
 #include <iostream>
@@ -155,7 +157,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         bool lastBlockEndedWithNewline = true;
         Indexer indexer(make_shared<PathInputSource>(fastq), index, 1, true);
         for (auto bd : _blockData) {
-            auto split = ZLibBasedFASTQProcessorBaseClass::splitStr(bd);
+            auto split = StringHelper::splitStr(bd);
             bool currentBlockEndedWithNewline;
             u_int32_t numberOfLinesInBlock;
             u_int64_t offset = 0;
@@ -193,7 +195,7 @@ SUITE (INDEXER_SUITE_TESTS) {
             for (int j = startingBlockIDs[i]; j < _blockData.size(); j++) {
                 extractor.processDecompressedChunkOfData(&outStream, _blockData[j], indexEntry->toIndexEntry());
             }
-            auto split = ZLibBasedFASTQProcessorBaseClass::splitStr(outStream.str());
+            auto split = StringHelper::splitStr(outStream.str());
                     CHECK(extractor.getStoredLines().size() == expectedLines[i]);
         }
     }

@@ -6,22 +6,21 @@
 
 #include <iostream>
 #include "IndexerRunner.h"
-#include "../process/index/Indexer.h"
+#include "process/index/Indexer.h"
 
 using namespace std;
 
 IndexerRunner::IndexerRunner(
-        const shared_ptr<InputSource> &fastqfile,
-        const path &indexfile,
+        const shared_ptr<Source> &fastqFile,
+        const shared_ptr<Sink> &indexFile,
         int blockInterval,
         bool enableDebugging,
         bool forceOverwrite,
         bool forbidWriteFQI,
         bool disableFailsafeDistance,
-        bool compressDictionaries
-) :
-        ActualRunner(fastqfile, indexfile) {
-    this->indexer = new Indexer(
+        bool compressDictionaries) :
+        IndexWritingRunner(fastqFile, indexFile) {
+    this->indexer = make_shared<Indexer>(
             this->fastqFile,
             this->indexFile,
             blockInterval,
@@ -34,7 +33,7 @@ IndexerRunner::IndexerRunner(
 }
 
 IndexerRunner::~IndexerRunner() {
-    delete indexer;
+    indexer.reset();
 }
 
 bool IndexerRunner::checkPremises() {
@@ -49,7 +48,7 @@ bool IndexerRunner::allowsReadFromStreamedSource() {
     return true;
 }
 
-unsigned char IndexerRunner::run() {
+unsigned char IndexerRunner::_run() {
     if (indexer->createIndex()) return 0;
     else return 1;
 }

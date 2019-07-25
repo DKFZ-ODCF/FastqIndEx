@@ -6,28 +6,28 @@
 
 #include <iostream>
 #include "ExtractorRunner.h"
-#include "../process/extract/IndexReader.h"
-#include "../process/extract/Extractor.h"
-#include "../process/io/PathInputSource.h"
+#include "process/extract/IndexReader.h"
+#include "process/extract/Extractor.h"
+#include "process/io/PathSource.h"
 
 ExtractorRunner::ExtractorRunner(
-        const shared_ptr<PathInputSource> &fastqfile,
-        const path &indexfile,
-        const path &resultfile,
+        const shared_ptr<Source> &fastqfile,
+        const shared_ptr<Source> &indexFile,
+        const shared_ptr<Sink> &resultfile,
         bool forceOverwrite,
         ExtractMode mode,
         u_int64_t start,
         u_int64_t count,
         uint extractionMultiplier,
         bool enableDebugging
-) : ActualRunner(fastqfile, indexfile) {
+) : IndexReadingRunner(fastqfile, indexFile) {
 
     this->start = start;
     this->count = count;
     this->extractionMultiplier = extractionMultiplier;
     this->enableDebugging = enableDebugging;
     this->extractor.reset(
-            new Extractor(fastqfile, indexfile, resultfile, forceOverwrite, mode, start, count,
+            new Extractor(fastqfile, indexFile, resultfile, forceOverwrite, mode, start, count,
                           extractionMultiplier, enableDebugging)
     );
 }
@@ -43,7 +43,7 @@ bool ExtractorRunner::checkPremises() {
     return baseClassChecksPassed && extractorTestsPassed;
 }
 
-unsigned char ExtractorRunner::run() {
+unsigned char ExtractorRunner::_run() {
     return extractor->extract() ? 0 : 1;
 }
 

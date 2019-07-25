@@ -7,6 +7,12 @@ to enable random access to the FASTQ file. Though its primary goal is to
 extract data from FASTQ files, you can also use it to index gzipped text
 files.
 
+FastqIndEx allows to you work on local files, files in the network and
+files in an S3 bucket. Index file access in the network is guarded using
+flock() and should be safe. For S3, we implemented a custom, temporary
+lock file approach. The S3 approach is not a 100% safe but should be 
+good enough, when used with the proper awareness. 
+
 ## License 
 
 FastqIndEx is published under the MIT license. See 
@@ -107,6 +113,14 @@ git checkout master     # Or any other version you like
 To compile it, create a CMake build directory and run CMake afterwards:
 
 ``` Bash
+export CONDA_DIR="/data/michael/miniconda2/envs/FastqIndEx"
+export CONDA_LIB=${CONDA_DIR}/lib
+export CONDA_LIB64=${CONDA_DIR}/lib64
+export CONDA_INCLUDE=${CONDA_DIR}/include
+cmake -D CMAKE_BUILD_TYPE=Debug -D BUILD_ONLY="s3;config;transfer" -D BUILD_SHARED_LIBS=ON  -D OPENSSL_ROOT_DIR=${CONDA_DIR}  -D OPENSSL_INCLUDE_DIR=${CONDA_INCLUDE} OPENSSL_LIBRARIES=${CONDA_LIB}  -D ZLIB_INCLUDE_DIR=${CONDA_INCLUDE} -DZLIB_LIBRARY=${CONDA_LIB}/libz.a -D CURL_INCLUDE_DIR=${CONDA_INCLUDE} -DCURL_LIBRARY=${CONDA_LIB}/libcurl.so  -D CMAKE_INSTALL_PREFIX=$PWD/../install_shared -D ENABLE_TESTING=OFF ..
+cmake -D CMAKE_BUILD_TYPE=Debug -D BUILD_ONLY="s3;config;transfer" -D BUILD_SHARED_LIBS=OFF  -D OPENSSL_ROOT_DIR=${CONDA_DIR}  -D OPENSSL_INCLUDE_DIR=${CONDA_INCLUDE} OPENSSL_LIBRARIES=${CONDA_LIB}  -D ZLIB_INCLUDE_DIR=${CONDA_INCLUDE} -DZLIB_LIBRARY=${CONDA_LIB}/libz.a -D CURL_INCLUDE_DIR=${CONDA_INCLUDE} -DCURL_LIBRARY=${CONDA_LIB}/libcurl.so  -D CMAKE_INSTALL_PREFIX=$PWD/../install_shared -D ENABLE_TESTING=OFF ..
+
+
 AWS_DIR="/data/michael/Projekte/aws-sdk-cpp/install_shared"
 cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -D "UnitTest++_DIR":PATH="/data/michael/Projekte/unittest-cpp/install/lib/cmake/UnitTest++" \
     -D "AWSSDK_DIR":PATH="${AWS_DIR}/lib64/cmake/AWSSDK" \
@@ -174,6 +188,9 @@ fastqindex index -f=test2.fastq.gz -i=test2.fastq.gz.fqi
 
 # Index from a pipe
 cat test2.fastq.gz | fastqindex -f=- -i=test2.fastq.fqi
+
+# Index from an S3 bucket
+fastqindex index -f=s3://bucket/test2.fastq.gz
 ```
 
 There are more options available like:

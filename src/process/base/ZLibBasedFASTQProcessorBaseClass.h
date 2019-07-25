@@ -7,11 +7,12 @@
 #ifndef FASTQINDEX_ZLIBHELPER_H
 #define FASTQINDEX_ZLIBHELPER_H
 
-#include "../../common/CommonStructsAndConstants.h"
-#include "../../common/ErrorAccumulator.h"
-#include "../extract/IndexReader.h"
-#include "../io/InputSource.h"
-#include "../io/PathInputSource.h"
+#include "common/CommonStructsAndConstants.h"
+#include "common/ErrorAccumulator.h"
+#include "process/extract/IndexReader.h"
+#include "process/io/Source.h"
+#include "process/io/Sink.h"
+#include "process/io/PathSource.h"
 #include <cstdio>
 #include <experimental/filesystem>
 #include <zlib.h>
@@ -26,9 +27,11 @@ class ZLibBasedFASTQProcessorBaseClass : public ErrorAccumulator {
 
 protected:
 
-    shared_ptr<InputSource> fastqfile;
+    shared_ptr<Source> fastqFile;
 
-    path indexfile;
+    shared_ptr<Source> inputIndexFile;
+
+    shared_ptr<Sink> outputIndexFile;
 
     /**
      * Set to true, as soon as createIndex() was started.
@@ -98,13 +101,17 @@ protected:
      */
     stringstream currentDecompressedBlock;
 
-    ZLibBasedFASTQProcessorBaseClass(shared_ptr<InputSource> fastq, path index, bool enableDebugging);
+    ZLibBasedFASTQProcessorBaseClass(shared_ptr<Source> fastq, shared_ptr<Source> index, bool enableDebugging);
+
+    ZLibBasedFASTQProcessorBaseClass(shared_ptr<Source> fastq, shared_ptr<Sink> index, bool enableDebugging);
 
 public:
 
-    shared_ptr<InputSource> getFastq() { return fastqfile; }
+    shared_ptr<Source> getFastq() { return fastqFile; }
 
-    path getIndex() { return indexfile; }
+    auto getInputIndexFile() { return inputIndexFile; }
+
+    auto getOutputIndexFile() { return outputIndexFile; }
 
     bool wasSuccessful() { return finishedSuccessful; };
 
@@ -148,7 +155,7 @@ public:
      * @param buffer which will hold the latest decompressed chunk of data.
      * @return
      */
-    bool readCompressedDataFromInputSource();
+    bool readCompressedDataFromSource();
 
     bool checkStreamForBlockEnd();
 

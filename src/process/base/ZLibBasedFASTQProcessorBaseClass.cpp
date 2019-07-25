@@ -4,8 +4,8 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "../io/PathInputSource.h"
-#include "../extract/Extractor.h"
+#include "process/io/PathSource.h"
+#include "process/extract/Extractor.h"
 #include "ZLibBasedFASTQProcessorBaseClass.h"
 #include <cstdio>
 #include <experimental/filesystem>
@@ -14,14 +14,25 @@
 #include <zlib.h>
 
 ZLibBasedFASTQProcessorBaseClass::ZLibBasedFASTQProcessorBaseClass(
-        shared_ptr<InputSource> fastq,
-        path index,
+        shared_ptr<Source> fastq,
+        shared_ptr<Source> index,
         const bool enableDebugging) :
         enableDebugging(enableDebugging) {
-    // clang-tidy will complain, that zStream is not initialized by this constructor. This is done in another step.
 
-    fastqfile = move(fastq);
-    indexfile = move(index);
+    // clang-tidy will complain, that zStream is not initialized by this constructor. This is done in another step.
+    fastqFile = move(fastq);
+    inputIndexFile = move(index);
+}
+
+ZLibBasedFASTQProcessorBaseClass::ZLibBasedFASTQProcessorBaseClass(
+        shared_ptr<Source> fastq,
+        shared_ptr<Sink> index,
+        const bool enableDebugging) :
+        enableDebugging(enableDebugging) {
+
+    // clang-tidy will complain, that zStream is not initialized by this constructor. This is done in another step.
+    fastqFile = move(fastq);
+    outputIndexFile = move(index);
 }
 
 bool ZLibBasedFASTQProcessorBaseClass::initializeZStream(int mode) {
@@ -41,9 +52,9 @@ bool ZLibBasedFASTQProcessorBaseClass::initializeZStream(int mode) {
     return true;
 }
 
-bool ZLibBasedFASTQProcessorBaseClass::readCompressedDataFromInputSource() {
+bool ZLibBasedFASTQProcessorBaseClass::readCompressedDataFromSource() {
     /* get some compressed data from input file */
-    int result = this->fastqfile->read(input, CHUNK_SIZE);
+    int result = this->fastqFile->read(input, CHUNK_SIZE);
 
     if (result == -1) {
         this->addErrorMessage("There was an error during fread.");

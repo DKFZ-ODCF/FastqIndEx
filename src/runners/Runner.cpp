@@ -4,14 +4,8 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "Runner.h"
-#include "../startup/Starter.h"
-#include <iostream>
+#include "runners/Runner.h"
 
-using namespace std;
-
-unsigned char DoNothingRunner::run() {
-//    cerr << *Starter::getInstance()->getCLIOptions();
+unsigned char Runner::run() {
+    return _run();
 }
-
-

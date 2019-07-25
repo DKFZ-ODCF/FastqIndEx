@@ -6,9 +6,10 @@
 
 #include "IndexStatsRunner.h"
 
-IndexStatsRunner::IndexStatsRunner(const path &indexfile, int start, int amount) : ActualRunner(nullptr, indexfile) {
+IndexStatsRunner::IndexStatsRunner(const shared_ptr<Source> &indexFile, int start, int amount) : IndexReadingRunner(
+        shared_ptr<Source>(nullptr), indexFile) {
 
-    this->indexReader = make_shared<IndexReader>(indexfile);
+    this->indexReader = make_shared<IndexReader>(indexFile);
     this->start = start;
     this->amount = amount;
 }
@@ -18,16 +19,17 @@ bool IndexStatsRunner::allowsReadFromStreamedSource() {
 }
 
 bool IndexStatsRunner::checkPremises() {
-    auto res = ActualRunner::checkPremises();
+    // There is no FASTQ file here
+//    auto res = ActualRunner::checkPremises();
     auto res2 = this->indexReader->tryOpenAndReadHeader();
-    return res && res2;
+    return res2;
 }
 
-unsigned char IndexStatsRunner::run() {
+unsigned char IndexStatsRunner::_run() {
     auto header = this->indexReader->getIndexHeader();
     auto indicesLeft = this->indexReader->getIndicesLeft();
 
-    cout << "Statistics for index file " << this->indexFile.string() << "\n";
+    cout << "Statistics for index file " << this->indexFile->toString() << "\n";
     cout << "\tMagic number:     " << header.magicNumber << "\n";
     cout << "\tWriter version:   " << header.indexWriterVersion << "\n";
     cout << "\tBlock Interval:   " << header.blockInterval << "\n";
@@ -51,7 +53,7 @@ unsigned char IndexStatsRunner::run() {
         cout << "Starting index id exceeds entry count.\n";
         return 1;
     } else {
-        for (int i = 0; i < toRead; i++) {
+        for (int i = 0; i < toRead && this->indexReader->getIndicesLeft() > 0; i++) {
             auto entry = this->indexReader->readIndexEntry();
 
             printIndexEntryToConsole(entry, (i + start));
@@ -60,14 +62,16 @@ unsigned char IndexStatsRunner::run() {
     }
 }
 
-void IndexStatsRunner::printIndexEntryToConsole(const shared_ptr<IndexEntry> &entry, u_int64_t entryNumber) {
-    cout << "Entry number:    " << entryNumber << "\n";
-    cout << "  Entry id:      " << entry->id << "\n";
-    cout << "  Raw offset:    " << entry->offsetInRawFile << "\n";
-    cout << "  Starting line: " << entry->startingLineInEntry << "\n";
-    cout << "    Record (/4): " << (entry->startingLineInEntry / 4) << "\n";
-    cout << "  Line offset:   " << entry->offsetOfFirstValidLine << "\n";
-    cout << "  Bits:          " << entry->bits << "\n";
+void IndexStatsRunner::printIndexEntryToConsole(const shared_ptr<IndexEntry> &entry, u_int64_t entryNumber,
+                                                bool toCErr) {
+    auto &_ostream = toCErr ? cout : cerr;
+    _ostream << "Entry number:    " << entryNumber << "\n";
+    _ostream << "  Entry id:      " << entry->id << "\n";
+    _ostream << "  Raw offset:    " << entry->offsetInRawFile << "\n";
+    _ostream << "  Starting line: " << entry->startingLineInEntry << "\n";
+    _ostream << "    Record (/4): " << (entry->startingLineInEntry / 4) << "\n";
+    _ostream << "  Line offset:   " << entry->offsetOfFirstValidLine << "\n";
+    _ostream << "  Bits:          " << entry->bits << "\n";
 }
 
 vector<string> IndexStatsRunner::getErrorMessages() {

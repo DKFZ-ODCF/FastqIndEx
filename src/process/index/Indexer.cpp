@@ -5,10 +5,10 @@
  */
 
 #include "Indexer.h"
-#include "../../runners/ActualRunner.h"
-#include "../../runners/IndexStatsRunner.h"
-#include "../../common/IOHelper.h"
-#include "../../common/StringHelper.h"
+#include "runners/ActualRunner.h"
+#include "runners/IndexStatsRunner.h"
+#include "common/IOHelper.h"
+#include "common/StringHelper.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -45,8 +45,8 @@ u_int32_t Indexer::calculateIndexBlockInterval(u_int64_t fileSize) {
 }
 
 Indexer::Indexer(
-        const shared_ptr<InputSource> &fastqfile,
-        const path &index,
+        const shared_ptr<Source> &fastqfile,
+        const shared_ptr<Sink> &index,
         int blockInterval,
         bool enableDebugging,
         bool forceOverwrite,
@@ -100,7 +100,7 @@ bool Indexer::createIndex() {
         return false;
     }
 
-    auto sizeOfFastq = fastqfile->size();
+    auto sizeOfFastq = fastqFile->size();
     // If not already set, recalculate the interval for index entries.
     if (blockInterval == -1) {
         if (sizeOfFastq == -1) {
@@ -123,7 +123,7 @@ bool Indexer::createIndex() {
         cerr << "The indexer will not write an index file!\n";
     }
 
-    fastqfile->open();
+    fastqFile->open();
 
     bool keepProcessing = true;
 
@@ -139,11 +139,11 @@ bool Indexer::createIndex() {
     while (keepProcessing) {
 
         do {
-            if (!fastqfile->canRead()) {
+            if (!fastqFile->canRead()) {
                 keepProcessing = false; // Happens, when input streams are used.
                 break;
             }
-            if (!readCompressedDataFromInputSource()) {
+            if (!readCompressedDataFromSource()) {
                 errorWasRaised = true;
                 break;
             }
@@ -171,7 +171,7 @@ bool Indexer::createIndex() {
 
             } while (zStream.avail_in != 0);
 
-            keepProcessing = zlibResult != Z_STREAM_END && fastqfile->canRead();
+            keepProcessing = zlibResult != Z_STREAM_END && fastqFile->canRead();
 
         } while (!errorWasRaised && keepProcessing);
 
@@ -190,7 +190,7 @@ bool Indexer::createIndex() {
         partialBlockinfoStream.close();
     }
 
-    fastqfile->close();
+    fastqFile->close();
     inflateEnd(&zStream);
 
     // Set line info for index file, which will be written, when the index writer is deleted.
@@ -215,8 +215,8 @@ bool Indexer::createIndex() {
 bool Indexer::checkAndPrepareForNextConcatenatedPart() {
     // The stream position needs to be set to the beginning of the new gzip stream. If reading from the data stream is
     // possible afterwards, there might be another gzip stream and we will continue decompression.
-    fastqfile->seek(totalBytesIn, true);
-    if (!fastqfile->canRead())
+    fastqFile->seek(totalBytesIn, true);
+    if (!fastqFile->canRead())
         return false;
 
     // Clean up and go on

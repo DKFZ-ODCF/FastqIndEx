@@ -24,8 +24,12 @@ void ErrorAccumulator::setVerbosity(int verbosity) {
 
 bool ErrorAccumulator::verbosityIsSetToDebug() { return verbosity >= 3; }
 
-void ErrorAccumulator::debug(const string &msg) {
-    if (verbosityIsSetToDebug()) cerr << msg << "\n";
+void ErrorAccumulator::always(_cstr s0, _cstr s1, _cstr s2, _cstr s3, _cstr s4, _cstr s5) {
+    cerr << ErrorAccumulator::join(s0, s1, s2, s3, s4, s5) << "\n";
+}
+
+void ErrorAccumulator::debug(_cstr s0, _cstr s1, _cstr s2, _cstr s3, _cstr s4, _cstr s5) {
+    if (verbosityIsSetToDebug()) cerr << ErrorAccumulator::join(s0, s1, s2, s3, s4, s5) << "\n";
 }
 
 void ErrorAccumulator::info(const string &msg) {
@@ -42,20 +46,32 @@ void ErrorAccumulator::severe(const string &msg) {
 
 vector<string> ErrorAccumulator::getErrorMessages() { return errorMessages; }
 
-const void ErrorAccumulator::addErrorMessage(const string &part0, const string &part1, const string &part2,
-                                             const string &part3, const string &part4, const string &part5) {
-    ostringstream stream(part0);
-    stream << part0 << part1 << part2 << part3 << part4 << part5;
-
-    string msg = stream.str();
-    ErrorAccumulator::debug(msg);
-    errorMessages.emplace_back(msg);
+const void ErrorAccumulator::addErrorMessage(_cstr s0, _cstr s1, _cstr s2, _cstr s3, _cstr s4, _cstr s5) {
+    ErrorAccumulator::debug(s0, s1, s2, s3, s4, s5);
+    errorMessages.emplace_back(join(s0, s1, s2, s3, s4, s5));
 }
+
+string ErrorAccumulator::join(_cstr s0, _cstr s1, _cstr s2, _cstr s3, _cstr s4, _cstr s5) {
+    ostringstream stream(s0);
+    stream << s0 << s1 << s2 << s3 << s4 << s5;
+    return stream.str();
+}
+
 
 vector<string> ErrorAccumulator::mergeToNewVector(const vector<string> &l, const vector<string> &r) {
     std::vector<string> merged;
     merged.reserve(l.size() + r.size());
     merged.insert(merged.end(), l.begin(), l.end());
     merged.insert(merged.end(), r.begin(), r.end());
+    return merged;
+}
+
+vector<string>
+ErrorAccumulator::mergeToNewVector(const vector<string> &a, const vector<string> &b, const vector<string> &c) {
+    std::vector<string> merged;
+    merged.reserve(a.size() + b.size() + c.size());
+    merged.insert(merged.end(), a.begin(), a.end());
+    merged.insert(merged.end(), b.begin(), b.end());
+    merged.insert(merged.end(), c.begin(), c.end());
     return merged;
 }

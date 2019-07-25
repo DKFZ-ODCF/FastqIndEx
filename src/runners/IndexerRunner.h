@@ -8,10 +8,10 @@
 #define FASTQINDEX_INDEXERRUNNER_H
 
 
-#include "ActualRunner.h"
-#include "../process/index/Indexer.h"
-#include "../process/io/InputSource.h"
-#include "../process/io/PathInputSource.h"
+#include "runners/ActualRunner.h"
+#include "process/index/Indexer.h"
+#include "process/io/Source.h"
+#include "process/io/PathSource.h"
 
 /**
  * The IndexRunner will, once started, create an index for the  FASTQ file by utilizing the Indexer class. As of now,
@@ -19,31 +19,21 @@
  * Indexer (there is only one version) whereas the ExtractorRunner, will use an extractor based on the index version.
  * One advantage: The code is a bit more modular and therefore better testable.
  */
-class IndexerRunner : public ActualRunner {
+class IndexerRunner : public IndexWritingRunner {
 
 private:
 
-    Indexer *indexer = nullptr;
+    shared_ptr<Indexer> indexer;
+
+protected:
+
+    unsigned char _run() override;
 
 public:
 
     IndexerRunner(
-            const path &fastqfile,
-            const path &indexfile,
-            int blockInterval = -1,
-            bool enableDebugging = false,
-            bool forceOverwrite = false
-    ) : IndexerRunner(
-            shared_ptr<InputSource>(new PathInputSource(fastqfile)),
-            indexfile,
-            blockInterval,
-            enableDebugging,
-            forceOverwrite
-    ) {};
-
-    IndexerRunner(
-            const shared_ptr<InputSource> &fastqfile,
-            const path &indexfile,
+            const shared_ptr<Source> &fastqfile,
+            const shared_ptr<Sink> &indexFile,
             int blockInterval = -1,
             bool enableDebugging = false,
             bool forceOverwrite = false,
@@ -63,18 +53,7 @@ public:
      */
     bool allowsReadFromStreamedSource() override;
 
-    unsigned char run() override;
-
     vector<string> getErrorMessages() override;
-
-    // Facade methods
-//    void enableDebugging() {
-//        this->indexer->enableDebugging();
-//    }
-
-//    void enableForbidWriteFQI() {
-//
-//    }
 
     void enableWriteOutOfDecompressedBlocksAndStatistics(const path &location) {
         this->indexer->enableWriteOutOfDecompressedBlocksAndStatistics(location);

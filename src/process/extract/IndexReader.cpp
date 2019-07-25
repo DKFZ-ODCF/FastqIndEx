@@ -5,7 +5,8 @@
  */
 
 #include "IndexReader.h"
-#include "../index/IndexWriter.h"
+#include "process/index/IndexWriter.h"
+#include "process/io/Source.h"
 #include <experimental/filesystem>
 #include <fstream>
 
@@ -13,15 +14,12 @@ using namespace std;
 using std::experimental::filesystem::path;
 
 
-IndexReader::IndexReader(const path &indexFile) : IndexProcessor(indexFile), inputStream(nullptr) {
+IndexReader::IndexReader(const shared_ptr<Source> &indexFile) {
+    this->indexFile = indexFile;
 }
 
 IndexReader::~IndexReader() {
-    if (inputStream) {
-        if (inputStream->good())
-            inputStream->close();
-        delete inputStream;
-    }
+    this->indexFile->close();
 }
 
 bool IndexReader::tryOpenAndReadHeader() {
@@ -29,33 +27,31 @@ bool IndexReader::tryOpenAndReadHeader() {
     if (readerIsOpen)
         return true;
 
-    if (!exists(indexFile)) {
+    if (!indexFile->exists()) {
         addErrorMessage("The index file does not exist.");
         return false;
     }
-    bool gotLock = openWithReadLock();
+    bool gotLock = indexFile->openWithReadLock();
     if (!gotLock) {
         addErrorMessage("Could not get a lock for the index file.");
         return false;
     }
 
-    uintmax_t fileSize = file_size(indexFile);
+    uintmax_t fileSize = indexFile->size();
 
     size_t headerSize = sizeof(IndexHeader);
     if (headerSize > fileSize) {
         addErrorMessage("The index file is too small and cannot be read.");
-        this->unlock();
+        indexFile->close();
         return false;
     }
 
     /**
      * Open the stream and see if it is good.
      */
-    this->inputStream = new ifstream(indexFile);
-    if (!this->inputStream->good()) {
+    if (this->indexFile->isBad()) {
         addErrorMessage("There was an error while opening input stream for index file.");
-        this->inputStream->close();
-        this->unlock();
+        indexFile->close();
         return false;
     }
 
@@ -69,22 +65,19 @@ bool IndexReader::tryOpenAndReadHeader() {
         sizeOfIndexEntry = sizeof(IndexEntryV1);
     } else {
         addErrorMessage("Index version is not readable with this version of FastqIndEx.");
-        this->inputStream->close();
-        this->unlock();
+        indexFile->close();
         return false;
     }
 
     if(this-readHeader.dictionariesAreCompressed ) {
         if(fileSize <= headerSize) {
             addErrorMessage("Cannot read index file, it is too small.");
-            this->inputStream->close();
-            this->unlock();
+            indexFile->close();
             return false;
         }
     } else if (headerSize + sizeOfIndexEntry > fileSize) {
         addErrorMessage("Cannot read index file, it is too small.");
-        this->inputStream->close();
-        this->unlock();
+        indexFile->close();
         return false;
     }
 
@@ -92,8 +85,7 @@ bool IndexReader::tryOpenAndReadHeader() {
         // We could only check, if there is at least one entry.
     } else if (0 != (fileSize - headerSize) % sizeOfIndexEntry) {
         addErrorMessage("Cannot read index file, there is a mismatch between stored index version and content size.");
-        this->inputStream->close();
-        this->unlock();
+        indexFile->close();
         return false;
     }
 
@@ -105,8 +97,7 @@ bool IndexReader::tryOpenAndReadHeader() {
 
     if(this->indicesLeft == 0) {
         addErrorMessage("Could not properly determine the amount of indices in this file.");
-        this->inputStream->close();
-        this->unlock();
+        indexFile->close();
         return false;
     }
 
@@ -119,7 +110,7 @@ bool IndexReader::tryOpenAndReadHeader() {
 
 IndexHeader IndexReader::readIndexHeader() {
     IndexHeader header;
-    inputStream->read((char *) &header, sizeof(IndexHeader));
+    indexFile->read((Bytef*)&header, sizeof(IndexHeader));
 
     this->readHeader = header;
     headerWasRead = true;
@@ -175,19 +166,19 @@ shared_ptr<IndexEntryV1> IndexReader::readIndexEntryV1() {
     }
 
     //Whyever, eof does not seem to work reliably, so use indicesLeft.
-    if (inputStream->eof() || indicesLeft <= 0) {
+    if (indexFile->eof() || indicesLeft <= 0) {
         addErrorMessage("The stream is finished and no entries are left to read. Can't read a new entry.");
         return shared_ptr<IndexEntryV1>(nullptr);
     }
 
     auto entry = make_shared<IndexEntryV1>();
     int headerSize = sizeof(IndexEntryV1) - sizeof(entry->dictionary);
-    inputStream->read((char *) entry.get(), headerSize);
+    indexFile->read((Bytef *) entry.get(), headerSize);
     if (entry->compressedDictionarySize == 0) { // No compression
-        inputStream->read((char *) entry.get() + headerSize, sizeof(entry->dictionary));
+        indexFile->read((Bytef *) entry.get() + headerSize, sizeof(entry->dictionary));
     } else {
         memset((char *) entry->dictionary, 0, WINDOW_SIZE); // Set to 0 first, so we won't have any garbage issues.
-        inputStream->read((char *) entry.get() + headerSize, entry->compressedDictionarySize);
+        indexFile->read((Bytef *) entry.get() + headerSize, entry->compressedDictionarySize);
     }
     indicesLeft--;
 

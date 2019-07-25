@@ -5,11 +5,11 @@
  */
 
 #include "Extractor.h"
-#include "../../common/IOHelper.h"
-#include "../../common/StringHelper.h"
-#include "../../runners/IndexStatsRunner.h"
-#include "../base/ZLibBasedFASTQProcessorBaseClass.h"
-#include "../io/PathInputSource.h"
+#include "common/IOHelper.h"
+#include "common/StringHelper.h"
+#include "runners/IndexStatsRunner.h"
+#include "process/base/ZLibBasedFASTQProcessorBaseClass.h"
+#include "process/io/PathSource.h"
 #include <chrono>
 #include <cstdio>
 #include <experimental/filesystem>
@@ -23,26 +23,19 @@ using namespace std::chrono;
 
 using experimental::filesystem::path;
 
-Extractor::Extractor(const shared_ptr<InputSource> &fastqfile, const path &indexfile,
-                     const path &resultfile, bool forceOverwrite,
+Extractor::Extractor(const shared_ptr<Source> &fastqfile,
+                     const shared_ptr<Source> &indexFile,
+                     const shared_ptr<Sink> &resultSink,
+                     bool forceOverwrite,
                      ExtractMode mode, u_int64_t start, u_int64_t count, uint extractionMulitplier,
                      bool enableDebugging) :
-        ZLibBasedFASTQProcessorBaseClass(fastqfile, indexfile, enableDebugging),
+        ZLibBasedFASTQProcessorBaseClass(fastqfile, indexFile, enableDebugging),
         mode(mode), start(start), count(count) {
-    this->indexReader = make_shared<IndexReader>(indexfile);
-    this->resultFile = resultfile;
-    this->forceOverwrite = forceOverwrite;
+    this->indexReader = make_shared<IndexReader>(indexFile);
+    this->resultSink = resultSink;
     this->extractionMultiplier = extractionMulitplier == 0 ? 4 : extractionMulitplier;
     this->roundtripBuffer = new string[extractionMulitplier];
 
-    if (resultFile.empty() || resultFile.generic_u8string() == "-") {
-        this->forceOverwrite = false;
-    } else {
-        char buf[WINDOW_SIZE]{0};
-        realpath(this->resultFile.string().c_str(), buf);
-        this->resultFile = path(string(buf));
-        useFile = true;
-    }
 }
 
 Extractor::~Extractor() { delete[] roundtripBuffer; }
@@ -58,21 +51,11 @@ bool Extractor::checkPremises() {
         return false;
     }
 
-    if (useFile) {
-        if (!forceOverwrite && exists(resultFile)) {
-            addErrorMessage(
-                    "The result file already exists and cannot be overwritten. Allow overwriting with -w, if it is intentional.");
-            return false;
-        }
-        if (exists(resultFile) && access(resultFile.string().c_str(), W_OK) != 0) {
-            addErrorMessage("The result file exists and cannot be overwritten. Check its file access rights.");
-            return false;
-        }
-        if (!exists(resultFile) && access(resultFile.parent_path().string().c_str(), W_OK) != 0) {
-            addErrorMessage("The result file cannot be written. Check the access rights of the parent folder.");
-            return false;
-        }
+    if (!resultSink->checkPremises()) {
+        return false;
     }
+
+
     bool couldOpen = this->indexReader->tryOpenAndReadHeader();
 
     if (!couldOpen)
@@ -117,7 +100,7 @@ void Extractor::calculateStartingLineAndLineCount() {
 
         lineCount = recordsPerSegment * extractionMultiplier;
         startingLine = start * lineCount;
-        if(start == count - 1) { // Last segment
+        if (start == count - 1) { // Last segment
             lineCount = recordsInLastSegment * extractionMultiplier;
         }
     }
@@ -130,11 +113,9 @@ bool Extractor::extract() {
     if (!useFile)
         out = &cout;
     else {
-        outfilestream.open(resultFile.string());
+        outfilestream.open(resultSink->toString());
         out = &outfilestream;
     }
-
-    timerStart();
 
     calculateStartingLineAndLineCount();
 
@@ -151,30 +132,29 @@ bool Extractor::extract() {
         startingIndexLine = entry;
     }
 
-    timerRestart("Index entry search");
-
     if (!initializeZStreamForRawInflate()) {
         return false;
     }
 
-    fastqfile->open();
+    fastqFile->open();
     off_t initialOffset = startingIndexLine->offsetInRawFile;
     totalBytesIn += initialOffset;
     int startBits = startingIndexLine->bits;
     if (startBits > 0)
         initialOffset--;
-    zlibResult = fastqfile->seek(initialOffset, true);
+    fastqFile->setReadStart(initialOffset); // This is for S3. Could be integrated into seek. Dont' know yet.
+    zlibResult = fastqFile->seek(initialOffset, true);
     if (zlibResult == -1) {
         addErrorMessage("");
-        fastqfile->close();
+        fastqFile->close();
         return false;
     }
 
     if (startBits > 0) {
-        int ret = fastqfile->readChar();
+        int ret = fastqFile->readChar();
         totalBytesIn++;
         if (ret == -1) {
-            ret = fastqfile->lastError() ? Z_ERRNO : Z_DATA_ERROR;
+            ret = fastqFile->lastError() ? Z_ERRNO : Z_DATA_ERROR;
             errorWasRaised = true;
         }
         // This will pop up a clang-tidy warning, but as Mark Adler does it, I don't want to change it.
@@ -193,13 +173,13 @@ bool Extractor::extract() {
 
     if (errorWasRaised) {
         addErrorMessage(string("zlib reported an error: ") + zStream.msg);
-        fastqfile->close();
+        fastqFile->close();
         return false;
     }
 
     timerRestart("Final extractor init");
 
-    IndexStatsRunner::printIndexEntryToConsole(startingIndexLine, indexEntryNumber);
+    IndexStatsRunner::printIndexEntryToConsole(startingIndexLine, indexEntryNumber, true);
 
     // The number of lines which will be skipped in the found starting block
     skip = startingLine - startingIndexLine->startingLineInEntry;
@@ -209,7 +189,7 @@ bool Extractor::extract() {
     do {
         do {
 
-            if (!readCompressedDataFromInputSource()) {
+            if (!readCompressedDataFromSource()) {
                 errorWasRaised = true;
                 break;
             }
@@ -242,7 +222,7 @@ bool Extractor::extract() {
     } while (keepExtracting);
 
     // Free the file pointer and close the file.
-    fastqfile->close();
+    fastqFile->close();
 
     if (outfilestream.is_open())
         outfilestream.close();
@@ -260,9 +240,9 @@ bool Extractor::checkAndPrepareForNextConcatenatedPart(bool finalAbort) {
 
     totalBytesIn += 8 + 10; // Plus 8 Byte (for what? they are missing...) and 10 Byte for the next header
     uint64_t streamEndPosition = totalBytesIn;
-    fastqfile->seek(streamEndPosition, true);
+    fastqFile->seek(streamEndPosition, true);
 
-    if (!fastqfile->canRead()) return false;
+    if (!fastqFile->canRead()) return false;
 
     inflateEnd(&zStream);
     if (!initializeZStreamForRawInflate()) {
@@ -340,14 +320,11 @@ Extractor::processDecompressedChunkOfData(ostream *out, string str, const shared
 void Extractor::storeOrOutputLine(ostream *outStream, string line) {
     roundtripBufferPosition = extractedLines % extractionMultiplier;
     roundtripBuffer[roundtripBufferPosition] = line;
-//    if (roundtripBufferPosition != extractionMultiplier - 1) return;
 
-//    for (int i = 0; i < extractionMultiplier; i++) {
     if (enableDebugging)
         storedLines.emplace_back(line);
     else
         (*outStream) << line << "\n";
-//    }
 }
 
 void Extractor::storeLinesOfCurrentBlockForDebugMode() {
@@ -359,7 +336,8 @@ void Extractor::storeLinesOfCurrentBlockForDebugMode() {
 }
 
 vector<string> Extractor::getErrorMessages() {
-    vector<string> l = ErrorAccumulator::getErrorMessages();
-    vector<string> r = indexReader->getErrorMessages();
-    return mergeToNewVector(l, r);
+    vector<string> a = ErrorAccumulator::getErrorMessages();
+    vector<string> b = indexReader->getErrorMessages();
+    vector<string> c = resultSink->getErrorMessages();
+    return mergeToNewVector(a, b, c);
 }

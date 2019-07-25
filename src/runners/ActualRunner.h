@@ -7,7 +7,8 @@
 #ifndef FASTQINDEX_ACTUALRUNNER_H
 #define FASTQINDEX_ACTUALRUNNER_H
 
-#include "../process/io/InputSource.h"
+#include "process/io/Source.h"
+#include "process/io/Sink.h"
 #include "Runner.h"
 #include <experimental/filesystem>
 #include <string>
@@ -24,29 +25,22 @@ class ActualRunner : public Runner {
 protected:
 
     /**
-     * The fastq file to work with. The reason, why this is of type InputSource and indexFile is not is, that the
+     * The fastq file to work with. The reason, why this is of type Source and indexFile is not is, that the
      * fastqFile can be piped in. All other sources (and results) are not pipeable or the piping (cout) is so trivial,
      * that no other class or complex mechanism is necessary.
      */
-    shared_ptr<InputSource> fastqFile = shared_ptr<InputSource>(nullptr);
+    shared_ptr<Source> fastqFile = shared_ptr<Source>(nullptr);
 
     /**
-     * The index file to work with.
-     */
-    path indexFile;
-
-    ActualRunner(const path &fastqfile, const path &indexfile);
-
-    ActualRunner(istream *fastqStream, const path &indexfile);
-
-    /**
-     * Only
+     * For index mode (writing)
      * @param fastqfile
-     * @param indexfile
+     * @param indexFile
      */
-    ActualRunner(const shared_ptr<InputSource> &fastqfile, const path &indexfile);
+    ActualRunner(const shared_ptr<Source> &fastqfile);
 
 public:
+
+    virtual ~ActualRunner() = default;
 
     /**
      * Used to check
@@ -61,11 +55,70 @@ public:
      */
     virtual bool allowsReadFromStreamedSource() { return false; };
 
-    shared_ptr<InputSource> getFastqFile() { return fastqFile; }
-
-    path getIndexFile() { return indexFile; }
+    shared_ptr<Source> getFastqFile() { return fastqFile; }
 
 
+};
+
+/**
+ * For extract and stats, takes an Source for the FQI
+ *
+ * Normally, I'd say, that this class and the Writing class are not necessary and that the differentiation could be
+ * handled with a template super class, but it somehow did not work.
+ *
+ * Either way, I will try to use this to make more detailed checks possible.
+ */
+class IndexReadingRunner : public ActualRunner {
+
+protected:
+
+    /**
+     * The index file to work with.
+     */
+    shared_ptr<Source> indexFile;
+
+public:
+
+    IndexReadingRunner(const shared_ptr<Source> &fastqfile,
+                       const shared_ptr<Source> &indexFile)
+            : ActualRunner(fastqfile) {
+        this->indexFile = indexFile;
+    }
+
+
+    shared_ptr<Source> getIndexFile() { return indexFile; }
+
+    bool checkPremises() override;
+
+    vector<string> getErrorMessages() override;
+};
+
+/**
+ * For index (actually only for index, maybe we'll have another runner later.
+ */
+class IndexWritingRunner : public ActualRunner {
+
+protected:
+
+    /**
+     * The index file for output...
+     */
+    shared_ptr<Sink> indexFile;
+
+public:
+
+    IndexWritingRunner(const shared_ptr<Source> &fastqfile,
+                       const shared_ptr<Sink> &indexFile) :
+            ActualRunner(fastqfile),
+            indexFile(indexFile) {}
+
+    virtual ~IndexWritingRunner() = default;
+
+    shared_ptr<Sink> getIndexFile() { return indexFile; }
+
+    bool checkPremises() override;
+
+    vector<string> getErrorMessages() override;
 };
 
 

@@ -7,11 +7,11 @@
 #ifndef FASTQINDEX_EXTRACTORV1_H
 #define FASTQINDEX_EXTRACTORV1_H
 
-#include "../../common/CommonStructsAndConstants.h"
-#include "../../common/ErrorAccumulator.h"
-#include "IndexReader.h"
-#include "../base/ZLibBasedFASTQProcessorBaseClass.h"
-#include "../io/PathInputSource.h"
+#include "common/CommonStructsAndConstants.h"
+#include "common/ErrorAccumulator.h"
+#include "process/extract/IndexReader.h"
+#include "process/base/ZLibBasedFASTQProcessorBaseClass.h"
+#include "process/io/PathSource.h"
 #include <experimental/filesystem>
 #include <zlib.h>
 
@@ -50,7 +50,7 @@ private:
 
     uint extractionMultiplier;
 
-    path resultFile;
+    shared_ptr<Sink> resultSink;
 
     bool useFile{false};
 
@@ -80,15 +80,17 @@ public:
 
     /**
      * @param fastqfile         The file from which we will extract data
-     * @param indexfile         The index file for this file
-     * @param resultfile        The result file or
+     * @param indexFile         The index file for this file
+     * @param resultSink        The result file or
      * @param forceOverwrite    If the resultfile exists, we can overwrite it with this flag
      * @param mode              Extraction mode, currently either lines or segment
      * @param start             Start extraction from this line or extract this segment
      * @param count             Extract a maximum of lineCount lines OR define the number of total segments
      * @param enableDebugging   Used for interactive debugging and unit tests
      */
-    explicit Extractor(const shared_ptr<InputSource> &fastqfile, const path &indexfile, const path &resultfile,
+    explicit Extractor(const shared_ptr<Source> &fastqfile,
+                       const shared_ptr<Source> &indexFile,
+                       const shared_ptr<Sink> &resultSink,
                        bool forceOverwrite,
                        ExtractMode mode, u_int64_t start, u_int64_t count, uint extractionMulitplier,
                        bool enableDebugging);
@@ -96,6 +98,8 @@ public:
     virtual ~Extractor();
 
     ExtractMode getExtractMode() { return mode; }
+
+    shared_ptr<Sink> getResultSink() { return resultSink; }
 
     u_int64_t getStart() { return start; }
 

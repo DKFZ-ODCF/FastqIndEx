@@ -9,9 +9,9 @@
 
 
 #include "ActualRunner.h"
-#include "../process/extract/IndexReader.h"
+#include "process/extract/IndexReader.h"
 
-class IndexStatsRunner : public ActualRunner {
+class IndexStatsRunner : public IndexReadingRunner {
 
 private:
 
@@ -23,17 +23,17 @@ private:
 
 public:
 
-    IndexStatsRunner(const path &indexfile, int start, int amount);
+    IndexStatsRunner(const shared_ptr<Source> &indexFile, int start, int amount);
 
     bool allowsReadFromStreamedSource() override;
 
     bool checkPremises() override;
 
-    unsigned char run() override;
+    unsigned char _run() override;
 
     vector<string> getErrorMessages() override;
 
-    static void printIndexEntryToConsole(const shared_ptr<IndexEntry> &entry, u_int64_t entryNumber);
+    static void printIndexEntryToConsole(const shared_ptr<IndexEntry> &entry, u_int64_t entryNumber, bool toCErr = true);
 };
 
 

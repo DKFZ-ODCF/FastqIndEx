@@ -7,14 +7,32 @@
 #ifndef FASTQINDEX_INDEXMODECLIPARSER_H
 #define FASTQINDEX_INDEXMODECLIPARSER_H
 
-#include "../runners/IndexerRunner.h"
-#include "ModeCLIParser.h"
+#include "process/io/Sink.h"
+#include "runners/IndexerRunner.h"
+#include "startup/ModeCLIParser.h"
+
 
 class IndexModeCLIParser : public ModeCLIParser {
 
 public:
     IndexerRunner *parse(int argc, const char **argv) override;
 
+    _IntValueArg createBlockIntervalArg(CmdLine *cmdLineParser) const;
+
+    _SwitchArg createDictCompressionSwitchArg(CmdLine *cmdLineParser) const;
+
+    _SwitchArg createForbidIndexWriteoutSwitchArg(CmdLine *cmdLineParser) const;
+
+    _SwitchArg createDisableFailsafeDistanceSwitchArg(CmdLine *cmdLineParser) const;
+
+    _StringValueArg createStoreForPartialDecompressedBlocksArg(CmdLine *cmdLineParser) const;
+
+    _StringValueArg createStoreForDecompressedBlocksArg(CmdLine *cmdLineParser) const;
+
+
+    static const string descriptForFastqFileArg;
+    static const string descriptionForIndexModeIndexFileArg;
+    static const string s3ConfigFileSectionArgDescription;
 };
 
 

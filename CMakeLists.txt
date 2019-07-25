@@ -7,8 +7,8 @@ cmake_minimum_required(VERSION 3.13)
 
 set(CMAKE_CXX_STANDARD 17)
 # -pedantic -ansi -Winit-self -Wmissing-declarations -Wextra -Winit-self -Wold-style-cast -Woverloaded-virtual -Wuninitialized
-SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fPIC")
-SET(CMAKE_C_FLAGS_DEBUG "-O0 -g -fPIC")
+SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fPIC -Wreturn-type")
+SET(CMAKE_C_FLAGS_DEBUG "-O0 -g -fPIC -Wreturn-type")
 
 set(CMAKE_EXE_LINKER_FLAGS " -static-libstdc++ -static-libgcc")
 #add_definitions(" -DCURL_STATICLIB")
@@ -18,14 +18,24 @@ set(CMAKE_EXE_LINKER_FLAGS " -static-libstdc++ -static-libgcc")
 #-Wall
 # See https://stackoverflow.com/questions/14446495/cmake-project-structure-with-unit-tests
 project(FASTQIndEx)
-find_package(AWSSDK REQUIRED s3 config)
 
 # General libraries
+
+# Download and place next to FastqIndEx
+set(SIMPLEINI_INCLUDE_DIR ../simpleini_4.17/)
+set(AWS_DIR ../aws-sdk-cpp/install_shared)
+set(AWSSDK_DIR "${AWS_DIR}/lib64/cmake/AWSSDK")
+set(aws-cpp-sdk-core_DIR ${AWS_DIR}/lib64/cmake/aws-cpp-sdk-core)
+set(aws-cpp-sdk-config_DIR ${AWS_DIR}/lib64/cmake/aws-cpp-sdk-config)
+set(aws-c-event-stream_DIR ${AWS_DIR}/lib64/aws-c-event-stream/cmake)
+set(aws-c-common_DIR ${AWS_DIR}/lib64/aws-c-common/cmake)
+set(aws-checksums_DIR ${AWS_DIR}/lib64/aws-checksums/cmake)
+set(aws-cpp-sdk-s3_DIR ${AWS_DIR}/lib64/cmake/aws-cpp-sdk-s3)
+
 # Make cmake aware of an existing conda environment and try to load zlib and tclap from there.
 set(CONDA_DEFAULT_ENV $ENV{CONDA_DEFAULT_ENV})
 set(CONDA_PREFIX $ENV{CONDA_PREFIX})
 set(TCLAP_INCLUDE_DIR ../tclap-1.2.1/include)
-set(SIMPLEINI_INCLUDE_DIR ../simpleini_4.17/)  # Download and place next to FastqIndEx
 
 # Conda overrides - Really, use conda if possible!
 if (CONDA_DEFAULT_ENV)
@@ -39,6 +49,8 @@ if (CONDA_DEFAULT_ENV)
     message("   library: ${ZLIB_LIBRARY}")
     message("   include: ${ZLIB_INCLUDE_DIR}")
 endif (CONDA_DEFAULT_ENV)
+
+find_package(AWSSDK REQUIRED s3 )
 
 ## Amazon S3 Libraries
 message(STATUS "AWSSDK_LIB_DIR ${AWSSDK_LIB_DIR}")

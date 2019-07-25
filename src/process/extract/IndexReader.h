@@ -7,8 +7,10 @@
 #ifndef FASTQINDEX_INDEXREADER_H
 #define FASTQINDEX_INDEXREADER_H
 
-#include "../../common/CommonStructsAndConstants.h"
-#include "../base/IndexProcessor.h"
+#include "common/CommonStructsAndConstants.h"
+#include "common/ErrorAccumulator.h"
+#include "process/io/locks/PathLockHandler.h"
+#include "process/io/Source.h"
 #include <experimental/filesystem>
 #include <fstream>
 
@@ -17,7 +19,7 @@
  * Class for reading an index file. The current class concept will not feature templating or subclasses, see the comment
  * for readIndexEntryV1 for more details.
  */
-class IndexReader : public IndexProcessor {
+class IndexReader : public ErrorAccumulator {
 
 private:
 
@@ -33,11 +35,7 @@ private:
      */
     bool readerIsOpen = false;
 
-    /**
-     * Weird behaviour, but I could not get this running with a shared_ptr.
-     * This threw boost assertion errors for null pointers.
-     */
-    std::ifstream *inputStream;
+    shared_ptr<Source> indexFile;
 
     /**
      * Count of indices which can still be read from the index file. The number is calculated by utilizing the
@@ -61,12 +59,12 @@ private:
 
 public:
 
-    explicit IndexReader(const path &indexFile);
+    explicit IndexReader(const shared_ptr<Source> &indexFile);
 
     virtual ~IndexReader();
 
     /**
-     * Try to aquire a lock for the indexfile and open it. Read the header from the file, if possible and
+     * Try to aquire a lock for the indexFile and open it. Read the header from the file, if possible and
      * Stores error messages for failures.
      * @return true, if everything worked fine.
      */

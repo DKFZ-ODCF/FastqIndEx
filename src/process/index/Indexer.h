@@ -7,10 +7,11 @@
 #ifndef FASTQINDEX_INDEXER_H
 #define FASTQINDEX_INDEXER_H
 
-#include "../../common/CommonStructsAndConstants.h"
-#include "../../common/ErrorAccumulator.h"
+#include "common/CommonStructsAndConstants.h"
+#include "common/ErrorAccumulator.h"
+#include "process/io/Sink.h"
+#include "process/base/ZLibBasedFASTQProcessorBaseClass.h"
 #include "IndexWriter.h"
-#include "../base/ZLibBasedFASTQProcessorBaseClass.h"
 #include <zlib.h>
 #include <string>
 
@@ -126,8 +127,8 @@ public:
      * @param index The index for the FASTQ.
      * @param enableDebugging Store debug information or not.
      */
-    Indexer(const shared_ptr<InputSource> &fastqfile,
-            const path &index,
+    Indexer(const shared_ptr<Source> &fastqfile,
+            const shared_ptr<Sink> &index,
             int blockInterval,
             bool enableDebugging = false,
             bool forceOverwrite = false,

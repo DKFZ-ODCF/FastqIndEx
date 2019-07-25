@@ -7,10 +7,11 @@
 #ifndef FASTQINDEX_STARTER_H
 #define FASTQINDEX_STARTER_H
 
-#include "../runners/Runner.h"
-#include "../runners/IndexerRunner.h"
-#include "../runners/IndexStatsRunner.h"
-#include "../runners/ExtractorRunner.h"
+#include "runners/DoNothingRunner.h"
+#include "runners/ExtractorRunner.h"
+#include "runners/IndexerRunner.h"
+#include "runners/IndexStatsRunner.h"
+#include "runners/Runner.h"
 #include <tclap/CmdLine.h>
 #include <cstring>
 #include <memory>

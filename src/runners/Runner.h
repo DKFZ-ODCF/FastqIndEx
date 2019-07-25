@@ -7,9 +7,10 @@
 #ifndef FASTQINDEX_RUNNER_H
 #define FASTQINDEX_RUNNER_H
 
+#include "common/ErrorAccumulator.h"
+#include "process/io/s3/S3Service.h"
 #include <string>
 #include <vector>
-#include "../common/ErrorAccumulator.h"
 
 using namespace std;
 
@@ -20,15 +21,25 @@ using namespace std;
  */
 class Runner : public ErrorAccumulator {
 
+private:
+
+    S3ServiceOptions s3Options;
+
+    bool s3Enabled{false};
+
 protected:
     Runner() = default;
 
+    virtual unsigned char _run() { return 0; };
+
 public:
+
+    virtual ~Runner() = default;
 
     /**
      * Can return an exit code between 0 and 255.
      */
-    virtual unsigned char run() {};
+    unsigned char run();
 
     /**
      * Check premises for the runner instance and accumulate errors, if the checks fail.
@@ -51,26 +62,6 @@ public:
      */
     virtual bool isExtractor() { return false; };
 };
-
-/**
- * When the application is started, it will create a Starter, which parses the CLI options. The Starter instance will
- * afterwards be used to create a Runner (Extractor, Indexer). If the options are somehow wrong and no valid mode could
- * be determined, a PrintCLIOptionsRunner will be created instead and this will then print out the command line options.
- */
-class DoNothingRunner : public Runner {
-public :
-    DoNothingRunner() = default;
-
-    /**
-     * Print CLI options to cerr
-     */
-    unsigned char run() override;
-
-    bool isCLIOptionsPrinter() override { return true; }
-};
-
-
-
 
 
 #endif //FASTQINDEX_RUNNER_H

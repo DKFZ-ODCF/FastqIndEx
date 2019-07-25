@@ -4,15 +4,16 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "../runners/ExtractorRunner.h"
-#include "../runners/IndexerRunner.h"
-#include "../process/io/InputSource.h"
-#include "../process/io/PathInputSource.h"
-#include "../process/io/StreamInputSource.h"
+#include "process/io/Source.h"
+#include "process/io/PathSource.h"
+#include "process/io/StreamSource.h"
+#include "runners/ExtractorRunner.h"
+#include "runners/IndexerRunner.h"
 #include "ExtractModeCLIParser.h"
 #include "IndexModeCLIParser.h"
-#include "Starter.h"
+#include "IndexStatsModeCLIParser.h"
 #include "ModeCLIParser.h"
+#include "Starter.h"
 #include <cstring>
 #include <tclap/CmdLine.h>
 
@@ -40,35 +41,7 @@ DoNothingRunner *Starter::assembleSmallCmdLineParserAndParseOpts(int argc, const
 }
 
 IndexStatsRunner *Starter::assembleCmdLineParserForIndexStatsAndParseOpts(int argc, const char **argv) {
-    CmdLine cmdLineParser("Command description message", '=', "0.0.1", false);
-    ValueArg<string> indexFile(
-            "i", "indexfile",
-            string("The index file which shall be used for extraction. If the value is not set, .fqi will be") +
-            "to the name of the FASTQ file.",
-            false,
-            "", "string", cmdLineParser);
-
-    ValueArg<int> startingread(
-            "s", "startingentry",
-            "Defines the first to show.",
-            false,
-            0, "int", cmdLineParser);
-
-    ValueArg<int> numberofreads(
-            "n", "numberofentries",
-            "Number of index entries to show.",
-            false,
-            1, "int", cmdLineParser);
-
-    vector<string> allowedMode{"stats"};
-    ValuesConstraint<string> allowedModesConstraint(allowedMode);
-    UnlabeledValueArg<string> mode("mode", "mode is stats", true, "", &allowedModesConstraint);
-    cmdLineParser.add(mode);
-
-    cmdLineParser.parse(argc, argv);
-
-    path index(indexFile.getValue());
-    return new IndexStatsRunner(index, startingread.getValue(), numberofreads.getValue());
+    return IndexStatsModeCLIParser().parse(argc, argv);
 }
 
 IndexerRunner *Starter::assembleCmdLineParserForIndexAndParseOpts(int argc, const char **argv) {
@@ -108,6 +81,7 @@ Runner *Starter::assembleCLIOptions(int argc, const char *argv[]) {
     } catch (TCLAP::ArgException &e) { // catch any exceptions
         std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl;
     }
+    return new DoNothingRunner();
 }
 
 shared_ptr<Runner> Starter::createRunner(int argc, const char *argv[]) {

@@ -24,6 +24,7 @@ add_library(
         process/base/ZLibBasedFASTQProcessorBaseClass.cpp process/base/ZLibBasedFASTQProcessorBaseClass.h
         process/extract/Extractor.cpp process/extract/Extractor.h
         process/extract/IndexReader.cpp process/extract/IndexReader.h
+        process/index/IndexEntryStorageStrategy.h
         process/index/Indexer.cpp process/index/Indexer.h
         process/index/IndexWriter.cpp process/index/IndexWriter.h
         process/io/s3/FQIS3Client.h

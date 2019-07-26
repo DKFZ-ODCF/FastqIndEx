@@ -9,11 +9,12 @@
 
 #include "common/CommonStructsAndConstants.h"
 #include "common/ErrorAccumulator.h"
+#include "process/index/IndexEntryStorageStrategy.h"
+#include "process/index/IndexWriter.h"
 #include "process/io/Sink.h"
 #include "process/base/ZLibBasedFASTQProcessorBaseClass.h"
-#include "IndexWriter.h"
-#include <zlib.h>
 #include <string>
+#include <zlib.h>
 
 using namespace std;
 
@@ -35,8 +36,6 @@ public:
      */
     static const unsigned int INDEXER_VERSION;
 
-    static uint calculateIndexBlockInterval(u_int64_t fileSize);
-
 private:
 
     long numberOfFoundEntries = 0;
@@ -47,7 +46,7 @@ private:
 
     bool forceOverwrite{false};
 
-    bool disableFailsafeDistance;
+    shared_ptr<IndexEntryStorageStrategy> storageStrategy;
 
     bool compressDictionaries{true};
 
@@ -94,19 +93,11 @@ private:
      */
     bool lastBlockEndedWithNewline = true;
 
-    /**
-     * Empty blocks occur a lot and will cause trouble, if they get written to an index file. To overcome this, we skip
-     * empty blocks until the next valid block.
-     */
-    bool postponeWrite = false;
-
     u_int64_t lineCountForNextIndexEntry{0};
 
     u_int64_t numberOfConcatenatedFiles{1};
 
     long blockID{-1};                   // Number of the currently processed block.
-
-    int blockInterval;                  // Only store every n'th index entry.
 
     shared_ptr<IndexEntryV1> lastStoredEntry;
 

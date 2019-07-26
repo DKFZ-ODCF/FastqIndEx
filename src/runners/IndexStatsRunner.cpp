@@ -67,7 +67,7 @@ void IndexStatsRunner::printIndexEntryToConsole(const shared_ptr<IndexEntry> &en
     auto &_ostream = toCErr ? cout : cerr;
     _ostream << "Entry number:    " << entryNumber << "\n";
     _ostream << "  Entry id:      " << entry->id << "\n";
-    _ostream << "  Raw offset:    " << entry->offsetInRawFile << "\n";
+    _ostream << "  Raw offset:    " << entry->blockOffsetInRawFile << "\n";
     _ostream << "  Starting line: " << entry->startingLineInEntry << "\n";
     _ostream << "    Record (/4): " << (entry->startingLineInEntry / 4) << "\n";
     _ostream << "  Line offset:   " << entry->offsetOfFirstValidLine << "\n";

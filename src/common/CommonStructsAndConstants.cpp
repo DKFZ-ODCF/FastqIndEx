@@ -45,7 +45,7 @@ IndexEntry::IndexEntry(u_int64_t id,
                        u_int64_t offsetInRawFile,
                        u_int64_t startingLineInEntry) :
         id(id),
-        offsetInRawFile(offsetInRawFile),
+        blockOffsetInRawFile(offsetInRawFile),
         startingLineInEntry(startingLineInEntry),
         offsetOfFirstValidLine(offsetOfFirstValidLine),
         bits(bits) {}
@@ -54,7 +54,7 @@ bool IndexEntry::operator==(const IndexEntry &rhs) const {
     return bits == rhs.bits &&
            id == rhs.id &&
            offsetOfFirstValidLine == rhs.offsetOfFirstValidLine &&
-           offsetInRawFile == rhs.offsetInRawFile &&
+           blockOffsetInRawFile == rhs.blockOffsetInRawFile &&
            startingLineInEntry == rhs.startingLineInEntry;
 }
 

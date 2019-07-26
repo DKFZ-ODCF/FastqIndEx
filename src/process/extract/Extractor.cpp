@@ -137,7 +137,7 @@ bool Extractor::extract() {
     }
 
     fastqFile->open();
-    off_t initialOffset = startingIndexLine->offsetInRawFile;
+    off_t initialOffset = startingIndexLine->blockOffsetInRawFile;
     totalBytesIn += initialOffset;
     int startBits = startingIndexLine->bits;
     if (startBits > 0)

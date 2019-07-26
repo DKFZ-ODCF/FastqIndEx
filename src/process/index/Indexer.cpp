@@ -5,6 +5,7 @@
  */
 
 #include "Indexer.h"
+#include "IndexEntryStorageStrategy.h"
 #include "runners/ActualRunner.h"
 #include "runners/IndexStatsRunner.h"
 #include "common/IOHelper.h"
@@ -19,31 +20,6 @@ using std::experimental::filesystem::path;
 
 const unsigned int Indexer::INDEXER_VERSION = 1;
 
-u_int32_t Indexer::calculateIndexBlockInterval(u_int64_t fileSize) {
-    const u_int64_t GB = 1024 * 1024 * 1024;
-    u_int64_t testSize = fileSize / GB;
-
-    if (testSize <= 1)
-        return 16;
-    if (testSize <= 2)
-        return 32;
-    if (testSize <= 4)
-        return 64;
-    if (testSize <= 8)
-        return 128;
-    if (testSize <= 16)
-        return 256;
-    if (testSize <= 32)
-        return 512;
-    if (testSize <= 64)
-        return 1024;
-    if (testSize <= 128)
-        return 2048;
-    if (testSize <= 256)
-        return 4096;
-    return 8192;
-}
-
 Indexer::Indexer(
         const shared_ptr<Source> &fastqfile,
         const shared_ptr<Sink> &index,
@@ -53,11 +29,9 @@ Indexer::Indexer(
         bool forbidWriteFQI,
         bool disableFailsafeDistance,
         bool compressDictionaries
-) :
-        ZLibBasedFASTQProcessorBaseClass(fastqfile, index, enableDebugging),
-        blockInterval(blockInterval) {
+) : ZLibBasedFASTQProcessorBaseClass(fastqfile, index, enableDebugging) {
     this->forbidWriteFQI = forbidWriteFQI;
-    this->disableFailsafeDistance = disableFailsafeDistance;
+    this->storageStrategy = shared_ptr<IndexEntryStorageStrategy>(new BlockDistanceStorageStrategy(blockInterval, !disableFailsafeDistance));
     this->forceOverwrite = forceOverwrite;
     this->compressDictionaries = compressDictionaries;
     if (!forbidWriteFQI)
@@ -71,7 +45,7 @@ bool Indexer::checkPremises() {
 }
 
 shared_ptr<IndexHeader> Indexer::createHeader() {
-    auto header = make_shared<IndexHeader>(Indexer::INDEXER_VERSION, sizeof(IndexEntryV1), blockInterval,
+    auto header = make_shared<IndexHeader>(Indexer::INDEXER_VERSION, sizeof(IndexEntryV1), 0,
                                            compressDictionaries);
     return header;
 }
@@ -102,13 +76,7 @@ bool Indexer::createIndex() {
 
     auto sizeOfFastq = fastqFile->size();
     // If not already set, recalculate the interval for index entries.
-    if (blockInterval == -1) {
-        if (sizeOfFastq == -1) {
-            blockInterval = 2048; // Like for files > 128GB.
-        } else {
-            blockInterval = Indexer::calculateIndexBlockInterval(sizeOfFastq);
-        }
-    }
+    storageStrategy->useFilesizeForCalculation(sizeOfFastq);
 
     // After init, store header, then start indexing
     auto header = createHeader();
@@ -326,7 +294,7 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
                                << "\n\t#L:  " << numberOfLinesInBlock
                                << "\n\toff: " << entry->offsetOfFirstValidLine
                                << "\n\tsl:  " << entry->startingLineInEntry
-                               << "\n\tsts: " << (postponeWrite ? "Postponed" : written ? "Written" : "Skipped")
+                               << "\n\tsts: " << (storageStrategy->wasPostponed() ? "Postponed" : written ? "Written" : "Skipped")
                                << "\n";
         if (blockIsEmpty) {
             partialBlockinfoStream << "EMPTY BLOCK!\n";
@@ -355,37 +323,8 @@ bool Indexer::writeIndexEntryIfPossible(shared_ptr<IndexEntryV1> &entry,
                                         const vector<string> &lines,
                                         bool blockIsEmpty) {
 
-    // Only write back every nth entry. As we need the large window / dictionary of 32kb, we'll need to save
-    // some space here. Think of large NovaSeq FASTQ files with ~200GB! We can't store approximately 3.6m index
-    // entries which would be around 115GB for an index file
-
-    // In addition to the block distance, we need to add a further constrant.
-    // E.g. in test files from here:
-    // https://trace.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?exp=SRX000001&cmd=search&m=downloads&s=seq
-    //  What I found out is, that the checked files contain very small compressed blocks each holding just a few bytes.
-    //  To encounter this, we introduce the failsafe distance when writing index entries. So not only the block distance
-    //  will be looked at but also the Byte distance to the last written index entry.
-    // Why?  In one exemplary case, the file size is approximately 145MB and it contains around 7,35 million compressed
-    //  blocks. This results in ca. 20Bytes per block. E.g. storing every 16th block with ~ 32kByte results in a
-    //  hopelessly huge index file.
-
-    auto blockOffset = entry->blockOffsetInRawFile;
-    u_int64_t offsetOfLastEntry = 0;
-    bool failsafeDistanceIsReached = true;
-    if (!disableFailsafeDistance) {
-        u_int64_t failsafeDistance = blockInterval * 16384;
-        if (lastStoredEntry.get() != nullptr)
-            offsetOfLastEntry = lastStoredEntry->blockOffsetInRawFile;
-        failsafeDistanceIsReached = (blockOffset - offsetOfLastEntry) > (failsafeDistance);
-    }
-
-    bool shouldWrite = postponeWrite || blockID == 0 || (blockID % blockInterval == 0 && failsafeDistanceIsReached);
-    if (blockIsEmpty && shouldWrite) {
-        postponeWrite = true;
-        shouldWrite = false;
-    }
-
-    if (!shouldWrite) return shouldWrite;
+    if(!storageStrategy->shallStore(entry, blockID, blockIsEmpty))
+        return false;
 
     // Now, if we store the entry and dictionary compression is enable, do exactly that!
     if (compressDictionaries) {
@@ -397,7 +336,7 @@ bool Indexer::writeIndexEntryIfPossible(shared_ptr<IndexEntryV1> &entry,
         memcpy(entry->dictionary, compressedDictionary, compressedBytes);
     }
 
-    postponeWrite = false;
+    storageStrategy->resetPostponeWrite();
     if (!forbidWriteFQI)
         indexWriter->writeIndexEntry(entry);
     lastStoredEntry = entry;

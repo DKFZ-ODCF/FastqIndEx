@@ -118,7 +118,7 @@ struct IndexHeader {
  */
 struct IndexEntry {
     u_int64_t id{0};
-    u_int64_t offsetInRawFile{0};
+    u_int64_t blockOffsetInRawFile{0};
     u_int64_t startingLineInEntry{0};
     u_int64_t compressedDictionarySize{0};
     u_int32_t bits{0};

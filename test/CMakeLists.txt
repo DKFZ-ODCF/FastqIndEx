@@ -39,6 +39,7 @@ add_executable(
 
         process/index/IndexWriterTest.cpp
         process/index/IndexerTest.cpp
+        process/index/IndexEntryStorageStrategyTest.cpp
 
         process/io/SourceTest.cpp
         common/CommonStructsTest.cpp

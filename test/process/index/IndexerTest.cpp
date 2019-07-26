@@ -29,25 +29,6 @@ const char *const TEST_CREATE_INDEX_CONCAT_SINGLEBLOCKS = "Test create index wit
 
 SUITE (INDEXER_SUITE_TESTS) {
 
-    TEST (TEST_CALCULATE_BLOCK_INTERVAL) {
-        const u_int64_t GB = 1024 * 1024 * 1024;
-                CHECK_EQUAL(16, Indexer::calculateIndexBlockInterval(1 * GB));
-                CHECK_EQUAL(32, Indexer::calculateIndexBlockInterval(2 * GB));
-                CHECK_EQUAL(64, Indexer::calculateIndexBlockInterval(4 * GB));
-                CHECK_EQUAL(128, Indexer::calculateIndexBlockInterval(8 * GB));
-                CHECK_EQUAL(512, Indexer::calculateIndexBlockInterval(20 * GB));
-                CHECK_EQUAL(512, Indexer::calculateIndexBlockInterval(30 * GB));
-                CHECK_EQUAL(1024, Indexer::calculateIndexBlockInterval(40 * GB));
-                CHECK_EQUAL(2048, Indexer::calculateIndexBlockInterval(80 * GB));
-                CHECK_EQUAL(2048, Indexer::calculateIndexBlockInterval(120 * GB));
-                CHECK_EQUAL(4096, Indexer::calculateIndexBlockInterval(160 * GB));
-                CHECK_EQUAL(4096, Indexer::calculateIndexBlockInterval(200 * GB));
-                CHECK_EQUAL(8192, Indexer::calculateIndexBlockInterval(300 * GB));
-        //Maximum value
-                CHECK_EQUAL(8192, Indexer::calculateIndexBlockInterval(430 * GB));
-                CHECK_EQUAL(8192, Indexer::calculateIndexBlockInterval(1630 * GB));
-    }
-
     TEST (TEST_INDEXER_CREATION) {
         TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_INDEXER_CREATION);
 

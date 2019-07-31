@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <iostream>
 #include <UnitTest++/UnitTest++.h>
+#include <common/IOHelper.h>
 
 using namespace std::experimental::filesystem;
 using std::experimental::filesystem::path;
@@ -48,18 +49,16 @@ void TestResourcesAndFunctions::finalize() {
 path TestResourcesAndFunctions::getTestPath() {
     lock.lock();
     if (testPath.empty()) {
-        auto tempDir = temp_directory_path();
-        string testDir = tempDir.string() + "/FastqIndExTest_" + testSuite + "_" + testName + "_XXXXXXXXXXXXXX";
-        char *buf = new char[testDir.size() + 1]{0};
-        testDir.copy(buf, testDir.size(), 0);
-        char *result = mkdtemp(buf);
-        if (result == buf) { // Check for nullptr
-            testPath = path(result);
-            create_directories(testPath);
-            bool success = exists(testPath);
-            testPathCreationWasSuccessful = success;
+        string prefix = "FastqIndExTest_" + testSuite + "_" + testName;
+        auto[result, tempDir] = IOHelper::createTempDir(prefix);
+        if (!result) {
+            cerr << "## The temporary folder for pattern '" << prefix << "' could not be created!\n";
         }
-        delete[] buf; // Delete the buffer
+        bool success = exists(tempDir);
+                CHECK(!tempDir.string().empty());
+                CHECK(success);
+        testPathCreationWasSuccessful = success;
+        testPath = tempDir;
     }
     lock.unlock();
     return testPath;

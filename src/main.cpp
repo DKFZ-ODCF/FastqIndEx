@@ -4,10 +4,8 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include <iostream>
-
 #include "main.h"
-#include "Starter.h"
+#include "startup/Starter.h"
 
 int main(int argc, const char *argv[]) {
     Starter *starter = Starter::getInstance();
@@ -23,6 +21,9 @@ int main(int argc, const char *argv[]) {
     } else {
         exitCode = runner->run();
     }
+
+    S3Service::close();
+
     delete starter;
     return exitCode;
 }

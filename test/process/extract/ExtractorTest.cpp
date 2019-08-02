@@ -75,7 +75,7 @@ bool initializeComplexTest(const path &fastq,
     auto *indexer = new Indexer(
             make_shared<PathSource>(fastq),
             make_shared<PathSink>(index),
-            blockInterval, true, false, false, true);
+            make_shared<BlockDistanceStorageStrategy>(blockInterval, true), true, false, false, true);
             CHECK(indexer->checkPremises());
     indexer->enableWriteOutOfDecompressedBlocksAndStatistics(index.parent_path());
     indexer->createIndex();
@@ -171,7 +171,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         vector<shared_ptr<IndexEntryV1>> indexEntries;
 
         bool lastBlockEndedWithNewline = true;
-        Indexer indexer(make_shared<PathSource>(fastq), make_shared<PathSink>(index), 1, true);
+        Indexer indexer(make_shared<PathSource>(fastq), make_shared<PathSink>(index), make_shared<BlockDistanceStorageStrategy>(1, true), true);
         for (auto bd : _blockData) {
             auto split = StringHelper::splitStr(bd);
             bool currentBlockEndedWithNewline;

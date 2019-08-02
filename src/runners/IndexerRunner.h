@@ -34,11 +34,10 @@ public:
     IndexerRunner(
             const shared_ptr<Source> &fastqfile,
             const shared_ptr<Sink> &indexFile,
-            int blockInterval = -1,
+            shared_ptr<IndexEntryStorageStrategy> storageStrategy,
             bool enableDebugging = false,
             bool forceOverwrite = false,
             bool forbidWriteFQI = false,
-            bool disableFailsafeDistance = false,
             bool compressDictionaries = true
     );
 

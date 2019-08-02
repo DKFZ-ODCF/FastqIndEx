@@ -30,7 +30,8 @@ SUITE (StarterTests) {
     TEST (testCreateNewRunners) {
         auto fastqFile = shared_ptr<Source>(new PathSource("/tmp/abc"));
         path indexFile("/tmp/abc.fqi");
-        IndexerRunner _runner(fastqFile, make_shared<PathSink>(indexFile));
+        IndexerRunner _runner(fastqFile, make_shared<PathSink>(indexFile),
+                              BlockDistanceStorageStrategy::from(1));
                 CHECK_EQUAL(dynamic_pointer_cast<PathSource>(_runner.getFastqFile())->getPath(),
                             dynamic_pointer_cast<PathSource>(fastqFile)->getPath());
                 CHECK_EQUAL(_runner.getIndexFile()->toString(), indexFile.string());

@@ -37,7 +37,9 @@ SUITE (INDEXER_SUITE_TESTS) {
 
         auto *indexer = new Indexer(
                 make_shared<PathSource>(fastq),
-                make_shared<PathSink>(index), -1);
+                make_shared<PathSink>(index),
+                BlockDistanceStorageStrategy::getDefault()
+        );
 
                 CHECK_EQUAL(fastq, dynamic_pointer_cast<PathSource>(indexer->getFastq())->getPath());
                 CHECK_EQUAL(index.string(), indexer->getOutputIndexFile()->toString());
@@ -47,7 +49,11 @@ SUITE (INDEXER_SUITE_TESTS) {
                 CHECK(!indexer->getStoredHeader());
 
         delete indexer;
-        indexer = new Indexer(make_shared<PathSource>(fastq), make_shared<PathSink>(index), -1, true);
+        indexer = new Indexer(make_shared<PathSource>(fastq),
+                              make_shared<PathSink>(index),
+                              BlockDistanceStorageStrategy::getDefault(),
+                              true
+        );
                 CHECK_EQUAL(true, indexer->isDebuggingEnabled());
         delete indexer;
     }
@@ -58,7 +64,9 @@ SUITE (INDEXER_SUITE_TESTS) {
         path fastq = res.getResource(TEST_FASTQ_LARGE);
         path index = res.filePath("test2.fastq.gz.fqi");
 
-        Indexer indexer(make_shared<PathSource>(fastq), make_shared<PathSink>(index), -1,
+        Indexer indexer(make_shared<PathSource>(fastq),
+                        make_shared<PathSink>(index),
+                        BlockDistanceStorageStrategy::getDefault(),
                         true); // Tell the indexer to store entries. This is solely a debug feature but it
         shared_ptr<IndexHeader> header = indexer.createHeader();
                 CHECK(header.get());
@@ -89,7 +97,11 @@ SUITE (INDEXER_SUITE_TESTS) {
         // Files are not actually used.
         path fastq = res.getResource(TEST_FASTQ_LARGE);
         path index = res.filePath("test2.fastq.gz.fqi");
-        Indexer indexer(make_shared<PathSource>(fastq), make_shared<PathSink>(index), -1, true);
+        Indexer indexer(make_shared<PathSource>(fastq),
+                        make_shared<PathSink>(index),
+                        BlockDistanceStorageStrategy::getDefault(),
+                        true
+        );
 
         bool lastBlockEndedWithNewline = true;
 
@@ -119,7 +131,13 @@ SUITE (INDEXER_SUITE_TESTS) {
         path fastq = res.getResource("test_singlecompressedblocks.fastq.gz");
         path index = res.filePath("test.fastq.gz.fqi");
         path extractedFastq = res.filePath(TEST_FASTQ_SMALL);
-        auto *indexer = new Indexer(make_shared<PathSource>(fastq), make_shared<PathSink>(index), -1, true, false, false, true);
+        auto *indexer = new Indexer(make_shared<PathSource>(fastq), make_shared<PathSink>(index),
+                                    BlockDistanceStorageStrategy::getDefault(),
+                                    true,
+                                    false,
+                                    false,
+                                    true
+        );
                 CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.
 
         bool result = indexer->createIndex();
@@ -166,7 +184,14 @@ SUITE (INDEXER_SUITE_TESTS) {
                 CHECK_EQUAL(true, result);
                 CHECK(4 * file_size(fastq) == file_size(concat));
 
-        auto *indexer = new Indexer(make_shared<PathSource>(concat), make_shared<PathSink>(index), -1, true, false, false, true);
+        auto *indexer = new Indexer(make_shared<PathSource>(concat),
+                                    make_shared<PathSink>(index),
+                                    BlockDistanceStorageStrategy::getDefault(),
+                                    true,
+                                    false,
+                                    false,
+                                    true
+        );
                 CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.
 
         result = indexer->createIndex();
@@ -207,7 +232,9 @@ SUITE (INDEXER_SUITE_TESTS) {
         path fastq = res.getResource(string(TEST_FASTQ_SMALL));
         path index = res.filePath("test.fastq.gz.fqi");
 
-        auto indexer = new Indexer(make_shared<PathSource>(fastq), make_shared<PathSink>(index), -1, true, false, false, true);
+        auto indexer = new Indexer(make_shared<PathSource>(fastq), make_shared<PathSink>(index),
+                                   BlockDistanceStorageStrategy::getDefault(), true, false, false,
+                                   true);
                 CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.
 
         bool result = indexer->createIndex();
@@ -249,7 +276,15 @@ SUITE (INDEXER_SUITE_TESTS) {
                 CHECK(4 * file_size(fastq) == file_size(concat));
 
         ifstream fastqStream(concat.string());
-        auto indexer = new Indexer(make_shared<StreamSource>(&fastqStream), make_shared<PathSink>(index), 1, true, false, false, true);
+        auto indexer = new Indexer(
+                make_shared<StreamSource>(&fastqStream),
+                make_shared<PathSink>(index),
+                BlockDistanceStorageStrategy::from(1),
+                true,
+                false,
+                false,
+                true
+        );
 
         indexer->createIndex();
         auto storedHeader = indexer->getStoredHeader();
@@ -268,8 +303,11 @@ SUITE (INDEXER_SUITE_TESTS) {
         path fastq = res.getResource(string(TEST_FASTQ_LARGE));
         path index = res.filePath("test2.fastq.gz.fqi");
         ifstream fqStream(fastq);
-        auto runner = new IndexerRunner(shared_ptr<Source>(new StreamSource(&fqStream)), make_shared<PathSink>(index),
-                                        -1, false, false, false, true);
+        auto runner = new IndexerRunner(
+                StreamSource::from(&fqStream),
+                PathSink::from(index),
+                BlockDistanceStorageStrategy::getDefault(),
+                false, false, false, true);
                 CHECK(runner->run() == 0);
         delete runner;
                 CHECK(file_size(index) > 0);
@@ -286,7 +324,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         auto *indexer = new Indexer(
                 make_shared<PathSource>(fastq),
                 make_shared<PathSink>(index),
-                blockSize,
+                BlockDistanceStorageStrategy::from(blockSize),
                 true, false, false, true
         ); // Tell the indexer to store entries. This is solely a debug feature but it
                 CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.

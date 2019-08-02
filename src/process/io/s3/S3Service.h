@@ -31,9 +31,6 @@ using namespace Aws::Utils;
 using namespace std;
 using namespace std::experimental::filesystem;
 
-// Forward declaration of included class
-//class S3Config;
-
 /**
  * Thread safe helper service for S3
  */

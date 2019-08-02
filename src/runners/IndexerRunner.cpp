@@ -13,21 +13,19 @@ using namespace std;
 IndexerRunner::IndexerRunner(
         const shared_ptr<Source> &fastqFile,
         const shared_ptr<Sink> &indexFile,
-        int blockInterval,
+        shared_ptr<IndexEntryStorageStrategy> storageStrategy,
         bool enableDebugging,
         bool forceOverwrite,
         bool forbidWriteFQI,
-        bool disableFailsafeDistance,
         bool compressDictionaries) :
         IndexWritingRunner(fastqFile, indexFile) {
     this->indexer = make_shared<Indexer>(
             this->fastqFile,
             this->indexFile,
-            blockInterval,
+            storageStrategy,
             enableDebugging,
             forceOverwrite,
             forbidWriteFQI,
-            disableFailsafeDistance,
             compressDictionaries
     );
 }

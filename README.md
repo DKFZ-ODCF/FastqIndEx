@@ -183,13 +183,13 @@ export PATH=~/Projects/FastqIndEx/release/src:$PATH
 ### Index
 
 ``` Bash
-# Index from a file
-fastqindex index -f=test2.fastq.gz -i=test2.fastq.gz.fqi
+# Index a file
+fastqindex index -f=test2.fastq.gz 
 
-# Index from a pipe
+# Index piped input
 cat test2.fastq.gz | fastqindex -f=- -i=test2.fastq.fqi
 
-# Index from an S3 bucket
+# Index an object stored in an S3 bucket
 fastqindex index -f=s3://bucket/test2.fastq.gz
 ```
 
@@ -197,8 +197,8 @@ There are more options available like:
 
 | Option        | Description         |
 | ---           |---                  |
-| -b            | Defines, that an index entry will be written to the index file for every nth compressed block. Value needs to be in range from [1 .. n]. By default, the block distance will be determined by the application. |
 | -w            | Allow the application to overwrite the index file. By default, this is not allowed. |
+| -B            | Tell the indexer to store an entry after approximately n Byte (like 4M, 2G, 512K)|
 
 Please call the application with 
 ``` bash
@@ -210,11 +210,19 @@ to see more options.
 
 ``` Bash
 # Extract to a file, note, that this command produces an uncompressed file!
+# Note, that the command will decompress everything (basically gunzip)
 fastqindex extract -f=test2.fastq.gz -i=test2.fastq.fqi -o=extracted.fastq
 
 # Or to stdout / the console, this is also uncompressed data!
-fastqindex extract -f=test2.fastq.gz -i=test2.fastq.fqi -o=- 
+# Extract 16 records, starting with record 201 (we have a 0 based offset!)
+fastqindex extract -f=test2.fastq.gz -i=test2.fastq.fqi -o=- -s=200 -n=16
+
+# Or also from S3 with a locally stored index.
+# Extract the second and third record.
+fastqindex extract -f=s3://bucket/test2.fastq.gz -i=/local/path/test2.fastq.fqi -o=- -s=1 -n=2
 ```
+Please note, that the S3 extraction is still experimental (but working for us). Unfortunately, there
+will always be an error message, that a stream was closed. You can ignore this.
 
 There are more options available here as well like:
 

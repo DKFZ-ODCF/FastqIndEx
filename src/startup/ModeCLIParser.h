@@ -56,15 +56,18 @@ protected:
 
 public:
 
-    static path argumentToPath(ValueArg<string> &cliArg);
-
-    static bool isS3Path(string str) {
-        string_view _str = str;
-        string prefix = "s3://";
-        return _str.size() > prefix.size() && _str.substr(0, prefix.size()) == prefix;
-    }
-
+    /**
+     * Needs to be overriden by specialized mode parsers and is used to parse the application arguments.
+     * Note, that subclasses may use derived classes of Runner as a return type (C++ allows this). However, e.g. CLion
+     * will not recognize parse as used!
+     */
     virtual Runner *parse(int argc, const char **argv) = 0;
+
+    shared_ptr<CmdLine> createCommandLineParser() {
+        return make_shared<CmdLine>(
+                "FastqInDex - A tool to index compressed FASTQ (or text files) and to allow random data extraction from them.",
+                '=', "0.10b", false);
+    }
 
     _IntValueArg createVerbosityArg(CmdLine *cmdLineParser) const;
 
@@ -81,6 +84,15 @@ public:
     _StringValueArg createS3ConfigFileSectionArg(CmdLine *cmdLineParser) const;
 
     _SwitchArg createForceOverwriteSwitchArg(CmdLine *cmdLineParser) const;
+
+    tuple<shared_ptr<UnlabeledValueArg<string>>, shared_ptr<ValuesConstraint<string>>>
+    createAllowedModeArg(const string &mode, CmdLine *cmdLineParser) const;
+    
+    static bool isS3Path(string str) {
+        string_view _str = str;
+        string prefix = "s3://";
+        return _str.size() > prefix.size() && _str.substr(0, prefix.size()) == prefix;
+    }
 
     static string resolveIndexFileName(const string &file, const shared_ptr<Source> &fastq) {
         // S3 and Path based! Stream is not a valid input here, as it has no name. In that case, the original value will

@@ -15,7 +15,7 @@ class ExtractModeCLIParser : public ModeCLIParser {
 public:
     ExtractorRunner *parse(int arc, const char **argv) override;
 
-    [[nodiscard]] _UIntValueArg createSegmentCountArg(CmdLine *cmdLineParser) const;
+    _UIntValueArg createSegmentCountArg(CmdLine *cmdLineParser) const;
 
     _UIntValueArg createSegmentIdentifierArg(CmdLine *cmdLineParser) const;
 
@@ -26,6 +26,7 @@ public:
     _IntValueArg createExtractionMultiplierArg(CmdLine *cmdLineParser) const;
 
     _StringValueArg createOutputFileArg(CmdLine *cmdLineParser) const;
+
 };
 
 

@@ -11,23 +11,11 @@
 #include "process/io/Source.h"
 #include "process/io/ConsoleSink.h"
 #include "process/io/StreamSource.h"
-#include "runners/IndexerRunner.h"
 #include "runners/ExtractorRunner.h"
-#include "IndexModeCLIParser.h"
-#include "ExtractModeCLIParser.h"
 #include "ModeCLIParser.h"
-#include "Starter.h"
 #include <tclap/CmdLine.h>
-#include <cstring>
 
-path ModeCLIParser::argumentToPath(ValueArg<string> &cliArg) {
-    path _path;
-    if (cliArg.getValue() == "-")
-        _path = path("-");
-    else
-        _path = path(cliArg.getValue());
-    return _path;
-}
+#include <memory>
 
 _IntValueArg ModeCLIParser::createVerbosityArg(CmdLine *cmdLineParser) const {
     return _makeIntValueArg(
@@ -48,15 +36,23 @@ _SwitchArg ModeCLIParser::createDebugSwitchArg(CmdLine *cmdLineParser) const {
 }
 
 _StringValueArg ModeCLIParser::createIndexFileArg(CmdLine *cmdLineParser) const {
-    return _makeStringValueArg("i", "indexFile",
-                               IndexModeCLIParser::descriptionForIndexModeIndexFileArg, false, "",
-                               cmdLineParser);
+    return _makeStringValueArg(
+            "i", "indexFile",
+            string("The index file which shall be created or - for stdout or \"\" to append .fqi to the FASTQ filename. ") +
+            "Note, that the index will be streamed to stdout, if you provide \"\" or - as the FASTQ file parameter. " +
+            "The index file can also reside in an S3 bucket. Enter the filename here like s3:<filename> and set the"
+            " bucket with --bucket." +
+            " Note, that this software will create the index in the tmp directory before uploading it to S3!",
+            false, "",
+            cmdLineParser);
 }
 
 _StringValueArg ModeCLIParser::createFastqFileArg(CmdLine *cmdLineParser) const {
     return _makeStringValueArg(
             "f", "fastqFile",
-            IndexModeCLIParser::descriptForFastqFileArg,
+            string("The fastq file which shall be indexed or - for stdin.") +
+            "The FASTQ file can also reside in an S3 bucket. Enter the filename here like s3:<filename> and set the"
+            " bucket with --bucket.",
             true,
             "-",
             cmdLineParser);
@@ -85,7 +81,9 @@ _StringValueArg ModeCLIParser::createS3ConfigFileArg(CmdLine *cmdLineParser) con
 _StringValueArg ModeCLIParser::createS3ConfigFileSectionArg(CmdLine *cmdLineParser) const {
     return _makeStringValueArg(
             "", "s3ConfigSection",
-            IndexModeCLIParser::s3ConfigFileSectionArgDescription,
+            string("In alternative to setting the bucket and the endpoint via command line, you can also specify ") +
+            "a configuration file. In this, you can also set proxy settings etc. Create a file with the s3init mode " +
+            "if you don't have one. The file format is described on the project website.",
             false,
             "default",
             cmdLineParser);
@@ -99,9 +97,17 @@ _SwitchArg ModeCLIParser::createForceOverwriteSwitchArg(CmdLine *cmdLineParser) 
             cmdLineParser);
 }
 
+tuple<shared_ptr<UnlabeledValueArg<string>>, shared_ptr<ValuesConstraint<string>>>
+ModeCLIParser::createAllowedModeArg(const string &mode, CmdLine *cmdLineParser) const {
+    vector<string> allowedMode{mode};
+    auto allowedModesConstraint = make_shared<ValuesConstraint<string>>(allowedMode);
+    auto arg = std::make_shared<UnlabeledValueArg<string>>(mode, "mode is " + mode, true, "", allowedModesConstraint.get());
+    cmdLineParser->add(arg.get());
+    return {arg, allowedModesConstraint};
+}
+
 shared_ptr<Source> ModeCLIParser::processFastqFile(const string &fastqFileVal,
                                                    const S3ServiceOptions &s3ServiceOptions) {
-
     if (fastqFileVal == "-") {      // Streamed mode
         return StreamSource::from(&cin);
     } else if (isS3Path(fastqFileVal)) {     // S3 mode!

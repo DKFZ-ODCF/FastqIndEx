@@ -11,67 +11,45 @@
 #include "ModeCLIParser.h"
 #include <tclap/CmdLine.h>
 
+#include <memory>
+
 using namespace std;
 using namespace TCLAP;
-
-const string  IndexModeCLIParser::descriptionForIndexModeIndexFileArg =
-        string("The index file which shall be created or - for stdout or \"\" to append .fqi to the FASTQ filename. ") +
-        "Note, that the index will be streamed to stdout, if you provide \"\" or - as the FASTQ file parameter. " +
-        "The index file can also reside in an S3 bucket. Enter the filename here like s3:<filename> and set the"
-        " bucket with --bucket." +
-        " Note, that this software will create the index in the tmp directory before uploading it to S3!";
-
-const string  IndexModeCLIParser::descriptForFastqFileArg =
-        string("The fastq file which shall be indexed or - for stdin.") +
-        "The FASTQ file can also reside in an S3 bucket. Enter the filename here like s3:<filename> and set the"
-        " bucket with --bucket.";
-
-const string  IndexModeCLIParser::s3ConfigFileSectionArgDescription =
-        string("In alternative to setting the bucket and the endpoint via command line, you can also specify ") +
-        "a configuration file. In this, you can also set proxy settings etc. Create a file with the s3init mode " +
-        "if you don't have one. The file format is described on the project website.";
 
 IndexerRunner *IndexModeCLIParser::parse(int argc, const char **argv) {
     // Working with TCLAP is easy but also tricky:
     // - You need to put the init code in a seperate method using shared_ptr or pointers (due to scoping issues)
     // - You cannot put the variables into the header as there is no constructor for this.
 
-    CmdLine cmdLineParser("Command description message", '=', "0.0.1", false);
+    auto cmdLineParser = createCommandLineParser();
 
-    auto fastqFileArg = createFastqFileArg(&cmdLineParser);
+    // TCLAP displays latest added items first. So read the create..Arg methods in reverse order.
+    auto verbosityArg = createVerbosityArg(cmdLineParser.get());
 
-    auto indexFileArg = createIndexFileArg(&cmdLineParser);
+    auto forbidIndexWriteoutSwitch = createForbidIndexWriteoutSwitchArg(cmdLineParser.get());
+    auto storeForDecompressedBlocksArg = createStoreForDecompressedBlocksArg(cmdLineParser.get());
+    auto storeForPartialDecompressedBlocksArg = createStoreForPartialDecompressedBlocksArg(cmdLineParser.get());
+    auto debugSwitch = createDebugSwitchArg(cmdLineParser.get());
 
-    auto s3ConfigFileArg = createS3ConfigFileArg(&cmdLineParser);
+    auto disableFailsafeDistanceSwitch = createDisableFailsafeDistanceSwitchArg(cmdLineParser.get());
+    auto blockIntervalArg = createBlockIntervalArg(cmdLineParser.get());
+    auto byteDistanceArg = createByteDistanceArg(cmdLineParser.get());
+    auto[selectIndexMetricArg, constraints] = createSelectIndexEntryStorageStrategyArg(cmdLineParser.get());
 
-    auto s3CredentialsFileArg = createS3CredentialsFileArg(&cmdLineParser);
+    auto forceOverwriteArg = createForceOverwriteSwitchArg(cmdLineParser.get());
+    auto dictCompressionSwitch = createDictCompressionSwitchArg(cmdLineParser.get());
 
-    auto s3ConfigFileSectionArg = createS3ConfigFileSectionArg(&cmdLineParser);
+    auto s3ConfigFileSectionArg = createS3ConfigFileSectionArg(cmdLineParser.get());
+    auto s3CredentialsFileArg = createS3CredentialsFileArg(cmdLineParser.get());
+    auto s3ConfigFileArg = createS3ConfigFileArg(cmdLineParser.get());
 
-    auto blockIntervalArg = createBlockIntervalArg(&cmdLineParser);
+    auto indexFileArg = createIndexFileArg(cmdLineParser.get());
+    auto fastqFileArg = createFastqFileArg(cmdLineParser.get());
 
-    auto verbosityArg = createVerbosityArg(&cmdLineParser);
+    // Keep the mode constraints on the stack, so allowedModeArg won't access invalid memory!
+    auto[allowedModeArg, modeConstraints] = createAllowedModeArg("index", cmdLineParser.get());
 
-    auto forceOverwriteArg = createForceOverwriteSwitchArg(&cmdLineParser);
-
-    auto dictCompressionSwitch = createDictCompressionSwitchArg(&cmdLineParser);
-
-    auto debugSwitch = createDebugSwitchArg(&cmdLineParser);
-
-    auto forbidIndexWriteoutSwitch = createForbidIndexWriteoutSwitchArg(&cmdLineParser);
-
-    auto disableFailsafeDistanceSwitch = createDisableFailsafeDistanceSwitchArg(&cmdLineParser);
-
-    auto storeForDecompressedBlocksArg = createStoreForDecompressedBlocksArg(&cmdLineParser);
-
-    auto storeForPartialDecompressedBlocksArg = createStoreForPartialDecompressedBlocksArg(&cmdLineParser);
-
-    vector<string> allowedMode{"index"};
-    ValuesConstraint<string> allowedModesConstraint(allowedMode);
-    UnlabeledValueArg<string> mode("mode", "mode is index", true, "", &allowedModesConstraint);
-    cmdLineParser.add(mode);
-
-    cmdLineParser.parse(argc, argv);
+    cmdLineParser->parse(argc, argv);
 
     bool forceOverwrite = forceOverwriteArg->getValue();
 
@@ -81,11 +59,17 @@ IndexerRunner *IndexModeCLIParser::parse(int argc, const char **argv) {
     S3Service::setS3ServiceOptions(s3ServiceOptions);
 
     auto fastq = processFastqFile(fastqFileArg->getValue(), s3ServiceOptions);
-
     auto index = processIndexFileSink(indexFileArg->getValue(), forceOverwrite, fastq, s3ServiceOptions);
 
-    int blockInterval = blockIntervalArg->getValue();
-    if (blockInterval < -1) blockInterval = -1;
+    shared_ptr<IndexEntryStorageStrategy> storageStrategy;
+    if (selectIndexMetricArg->getValue() == "BlockDistance") {
+        int blockInterval = blockIntervalArg->getValue();
+        if (blockInterval < -1) blockInterval = -1;
+        storageStrategy.reset(
+                new BlockDistanceStorageStrategy(blockInterval, !disableFailsafeDistanceSwitch->getValue()));
+    } else if (selectIndexMetricArg->getValue() == "ByteDistance") {
+        storageStrategy.reset(new ByteDistanceStorageStrategy(byteDistanceArg->getValue()));
+    }
 
     ErrorAccumulator::setVerbosity(verbosityArg->getValue());
     bool enableDebugging = debugSwitch->getValue();
@@ -106,9 +90,8 @@ IndexerRunner *IndexModeCLIParser::parse(int argc, const char **argv) {
     if (disableFailsafeDistanceSwitch->getValue())
         ErrorAccumulator::always("Failsafe distance is turned off");
 
-    auto runner = new IndexerRunner(fastq, index, blockInterval, enableDebugging, forceOverwrite,
+    auto runner = new IndexerRunner(fastq, index, storageStrategy, enableDebugging, forceOverwrite,
                                     forbidIndexWriteoutSwitch->getValue(),
-                                    disableFailsafeDistanceSwitch->getValue(),
                                     dictCompressionSwitch->getValue());
 
     if (storeForDecompressedBlocksArg->isSet()) {
@@ -123,6 +106,20 @@ IndexerRunner *IndexModeCLIParser::parse(int argc, const char **argv) {
         runner->enableWriteOutOfPartialDecompressedBlocks(storeForPartialDecompressedBlocksArg->getValue());
     }
     return runner;
+}
+
+tuple<_StringValueArg, shared_ptr<ValuesConstraint<string>>>
+IndexModeCLIParser::createSelectIndexEntryStorageStrategyArg(CmdLine *cmdLineParser) const {
+    vector<string> allowedMetrics{"ByteDistance", "BlockDistance"};
+    auto allowedMetricsConstraint = make_shared<ValuesConstraint<string>>(allowedMetrics);
+
+    auto arg = make_shared<ValueArg<string>>(
+            "m", "selectIndexEntryMetric",
+            string("Selects the metric which is used to calculate, which compressed block will be referenced with ") +
+            "index entry in the resulting FQI file. The default value is \"ByteDistance\".",
+            false,
+            "ByteDistance", allowedMetricsConstraint.get(), *cmdLineParser);
+    return {arg, allowedMetricsConstraint};
 }
 
 _IntValueArg IndexModeCLIParser::createBlockIntervalArg(CmdLine *cmdLineParser) const {
@@ -157,6 +154,13 @@ _SwitchArg IndexModeCLIParser::createDisableFailsafeDistanceSwitchArg(CmdLine *c
             string("Disables the minimum offset-byte-distance checks for entries in the index file. ") +
             "The failsafe distance is calculated with (block distance) * (16kByte)",
             cmdLineParser);
+}
+
+_StringValueArg IndexModeCLIParser::createByteDistanceArg(CmdLine *cmdLineParser) const {
+    return _makeStringValueArg(
+            "B", "byteDistance",
+            string("Minimum distance between two referenced compressed blocks in the form of 3k, 4M, 12G or 1TB."),
+            false, "1G", cmdLineParser);
 }
 
 _StringValueArg IndexModeCLIParser::createStoreForPartialDecompressedBlocksArg(CmdLine *cmdLineParser) const {

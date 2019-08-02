@@ -56,7 +56,7 @@ SUITE (SUITE_ID) {
 
     TEST (TEST_CHECK_PREMISES_WITH_ALLOWED_PIPE) {
         TestResourcesAndFunctions res(SUITE_ID, TEST_CHECK_PREMISES_WITH_FASTQ);
-        IndexerRunner runner(make_shared<StreamSource>(&cin), make_shared<PathSink>(indexFile(&res)));
+        IndexerRunner runner(make_shared<StreamSource>(&cin), make_shared<PathSink>(indexFile(&res)), BlockDistanceStorageStrategy::getDefault());
         bool result = runner.checkPremises();
                 CHECK(result);
     }
@@ -65,14 +65,14 @@ SUITE (SUITE_ID) {
         TestResourcesAndFunctions res(SUITE_ID, TEST_CHECK_PREMISES_WITH_FASTQ);
         path fastq = fastqFile(&res);
         res.createEmptyFile(FASTQ_FILENAME);
-        IndexerRunner runner(_fastqFile(&res), _indexFile(&res));
+        IndexerRunner runner(_fastqFile(&res), _indexFile(&res),make_shared<BlockDistanceStorageStrategy>(-1, true));
         bool result = runner.checkPremises();
                 CHECK(result);
     }
 
     TEST (TEST_CHECK_PREMISES_WITH_MISSING_FASTQ) {
         TestResourcesAndFunctions res(SUITE_ID, TEST_CHECK_PREMISES_WITH_MISSING_FASTQ);
-        IndexerRunner *runner = new IndexerRunner(_fastqFile(&res), _indexFile(&res), -1);
+        IndexerRunner *runner = new IndexerRunner(_fastqFile(&res), _indexFile(&res), BlockDistanceStorageStrategy::getDefault());
         bool result = runner->checkPremises();
                 CHECK(!result);
 //                CHECK(runner->getErrorMessages().size() == 1);
@@ -90,7 +90,7 @@ SUITE (SUITE_ID) {
         create_symlink(fastq, symlink1);
         create_symlink(symlink1, symlink2);
         create_symlink(symlink2, symlink3);
-        IndexerRunner runner(shared_ptr<Source>(new PathSource(symlink3)), _indexFile(&res));
+        IndexerRunner runner(shared_ptr<Source>(new PathSource(symlink3)), _indexFile(&res), BlockDistanceStorageStrategy::getDefault());
         bool result = runner.checkPremises();
                 CHECK_EQUAL(true, result);
     }
@@ -100,7 +100,7 @@ SUITE (SUITE_ID) {
         path fastq = fastqFile(&res);
         path symlink1 = path(fastq.string() + ".link1");
         create_symlink(fastq, symlink1);
-        IndexerRunner runner(shared_ptr<Source>(new PathSource(symlink1)), _indexFile(&res));
+        IndexerRunner runner(shared_ptr<Source>(new PathSource(symlink1)), _indexFile(&res), BlockDistanceStorageStrategy::getDefault());
         bool result = runner.checkPremises();
                 CHECK_EQUAL(false, result);
     }
@@ -109,7 +109,7 @@ SUITE (SUITE_ID) {
         TestResourcesAndFunctions res(SUITE_ID, TEST_CHECK_PREMISES_WITH_EXISTING_INDEX);
         res.createEmptyFile(FASTQ_FILENAME);
         res.createEmptyFile(INDEX_FILENAME);
-        IndexerRunner runner(_fastqFile(&res), _indexFile(&res));
+        IndexerRunner runner(_fastqFile(&res), _indexFile(&res), BlockDistanceStorageStrategy::getDefault());
         bool result = runner.checkPremises();
         // It is not allowed to override an existing file! Test has to "fail"
                 CHECK(!result);

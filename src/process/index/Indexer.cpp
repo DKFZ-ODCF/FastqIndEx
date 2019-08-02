@@ -23,15 +23,14 @@ const unsigned int Indexer::INDEXER_VERSION = 1;
 Indexer::Indexer(
         const shared_ptr<Source> &fastqfile,
         const shared_ptr<Sink> &index,
-        int blockInterval,
+        shared_ptr<IndexEntryStorageStrategy> storageStrategy,
         bool enableDebugging,
         bool forceOverwrite,
         bool forbidWriteFQI,
-        bool disableFailsafeDistance,
         bool compressDictionaries
 ) : ZLibBasedFASTQProcessorBaseClass(fastqfile, index, enableDebugging) {
     this->forbidWriteFQI = forbidWriteFQI;
-    this->storageStrategy = shared_ptr<IndexEntryStorageStrategy>(new BlockDistanceStorageStrategy(blockInterval, !disableFailsafeDistance));
+    this->storageStrategy = storageStrategy;
     this->forceOverwrite = forceOverwrite;
     this->compressDictionaries = compressDictionaries;
     if (!forbidWriteFQI)

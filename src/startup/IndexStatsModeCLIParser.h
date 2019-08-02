@@ -14,34 +14,30 @@
 class IndexStatsModeCLIParser : public ModeCLIParser {
 public:
     IndexStatsRunner *parse(int argc, const char **argv) override {
-        CmdLine cmdLineParser("Command description message", '=', "0.0.1", false);
+        auto cmdLineParser = createCommandLineParser();
 
-        auto indexFileArg = createIndexFileArg(&cmdLineParser);
-
-        ValueArg<int> startingread(
+        auto startingReadArg = _makeUIntValueArg(
                 "s", "startingentry",
-                "Defines the first to show.",
+                "Defines the first index entry to show.",
                 false,
-                0, "int", cmdLineParser);
+                0, cmdLineParser.get());
 
-        ValueArg<int> numberofreads(
+        auto numberOfReadsArg = _makeUIntValueArg(
                 "n", "numberofentries",
                 "Number of index entries to show.",
                 false,
-                1, "int", cmdLineParser);
+                1, cmdLineParser.get());
 
-        auto s3ConfigFileArg = createS3ConfigFileArg(&cmdLineParser);
+        auto s3ConfigFileSectionArg = createS3ConfigFileSectionArg(cmdLineParser.get());
+        auto s3CredentialsFileArg = createS3CredentialsFileArg(cmdLineParser.get());
+        auto s3ConfigFileArg = createS3ConfigFileArg(cmdLineParser.get());
 
-        auto s3CredentialsFileArg = createS3CredentialsFileArg(&cmdLineParser);
+        auto indexFileArg = createIndexFileArg(cmdLineParser.get());
 
-        auto s3ConfigFileSectionArg = createS3ConfigFileSectionArg(&cmdLineParser);
+        // Keep the mode constraints on the stack, so allowedModeArg won't access invalid memory!
+        auto[allowedModeArg, modeConstraints] = createAllowedModeArg("stats", cmdLineParser.get());
 
-        vector<string> allowedMode{"stats"};
-        ValuesConstraint<string> allowedModesConstraint(allowedMode);
-        UnlabeledValueArg<string> mode("mode", "mode is stats", true, "", &allowedModesConstraint);
-        cmdLineParser.add(mode);
-
-        cmdLineParser.parse(argc, argv);
+        cmdLineParser->parse(argc, argv);
 
         S3ServiceOptions s3ServiceOptions(s3ConfigFileArg->getValue(),
                                           s3CredentialsFileArg->getValue(),
@@ -50,7 +46,7 @@ public:
 
         auto index = processIndexFileSource(indexFileArg->getValue(), s3ServiceOptions);
 
-        auto runner = new IndexStatsRunner(index, startingread.getValue(), numberofreads.getValue());
+        auto runner = new IndexStatsRunner(index, startingReadArg->getValue(), numberOfReadsArg->getValue());
 
         return runner;
     }

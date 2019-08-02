@@ -15,23 +15,13 @@ const char *INDEXERRUNNER_SUITE_TESTS = "IndexerRunnerTests";
 const char *TEST_INDEXERRUNNER_CREATION = "IndexerRunnerCreation";
 const char *TEST_INDEXERRUNNER_ERRORMESSAGE_PASSTHROUGH = "IndexerRunnerWithErrorMessagPassthrough";
 
-shared_ptr<IndexerRunner> createRunner(const char *const testID, bool createIndex) {
-    TestResourcesAndFunctions res(INDEXERRUNNER_SUITE_TESTS, testID);
-
-    path fastq = res.createEmptyFile("fastq.fastq");
-    if (createIndex)
-        return make_shared<IndexerRunner>(make_shared<PathSource>(fastq), make_shared<PathSink>(res.createEmptyFile("fastq.fastq.fqi")));
-    else
-        return make_shared<IndexerRunner>(make_shared<PathSource>(fastq), make_shared<PathSink>(res.filePath("fastq.fastq.fqi")));
-}
-
 SUITE (INDEXERRUNNER_SUITE_TESTS) {
     TEST (TEST_INDEXERRUNNER_CREATION) {
         TestResourcesAndFunctions res(INDEXERRUNNER_SUITE_TESTS, TEST_INDEXERRUNNER_CREATION);
         path fastq = res.createEmptyFile("fastq.fastq");
         path index = res.filePath("fastq.fastq.fqi");
 
-        auto r = make_shared<IndexerRunner>(make_shared<PathSource>(fastq), make_shared<PathSink>(index));
+        auto r = make_shared<IndexerRunner>(make_shared<PathSource>(fastq), make_shared<PathSink>(index), BlockDistanceStorageStrategy::getDefault());
                 CHECK(r->checkPremises()); // Index file missing.
                 CHECK(!r->isCLIOptionsPrinter());
                 CHECK(!r->isExtractor());
@@ -44,7 +34,7 @@ SUITE (INDEXERRUNNER_SUITE_TESTS) {
         path fastq = res.createEmptyFile("fastq.fastq");
         path index = res.createEmptyFile("fastq.fastq.fqi");
 
-        auto r = make_shared<IndexerRunner>(make_shared<PathSource>(fastq), make_shared<PathSink>(index));
+        auto r = make_shared<IndexerRunner>(make_shared<PathSource>(fastq), make_shared<PathSink>(index), BlockDistanceStorageStrategy::getDefault());
                 CHECK(!r->checkPremises()); // Index exists. Not indexable!
                 CHECK(!r->isCLIOptionsPrinter());
                 CHECK(!r->isExtractor());

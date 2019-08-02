@@ -22,6 +22,14 @@ struct IndexEntryV1;
  */
 extern const uint MAGIC_NUMBER;
 
+extern const u_int64_t kB;
+
+extern const u_int64_t MB;
+
+extern const u_int64_t GB;
+
+extern const u_int64_t TB;
+
 /**
  * Size of buffer for decompressed data
  * I'd prefer to set the following value as constant ints, but C++ then refuses to initialize arrays with the nice {0}

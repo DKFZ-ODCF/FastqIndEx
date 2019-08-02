@@ -120,11 +120,10 @@ public:
      */
     Indexer(const shared_ptr<Source> &fastqfile,
             const shared_ptr<Sink> &index,
-            int blockInterval,
+            shared_ptr<IndexEntryStorageStrategy> storageStrategy,
             bool enableDebugging = false,
             bool forceOverwrite = false,
             bool forbidWriteFQI = false,
-            bool disableFailsafeDistance = false,
             bool compressDictionaries = true
     );
 

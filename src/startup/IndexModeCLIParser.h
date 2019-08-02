@@ -17,22 +17,22 @@ class IndexModeCLIParser : public ModeCLIParser {
 public:
     IndexerRunner *parse(int argc, const char **argv) override;
 
+    tuple<_StringValueArg, shared_ptr<ValuesConstraint<string>>> createSelectIndexEntryStorageStrategyArg(CmdLine *cmdLineParser) const;
+
     _IntValueArg createBlockIntervalArg(CmdLine *cmdLineParser) const;
+
+    _SwitchArg createDisableFailsafeDistanceSwitchArg(CmdLine *cmdLineParser) const;
+
+    _StringValueArg createByteDistanceArg(CmdLine *cmdLineParser) const;
 
     _SwitchArg createDictCompressionSwitchArg(CmdLine *cmdLineParser) const;
 
     _SwitchArg createForbidIndexWriteoutSwitchArg(CmdLine *cmdLineParser) const;
 
-    _SwitchArg createDisableFailsafeDistanceSwitchArg(CmdLine *cmdLineParser) const;
-
     _StringValueArg createStoreForPartialDecompressedBlocksArg(CmdLine *cmdLineParser) const;
 
     _StringValueArg createStoreForDecompressedBlocksArg(CmdLine *cmdLineParser) const;
 
-
-    static const string descriptForFastqFileArg;
-    static const string descriptionForIndexModeIndexFileArg;
-    static const string s3ConfigFileSectionArgDescription;
 };
 
 

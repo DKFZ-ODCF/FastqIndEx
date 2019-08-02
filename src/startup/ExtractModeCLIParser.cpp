@@ -14,42 +14,33 @@ using namespace std;
 using namespace TCLAP;
 
 ExtractorRunner *ExtractModeCLIParser::parse(int argc, const char **argv) {
-    CmdLine cmdLineParser("Extract reads from a FASTQ file (or lines from a text file).", '=', "0.0.1", false);
+    auto cmdLineParser = createCommandLineParser();
 
-    auto outputFileArg = createOutputFileArg(&cmdLineParser);
+    auto verbosityArg = createVerbosityArg(cmdLineParser.get());
 
-    auto fastqFileArg = createFastqFileArg(&cmdLineParser);
+    auto debugSwitch = createDebugSwitchArg(cmdLineParser.get());
 
-    auto indexFileArg = createIndexFileArg(&cmdLineParser);
+    auto extractionMultiplierArg = createExtractionMultiplierArg(cmdLineParser.get());
+    auto numberOfReadsArg = createNumberOfReadsArg(cmdLineParser.get());
+    auto startingReadArg = createStartingReadArg(cmdLineParser.get());
 
-    auto s3ConfigFileArg = createS3ConfigFileArg(&cmdLineParser);
+    auto segmentIdentifierArg = createSegmentIdentifierArg(cmdLineParser.get());
+    auto segmentCountArg = createSegmentCountArg(cmdLineParser.get());
 
-    auto s3CredentialsFileArg = createS3CredentialsFileArg(&cmdLineParser);
+    auto forceOverwriteArg = createForceOverwriteSwitchArg(cmdLineParser.get());
 
-    auto s3ConfigFileSectionArg = createS3ConfigFileSectionArg(&cmdLineParser);
+    auto s3ConfigFileSectionArg = createS3ConfigFileSectionArg(cmdLineParser.get());
+    auto s3CredentialsFileArg = createS3CredentialsFileArg(cmdLineParser.get());
+    auto s3ConfigFileArg = createS3ConfigFileArg(cmdLineParser.get());
 
-    auto forceOverwriteArg = createForceOverwriteSwitchArg(&cmdLineParser);
+    auto outputFileArg = createOutputFileArg(cmdLineParser.get());
+    auto indexFileArg = createIndexFileArg(cmdLineParser.get());
+    auto fastqFileArg = createFastqFileArg(cmdLineParser.get());
 
-    auto extractionMultiplierArg = createExtractionMultiplierArg(&cmdLineParser);
+    // Keep the mode constraints on the stack, so allowedModeArg won't access invalid memory!
+    auto[allowedModeArg, modeConstraints] = createAllowedModeArg("extract", cmdLineParser.get());
 
-    auto startingReadArg = createStartingReadArg(&cmdLineParser);
-
-    auto numberOfReadsArg = createNumberOfReadsArg(&cmdLineParser);
-
-    auto segmentIdentifierArg = createSegmentIdentifierArg(&cmdLineParser);
-
-    auto segmentCountArg = createSegmentCountArg(&cmdLineParser);
-
-    auto verbosityArg = createVerbosityArg(&cmdLineParser);
-
-    auto debugSwitch = createDebugSwitchArg(&cmdLineParser);
-
-    vector<string> allowedMode{"extract"};
-    ValuesConstraint<string> allowedModesConstraint(allowedMode);
-    UnlabeledValueArg<string> mode("mode", "mode is extract", true, "", &allowedModesConstraint);
-    cmdLineParser.add(mode);
-
-    cmdLineParser.parse(argc, argv);
+    cmdLineParser->parse(argc, argv);
 
     S3ServiceOptions s3ServiceOptions(s3ConfigFileArg->getValue(),
                                       s3CredentialsFileArg->getValue(),

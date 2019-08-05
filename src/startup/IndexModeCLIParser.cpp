@@ -160,7 +160,7 @@ _StringValueArg IndexModeCLIParser::createByteDistanceArg(CmdLine *cmdLineParser
     return _makeStringValueArg(
             "B", "byteDistance",
             string("Minimum distance between two referenced compressed blocks in the form of 3k, 4M, 12G or 1TB."),
-            false, "1G", cmdLineParser);
+            false, "-1", cmdLineParser);
 }
 
 _StringValueArg IndexModeCLIParser::createStoreForPartialDecompressedBlocksArg(CmdLine *cmdLineParser) const {

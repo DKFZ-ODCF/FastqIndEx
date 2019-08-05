@@ -185,6 +185,8 @@ public:
     }
 
     static int64_t parseStringValue(string str) {
+        if(str == "-1")
+            return -1;
 
         long long result = 0;
         if (regex_match(str.c_str(), regex("[0-9]+[kmgtKMGT]"))) {
@@ -202,8 +204,7 @@ public:
         } else if (std::regex_match(str.c_str(), regex("[0-9]+"))) {
             result = stoll(str) * MB;
         }
-        if (result <= 0) return GB; // 1GB by default!
-        return result;
+        if (result <= 0) return -1;
     }
 
     static u_int64_t calculateDistanceBasedOnFileSize(u_int64_t fileSize) {

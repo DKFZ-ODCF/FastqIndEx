@@ -24,7 +24,7 @@ class ErrorAccumulator {
 private:
 
     /**
-     * Keep a list of errors which came up during checkPremises()
+     * Keep a list of errors which came up during fulfillsPremises()
      */
     vector<string> errorMessages;
 

@@ -21,7 +21,7 @@ using namespace std;
 /**
  * The Indexer class is used to walk through a gz compressed FASTQ file and to write an index for this file.
  * An Indexer is a one-time-use only object! Attempts to reuse it will fail.
- * While tryOpen() and checkPremises() will call thread / interprocess safe check and access methods for the index file,
+ * While tryOpen() and fulfillsPremises() will call thread / interprocess safe check and access methods for the index file,
  * all other methods are not. However, createIndex() will call tryOpen() and fail, if a write lock is already active.
  * It is also not allowed to rerun createIndex().
  */
@@ -133,7 +133,7 @@ public:
         this->compressDictionaries = value;
     }
 
-    bool checkPremises();
+    bool fulfillsPremises();
 
     /**
      * This will create an IndexHeader instance with INDEXER_VERSION and the size of the used IndexEntry struct.

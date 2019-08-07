@@ -231,7 +231,7 @@ bool StreamSource::canRead() {
     return !this->inputStream->eof();
 }
 
-bool StreamSource::checkPremises() {
+bool StreamSource::fulfillsPremises() {
     return false;
 }
 

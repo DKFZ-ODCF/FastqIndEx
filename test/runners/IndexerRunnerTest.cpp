@@ -22,7 +22,7 @@ SUITE (INDEXERRUNNER_SUITE_TESTS) {
         path index = res.filePath("fastq.fastq.fqi");
 
         auto r = make_shared<IndexerRunner>(make_shared<PathSource>(fastq), make_shared<PathSink>(index), BlockDistanceStorageStrategy::getDefault());
-                CHECK(r->checkPremises()); // Index file missing.
+                CHECK(r->fulfillsPremises()); // Index file missing.
                 CHECK(!r->isCLIOptionsPrinter());
                 CHECK(!r->isExtractor());
                 CHECK(r->isIndexer());
@@ -35,7 +35,7 @@ SUITE (INDEXERRUNNER_SUITE_TESTS) {
         path index = res.createEmptyFile("fastq.fastq.fqi");
 
         auto r = make_shared<IndexerRunner>(make_shared<PathSource>(fastq), make_shared<PathSink>(index), BlockDistanceStorageStrategy::getDefault());
-                CHECK(!r->checkPremises()); // Index exists. Not indexable!
+                CHECK(!r->fulfillsPremises()); // Index exists. Not indexable!
                 CHECK(!r->isCLIOptionsPrinter());
                 CHECK(!r->isExtractor());
                 CHECK(r->isIndexer());

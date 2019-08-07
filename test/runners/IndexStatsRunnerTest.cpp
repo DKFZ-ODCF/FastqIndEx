@@ -17,7 +17,7 @@ SUITE (SUITE_INDEXSTATSRUNNER_TESTS) {
         TestResourcesAndFunctions res(SUITE_INDEXSTATSRUNNER_TESTS, TEST_INDEXSTATSRUNNER_CREATION);
         path p = res.getResource(TEST_INDEX_SMALL);
         IndexStatsRunner r(make_shared<PathSource>(p), 0, 1);
-                CHECK(r.checkPremises());
+                CHECK(r.fulfillsPremises());
                 CHECK(!r.isCLIOptionsPrinter());
                 CHECK(!r.isExtractor());
                 CHECK(!r.isIndexer());

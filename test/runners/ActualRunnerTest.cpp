@@ -20,8 +20,8 @@
 using std::experimental::filesystem::path;
 
 const char *TEST_FILEPATH_HELPER_METHOD = "testFilePathHelperMethod";
-const char *TEST_CHECK_PREMISES_WITH_ALLOWED_PIPE = "Test for checkPremises with a piped (and allowed) input file";
-const char *TEST_CHECK_PREMISES_WITH_FORBIDDEN_PIPE = "Test for checkPremises with a forbidden input pipe (extractor)";
+const char *TEST_CHECK_PREMISES_WITH_ALLOWED_PIPE = "Test for fulfillsPremises with a piped (and allowed) input file";
+const char *TEST_CHECK_PREMISES_WITH_FORBIDDEN_PIPE = "Test for fulfillsPremises with a forbidden input pipe (extractor)";
 const char *TEST_CHECK_PREMISES_WITH_FASTQ = "testCheckPremisesWithFastq";
 const char *TEST_CHECK_PREMISES_WITH_MISSING_FASTQ = "testCheckPremisesWithMissingFastq";
 const char *TEST_CHECK_PREMISES_WITH_EXISTING_INDEX = "testCheckPremisesWithExistingIndex";
@@ -57,7 +57,7 @@ SUITE (SUITE_ID) {
     TEST (TEST_CHECK_PREMISES_WITH_ALLOWED_PIPE) {
         TestResourcesAndFunctions res(SUITE_ID, TEST_CHECK_PREMISES_WITH_FASTQ);
         IndexerRunner runner(make_shared<StreamSource>(&cin), make_shared<PathSink>(indexFile(&res)), BlockDistanceStorageStrategy::getDefault());
-        bool result = runner.checkPremises();
+        bool result = runner.fulfillsPremises();
                 CHECK(result);
     }
 
@@ -66,14 +66,14 @@ SUITE (SUITE_ID) {
         path fastq = fastqFile(&res);
         res.createEmptyFile(FASTQ_FILENAME);
         IndexerRunner runner(_fastqFile(&res), _indexFile(&res),make_shared<BlockDistanceStorageStrategy>(-1, true));
-        bool result = runner.checkPremises();
+        bool result = runner.fulfillsPremises();
                 CHECK(result);
     }
 
     TEST (TEST_CHECK_PREMISES_WITH_MISSING_FASTQ) {
         TestResourcesAndFunctions res(SUITE_ID, TEST_CHECK_PREMISES_WITH_MISSING_FASTQ);
         IndexerRunner *runner = new IndexerRunner(_fastqFile(&res), _indexFile(&res), BlockDistanceStorageStrategy::getDefault());
-        bool result = runner->checkPremises();
+        bool result = runner->fulfillsPremises();
                 CHECK(!result);
 //                CHECK(runner->getErrorMessages().size() == 1);
 //                CHECK(runner->getErrorMessages()[0] == ERR_MESSAGE_FASTQ_INVALID);
@@ -91,7 +91,7 @@ SUITE (SUITE_ID) {
         create_symlink(symlink1, symlink2);
         create_symlink(symlink2, symlink3);
         IndexerRunner runner(shared_ptr<Source>(new PathSource(symlink3)), _indexFile(&res), BlockDistanceStorageStrategy::getDefault());
-        bool result = runner.checkPremises();
+        bool result = runner.fulfillsPremises();
                 CHECK_EQUAL(true, result);
     }
 
@@ -101,7 +101,7 @@ SUITE (SUITE_ID) {
         path symlink1 = path(fastq.string() + ".link1");
         create_symlink(fastq, symlink1);
         IndexerRunner runner(shared_ptr<Source>(new PathSource(symlink1)), _indexFile(&res), BlockDistanceStorageStrategy::getDefault());
-        bool result = runner.checkPremises();
+        bool result = runner.fulfillsPremises();
                 CHECK_EQUAL(false, result);
     }
 
@@ -110,7 +110,7 @@ SUITE (SUITE_ID) {
         res.createEmptyFile(FASTQ_FILENAME);
         res.createEmptyFile(INDEX_FILENAME);
         IndexerRunner runner(_fastqFile(&res), _indexFile(&res), BlockDistanceStorageStrategy::getDefault());
-        bool result = runner.checkPremises();
+        bool result = runner.fulfillsPremises();
         // It is not allowed to override an existing file! Test has to "fail"
                 CHECK(!result);
     }

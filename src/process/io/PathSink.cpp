@@ -17,14 +17,14 @@ PathSink::PathSink(const path &file, bool forceOverwrite) :
         lockHandler(file) {
 }
 
-bool PathSink::checkPremises() {
+bool PathSink::fulfillsPremises() {
     if (!forceOverwrite && exists()) {
         addErrorMessage(
-                "The result file already exists and cannot be overwritten. Allow overwriting with -w, if it is intentional.");
+                "The file '", file, "' exists and cannot be overwritten. Allow overwriting with -w.");
         return false;
     }
     if (exists() && !canWrite()) {
-        addErrorMessage("The result file exists and cannot be overwritten. Check its file access rights.");
+        addErrorMessage("The result file '", file, "' exists and cannot be overwritten. Check its file access rights.");
         return false;
     }
 //    if (!exists() && access(parentPath().string().c_str(), W_OK) != 0) {

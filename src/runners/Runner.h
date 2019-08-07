@@ -45,7 +45,7 @@ public:
      * Check premises for the runner instance and accumulate errors, if the checks fail.
      * @return true if the premises were validated or false.
      */
-    virtual bool checkPremises() { return true; };
+    virtual bool fulfillsPremises() { return true; };
 
     /**
      * Actually for debugging.

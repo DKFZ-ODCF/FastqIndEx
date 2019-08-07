@@ -67,7 +67,7 @@ bool S3Config::figureOutConfigurationFiles() {
         usedCredentialsFile = finalCredentialsFile;
         usedConfigFile = finalConfigurationFile;
     } else {
-        addErrorMessage("Could not validate configuration for S3!");
+        addErrorMessage("Could not validate configuration for S3.");
     }
     return _isValid;
 }

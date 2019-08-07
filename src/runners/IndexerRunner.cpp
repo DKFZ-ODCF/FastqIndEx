@@ -34,11 +34,11 @@ IndexerRunner::~IndexerRunner() {
     indexer.reset();
 }
 
-bool IndexerRunner::checkPremises() {
-    // indexer->checkPremises() will call tryOpenAndReadHeader on the indexer.
+bool IndexerRunner::fulfillsPremises() {
+    // indexer->fulfillsPremises() will call tryOpenAndReadHeader on the indexer.
     // Errors will be collected.
-    bool myPremises = ActualRunner::checkPremises();
-    bool indexerPremises = indexer->checkPremises();
+    bool myPremises = ActualRunner::fulfillsPremises();
+    bool indexerPremises = indexer->fulfillsPremises();
     return myPremises && indexerPremises;
 }
 

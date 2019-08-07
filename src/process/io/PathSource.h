@@ -47,7 +47,7 @@ public:
 
     virtual ~PathSource();
 
-    bool checkPremises() override;
+    bool fulfillsPremises() override;
 
     bool open() override;
 

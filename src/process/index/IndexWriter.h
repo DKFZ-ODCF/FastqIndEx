@@ -8,6 +8,7 @@
 #define FASTQINDEX_INDEXWRITER_H
 
 #include "common/CommonStructsAndConstants.h"
+#include "common/IndexHeader.h"
 #include "process/io/locks/PathLockHandler.h"
 #include "process/io/Sink.h"
 #include <experimental/filesystem>

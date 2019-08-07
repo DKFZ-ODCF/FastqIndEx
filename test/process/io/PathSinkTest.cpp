@@ -5,7 +5,7 @@
  */
 
 const char *const PATH_SINK_TEST_SUITE = "Test suite for the PathSink class";
-const char *const PATH_SINK_CONSTRUCT = "Test construction and checkPremises()";
+const char *const PATH_SINK_CONSTRUCT = "Test construction and fulfillsPremises()";
 const char *const PATH_SINK_OPEN = "Test open and close";
 const char *const PATH_SINK_OPENLOCKED = "Test open and close with lock_unlock";
 const char *const PATH_SINK_AQUIRELOCK_LATER = "Test aquire lock after file open";
@@ -24,7 +24,7 @@ SUITE (PATH_SINK_TEST_SUITE) {
 
         auto ps = res.filePath(TEST_FASTQ_SMALL);
         PathSink p(ps);
-                CHECK(p.checkPremises());
+                CHECK(p.fulfillsPremises());
                 CHECK(p.getPath() == ps);
                 CHECK(!p.exists());
                 CHECK(!p.hasLock());
@@ -43,11 +43,11 @@ SUITE (PATH_SINK_TEST_SUITE) {
 
         auto p2 = PathSink(res.createEmptyFile("noOverwrite"));
                 CHECK(p2.exists());
-                CHECK(!p2.checkPremises());
+                CHECK(!p2.fulfillsPremises());
 
         auto p3 = PathSink(res.createEmptyFile("overwrite"), true);
                 CHECK(p3.exists());
-                CHECK(p3.checkPremises());
+                CHECK(p3.fulfillsPremises());
     }
 
 

@@ -108,7 +108,7 @@ public:
 
     bool canRead() override;
 
-    bool checkPremises() override;
+    bool fulfillsPremises() override;
 
     bool isOpen() override;
 

@@ -50,7 +50,7 @@ _StringValueArg ModeCLIParser::createIndexFileArg(CmdLine *cmdLineParser) const 
 _StringValueArg ModeCLIParser::createFastqFileArg(CmdLine *cmdLineParser) const {
     return _makeStringValueArg(
             "f", "fastqFile",
-            string("The fastq file which shall be indexed or - for stdin.") +
+            string("The FASTQ file which shall be indexed or - for stdin.") +
             "The FASTQ file can also reside in an S3 bucket. Enter the filename here like s3:<filename> and set the"
             " bucket with --bucket.",
             true,

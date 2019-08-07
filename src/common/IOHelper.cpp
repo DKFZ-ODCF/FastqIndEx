@@ -7,7 +7,6 @@
 #include "IOHelper.h"
 #include <fstream>
 #include <pwd.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <SimpleIni.h>
 
@@ -21,12 +20,16 @@ void IOHelper::report(const stringstream &sstream, ErrorAccumulator *errorAccumu
     }
 }
 
-/**
- * Not really testable! I rely on manual testing here.
- * @return The user home directory
- */
 path IOHelper::getUserHomeDirectory() {
+    // The manpage of getuid states:
+    // The getuid() function shall always be successful and no return value is reserved to indicate the error.
+    // Therefore, we have a valid uid and getpwuid should not fail as well. No further checks applied here.
     struct passwd *pw = getpwuid(getuid());
+    if(pw == nullptr) {
+        auto s = stringstream();
+        s << "FastqIndEx could not retrieve the user directory of the current user.";
+        report(s, nullptr);
+    }
     // According to the manpages, the struct is not to be free'd!
     return path(string(pw->pw_dir));
 }
@@ -35,7 +38,7 @@ bool IOHelper::checkFileReadability(const path &file, const string &fileType, Er
     bool _isValid = exists(file);
     if (!_isValid) {
         std::stringstream sstream;
-        sstream << "The " << fileType << " file '" << file.string() << "' could not be found or is not accessible.";
+        sstream << "The " << fileType << " file '" << file.string() << "' could not be found or is inaccessible.";
         report(sstream, errorAccumulator);
     }
 
@@ -79,11 +82,12 @@ tuple<bool, path> IOHelper::createTempFile(const string &prefix) {
     return {result != -1, tmp};
 }
 
-tuple<bool, path> IOHelper::createFifo(const string &prefix) {
+tuple<bool, path> IOHelper::createTempFifo(const string &prefix) {
     lock_guard<recursive_mutex> lockGuard(IOHelper::iohelper_mtx);
     auto[success, fifoPath] = createTempFile(prefix);
     remove(fifoPath);
-    mkfifo(fifoPath.string().c_str(), 0666);
+    // The mkfifo manpage states, that the requested mode is &'ded with the users umask.
+    mkfifo(fifoPath.string().c_str(), 0600);
     return {success, fifoPath};
 }
 

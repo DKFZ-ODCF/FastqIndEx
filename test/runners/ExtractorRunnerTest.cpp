@@ -25,7 +25,7 @@ SUITE (SUITE_EXTRACTORRUNNER_TESTS) {
                           make_shared<PathSource>(index),
                           ConsoleSink::create(),
                           false, ExtractMode::lines, 0, 100, 0, false);
-                CHECK(!r.checkPremises()); // Index is empty. Won't work!
+                CHECK(!r.fulfillsPremises()); // Index is empty. Won't work!
                 CHECK(!r.isCLIOptionsPrinter());
                 CHECK(r.isExtractor());
                 CHECK(!r.isIndexer());
@@ -42,7 +42,7 @@ SUITE (SUITE_EXTRACTORRUNNER_TESTS) {
                           make_shared<PathSource>(index),
                           ConsoleSink::create(),
                           false, ExtractMode::lines, 0, 100, 0, false);
-        bool premisesMet = r.checkPremises();
+        bool premisesMet = r.fulfillsPremises();
                 CHECK(premisesMet);
                 CHECK(!r.isCLIOptionsPrinter());
                 CHECK(r.isExtractor());

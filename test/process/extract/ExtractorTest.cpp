@@ -43,7 +43,7 @@ void runRangedExtractionTest(const path &fastq,
             make_shared<PathSource>(index),
             ConsoleSink::create(),
             false,
-            ExtractMode::lines, firstLine, lineCount, 4, true);
+            ExtractMode::lines, firstLine, lineCount, DEFAULT_RECORD_SIZE, true);
     bool ok = extractor->extract();
             CHECK(ok);
     if (!ok) {
@@ -76,7 +76,7 @@ bool initializeComplexTest(const path &fastq,
             make_shared<PathSource>(fastq),
             make_shared<PathSink>(index),
             make_shared<BlockDistanceStorageStrategy>(blockInterval, true), true, false, false, true);
-            CHECK(indexer->checkPremises());
+            CHECK(indexer->fulfillsPremises());
     indexer->enableWriteOutOfDecompressedBlocksAndStatistics(index.parent_path());
     indexer->createIndex();
     bool success = indexer->wasSuccessful();
@@ -95,8 +95,8 @@ bool initializeComplexTest(const path &fastq,
             make_shared<PathSource>(index),
             ConsoleSink::create(),
             false, ExtractMode::lines, 0, 10,
-            4, true);
-    bool premisesMet = extractor->checkPremises();
+            DEFAULT_RECORD_SIZE, true);
+    bool premisesMet = extractor->fulfillsPremises();
             CHECK(premisesMet);
     delete extractor;
     if (!premisesMet)
@@ -131,8 +131,8 @@ SUITE (INDEXER_SUITE_TESTS) {
                                         make_shared<PathSource>(index),
                                         ConsoleSink::create(),
                                         false,
-                                        ExtractMode::lines, 0, 10, 4, true);
-                CHECK(extractor->checkPremises());
+                                        ExtractMode::lines, 0, 10, DEFAULT_RECORD_SIZE, true);
+                CHECK(extractor->fulfillsPremises());
         delete extractor;
     }
 //
@@ -171,7 +171,8 @@ SUITE (INDEXER_SUITE_TESTS) {
         vector<shared_ptr<IndexEntryV1>> indexEntries;
 
         bool lastBlockEndedWithNewline = true;
-        Indexer indexer(make_shared<PathSource>(fastq), make_shared<PathSink>(index), make_shared<BlockDistanceStorageStrategy>(1, true), true);
+        Indexer indexer(make_shared<PathSource>(fastq), make_shared<PathSink>(index),
+                        make_shared<BlockDistanceStorageStrategy>(1, true), true);
         for (auto bd : _blockData) {
             auto split = StringHelper::splitStr(bd);
             bool currentBlockEndedWithNewline;
@@ -209,12 +210,10 @@ SUITE (INDEXER_SUITE_TESTS) {
                                 ExtractMode::lines, startingLine, lineCount, 4, true);
             extractor.calculateStartingLineAndLineCount(); // Needs to be done, otherwise startingLine and linecount are not set.
             extractor.setSkip(startingLine - indexEntry->startingLineInEntry);
-            ostringstream outStream;
 
             for (int j = startingBlockIDs[i]; j < _blockData.size(); j++) {
-                extractor.processDecompressedChunkOfData(&outStream, _blockData[j], indexEntry->toIndexEntry());
+                extractor.processDecompressedChunkOfData(_blockData[j], indexEntry->toIndexEntry());
             }
-            auto split = StringHelper::splitStr(outStream.str());
                     CHECK(extractor.getStoredLines().size() == expectedLines[i]);
         }
     }
@@ -343,7 +342,7 @@ SUITE (INDEXER_SUITE_TESTS) {
 //            Extractor extractor(make_shared<PathSource>(fastq), index, extract, true,
 //                                ExtractMode::segment, segment, segments, 4, true);
 //
-//                    CHECK(extractor.checkPremises() == true);
+//                    CHECK(extractor.fulfillsPremises() == true);
 //
 //            extractor.calculateStartingLineAndLineCount();
 //                    CHECK(extractor.getExtractMode() == ExtractMode::segment);

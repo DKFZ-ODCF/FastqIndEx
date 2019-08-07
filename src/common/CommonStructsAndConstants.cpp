@@ -17,72 +17,12 @@ const u_char MAGIC_NUMBER_RAW[4] = {1, 2, 3, 4};
 const uint MAGIC_NUMBER = *((uint *) MAGIC_NUMBER_RAW);
 
 const u_int64_t kB = 1024;
+
 const u_int64_t MB = kB * 1024;
+
 const u_int64_t GB = MB * 1024;
+
 const u_int64_t TB = GB * 1024;
 
-/**
- * Created by CLion
- */
-bool IndexHeader::operator==(const IndexHeader &rhs) const {
-    // We do not compare the reserved space
-    return indexWriterVersion == rhs.indexWriterVersion &&
-           blockInterval == rhs.blockInterval &&
-           sizeOfIndexEntry == rhs.sizeOfIndexEntry &&
-           magicNumber == rhs.magicNumber &&
-           dictionariesAreCompressed == rhs.dictionariesAreCompressed &&
-           linesInIndexedFile == rhs.linesInIndexedFile;
-}
+const int DEFAULT_RECORD_SIZE = 4;
 
-/**
- * Mainly for test.
- * @return
- */
-IndexHeader::operator bool() const {
-    return magicNumber == MAGIC_NUMBER &&
-           blockInterval > 0 &&
-           (indexWriterVersion == 1 && sizeOfIndexEntry == sizeof(IndexEntryV1));
-}
-
-IndexEntry::IndexEntry(u_int64_t id,
-                       u_int32_t bits,
-                       u_int16_t offsetOfFirstValidLine,
-                       u_int64_t offsetInRawFile,
-                       u_int64_t startingLineInEntry) :
-        id(id),
-        blockOffsetInRawFile(offsetInRawFile),
-        startingLineInEntry(startingLineInEntry),
-        offsetOfFirstValidLine(offsetOfFirstValidLine),
-        bits(bits) {}
-
-bool IndexEntry::operator==(const IndexEntry &rhs) const {
-    return bits == rhs.bits &&
-           id == rhs.id &&
-           offsetOfFirstValidLine == rhs.offsetOfFirstValidLine &&
-           blockOffsetInRawFile == rhs.blockOffsetInRawFile &&
-           startingLineInEntry == rhs.startingLineInEntry;
-}
-
-/**
- * Created by CLion
- */
-bool IndexEntryV1::operator==(const IndexEntryV1 &rhs) const {
-    return bits == rhs.bits &&
-           blockID == rhs.blockID &&
-           offsetOfFirstValidLine == rhs.offsetOfFirstValidLine &&
-           blockOffsetInRawFile == rhs.blockOffsetInRawFile &&
-           startingLineInEntry == rhs.startingLineInEntry;
-}
-
-shared_ptr<IndexEntry> IndexEntryV1::toIndexEntry() {
-    auto indexLine = make_shared<IndexEntry>(
-            this->blockID,
-            this->bits,
-            this->offsetOfFirstValidLine,
-            this->blockOffsetInRawFile,
-            this->startingLineInEntry
-    );
-    memcpy(indexLine->window, this->dictionary, sizeof(this->dictionary));
-    indexLine->compressedDictionarySize = this->compressedDictionarySize;
-    return indexLine;
-}

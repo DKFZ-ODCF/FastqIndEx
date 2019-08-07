@@ -69,8 +69,8 @@ bool IndexReader::tryOpenAndReadHeader() {
         return false;
     }
 
-    if(this-readHeader.dictionariesAreCompressed ) {
-        if(fileSize <= headerSize) {
+    if (this->readHeader.dictionariesAreCompressed) {
+        if (fileSize <= headerSize) {
             addErrorMessage("Cannot read index file, it is too small.");
             indexFile->close();
             return false;
@@ -91,11 +91,11 @@ bool IndexReader::tryOpenAndReadHeader() {
 
     if (this->readHeader.numberOfEntries > 0) { // Easy case, it is stored.
         this->indicesLeft = this->readHeader.numberOfEntries;
-    } else if(!this->readHeader.dictionariesAreCompressed){
+    } else if (!this->readHeader.dictionariesAreCompressed) {
         this->indicesLeft = (fileSize - headerSize) / sizeOfIndexEntry;
     }
 
-    if(this->indicesLeft == 0) {
+    if (this->indicesLeft == 0) {
         addErrorMessage("Could not properly determine the amount of indices in this file.");
         indexFile->close();
         return false;
@@ -110,7 +110,7 @@ bool IndexReader::tryOpenAndReadHeader() {
 
 IndexHeader IndexReader::readIndexHeader() {
     IndexHeader header;
-    indexFile->read((Bytef*)&header, sizeof(IndexHeader));
+    indexFile->read((Bytef *) &header, sizeof(IndexHeader));
 
     this->readHeader = header;
     headerWasRead = true;

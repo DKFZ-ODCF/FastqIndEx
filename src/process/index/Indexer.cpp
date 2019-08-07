@@ -37,7 +37,7 @@ Indexer::Indexer(
         indexWriter = make_shared<IndexWriter>(index, forceOverwrite, compressDictionaries);
 }
 
-bool Indexer::checkPremises() {
+bool Indexer::fulfillsPremises() {
     if (!forbidWriteFQI)
         return indexWriter->tryOpen();
     return true;
@@ -68,7 +68,7 @@ bool Indexer::createIndex() {
     }
     wasStarted = true;
 
-    if (!checkPremises()) {
+    if (!fulfillsPremises()) {
         finishedSuccessful = false;
         return false;
     }
@@ -116,7 +116,7 @@ bool Indexer::createIndex() {
             }
             // Process read data or until end of stream
             do {
-                checkAndResetSlidingWindow();
+                resetSlidingWindowIfNecessary();
 
                 bool checkForStreamEnd = true;
 
@@ -192,7 +192,7 @@ bool Indexer::checkAndPrepareForNextConcatenatedPart() {
         finishedSuccessful = false;
         return false;
     }
-    checkAndResetSlidingWindow();
+    resetSlidingWindowIfNecessary();
     numberOfConcatenatedFiles++;
     memset(window, 0, WINDOW_SIZE);
     memset(input, 0, CHUNK_SIZE);
@@ -291,7 +291,7 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
                                << "\n\tlNL: " << lastBlockEndedWithNewline
                                << "\n\tcNL: " << currentBlockEndedWithNewLine
                                << "\n\t#L:  " << numberOfLinesInBlock
-                               << "\n\toff: " << entry->offsetOfFirstValidLine
+                               << "\n\toff: " << entry->offsetToNextLineStart
                                << "\n\tsl:  " << entry->startingLineInEntry
                                << "\n\tsts: " << (storageStrategy->wasPostponed() ? "Postponed" : written ? "Written" : "Skipped")
                                << "\n";

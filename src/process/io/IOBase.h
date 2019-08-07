@@ -16,7 +16,7 @@ class IOBase : public ErrorAccumulator {
 
 public:
 
-    virtual bool checkPremises() = 0;
+    virtual bool fulfillsPremises() = 0;
 
     virtual bool open() = 0;
 

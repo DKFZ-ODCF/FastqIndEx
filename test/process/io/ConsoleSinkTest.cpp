@@ -15,7 +15,7 @@ SUITE (SUITE_CONSOLESINK_TESTS) {
     TEST (TEST_STATIC_CREATE_COUT) {
         auto sink = ConsoleSink::create();
                 CHECK(sink->toString() == "cout");
-                CHECK(sink->checkPremises());
+                CHECK(sink->fulfillsPremises());
                 CHECK(sink->isOpen());
                 CHECK(sink->close()); // Will not actually close the sink.
                 CHECK(sink->tell() == 0);
@@ -40,7 +40,7 @@ SUITE (SUITE_CONSOLESINK_TESTS) {
     TEST (TEST_STATIC_CREATE_CERR) {
         auto sink = ConsoleSink::create(ConsoleSinkType::CERR);
         sink->toString() == "cerr";
-                CHECK(sink->checkPremises());
+                CHECK(sink->fulfillsPremises());
                 CHECK(sink->isOpen());
                 CHECK(sink->close()); // Will not actually close the sink.
                 CHECK(sink->tell() == 0);

@@ -125,7 +125,7 @@ public:
         return true;
     }
 
-    bool checkPremises() override;
+    bool fulfillsPremises() override;
 
     bool isOpen() override;
 

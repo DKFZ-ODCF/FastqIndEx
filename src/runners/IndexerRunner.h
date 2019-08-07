@@ -45,7 +45,7 @@ public:
 
     bool isIndexer() override { return true; }
 
-    bool checkPremises() override;
+    bool fulfillsPremises() override;
 
     /**
      * The Indexer may use a piped input file, thus this will return true for the IndexerRunner!

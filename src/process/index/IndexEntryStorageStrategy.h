@@ -8,6 +8,7 @@
 #define FASTQINDEX_INDEXENTRYSTORAGESTRATEGY_H
 
 #include "common/CommonStructsAndConstants.h"
+#include "common/IndexEntryV1.h"
 #include <regex>
 #include <string>
 

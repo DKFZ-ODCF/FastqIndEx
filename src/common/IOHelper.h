@@ -7,10 +7,6 @@
 #ifndef FASTQINDEX_IOHELPER_H
 #define FASTQINDEX_IOHELPER_H
 
-#include "process/extract/IndexReader.h"
-#include "process/io/Source.h"
-#include "process/io/PathSource.h"
-#include "CommonStructsAndConstants.h"
 #include "ErrorAccumulator.h"
 #include <cstdio>
 #include <experimental/filesystem>
@@ -29,9 +25,14 @@ private:
 
     static recursive_mutex iohelper_mtx;
 
-    static void report(const stringstream &sstream, ErrorAccumulator *errorAccumulator);
-
 public:
+
+    /**
+     * Append the message stored in sstream to the errorAccumulator OR write it to cerr, if the errorAccumulator is null
+     * @param sstream           The stringstream containing an error message.
+     * @param errorAccumulator  An errorAccumulator instance OR nullptr.
+     */
+    static void report(const stringstream &sstream, ErrorAccumulator *errorAccumulator);
 
     static path getUserHomeDirectory();
 
@@ -52,14 +53,14 @@ public:
      * Needs to be cleaned before the application exits.
      * @return A tuple indicating [success, fifo path]
      */
-    static tuple<bool, path> createFifo(const string &prefix);
+    static tuple<bool, path> createTempFifo(const string &prefix);
 
     /**
      * Check file existence and read / write capability for it. Report to either cerr or the pointed to errorAccumulator
      * instance.
      *
      * @param file              The file to check
-     * @param fileType        Some identifier, like "credentials".
+     * @param fileType          Some identifier, like "credentials".
      *                          Will be placed into "The '<identifier>' file '<path>'... messages
      * @param errorAccumulator  If nullptr is set here, cerr will be used to report errors. Otherwise, the instance will
      *                          store the new message.

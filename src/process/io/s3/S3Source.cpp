@@ -38,9 +38,9 @@ bool S3Source::open() {
         return true;
 
     // Create fifo
-    auto[success, fifo] = IOHelper::createFifo("FASTQIndEx_S3SourceFIFO");
+    auto[success, fifo] = IOHelper::createTempFifo("FASTQIndEx_S3SourceFIFO");
     if (!success) {
-        ErrorAccumulator::addErrorMessage("Could not create a fifo for the S3 source.");
+        ErrorAccumulator::addErrorMessage("Could not create a fifo for the S3 source '", fqiS3Client.getS3Path(), "'.");
         return false;
     }
 
@@ -133,7 +133,7 @@ int S3Source::lastError() {
     return 0;
 }
 
-bool S3Source::checkPremises() {
+bool S3Source::fulfillsPremises() {
 
     if (!fqiS3Client.isValid()) {
         return false;

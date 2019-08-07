@@ -27,7 +27,7 @@ bool IndexWriter::tryOpen() {
     if (writerIsOpen)
         return true;
 
-    if (!indexFile->checkPremises()) {
+    if (!indexFile->fulfillsPremises()) {
         indexFile->unlock();
         return false;
     }
@@ -40,7 +40,7 @@ bool IndexWriter::tryOpen() {
     indexFile->write("", 0);
 
     if (!indexFile->exists()) {
-        addErrorMessage("Could not create index file: " + indexFile->toString());
+        addErrorMessage("Could not create index file '" + indexFile->toString() + "'.");
         indexFile->unlock();
         return false;
     }
@@ -54,7 +54,7 @@ bool IndexWriter::writeIndexHeader(const shared_ptr<IndexHeader> &header) {
     lock_guard<mutex> lock(iwMutex);
     if (!this->writerIsOpen) {
         // Throw assertion errors? Would actually be better right?
-        addErrorMessage("Could not write header to index file, writer is not open.");
+        addErrorMessage("Could not write header to index file '" + indexFile->toString() + "', writer is not open.");
         return false;
     }
 
@@ -75,13 +75,13 @@ bool IndexWriter::writeIndexEntry(const shared_ptr<IndexEntryV1> &entry) {
     lock_guard<mutex> lock(iwMutex);
     if (!this->writerIsOpen) {
         // Throw assertion errors? Would actually be better right?
-        addErrorMessage("Could not write index entry to index file, writer is not open.");
+        addErrorMessage("Could not write index entry to index file '" + indexFile->toString() + "', writer is not open.");
         return false;
     }
 
     if (!this->headerWasWritten) {
         // Throw assertion errors? Would actually be better right?
-        addErrorMessage("The index header must be written to the index file before the entries.");
+        addErrorMessage("The index header must be written to the index file before an entry can be written.");
         return false;
     }
 

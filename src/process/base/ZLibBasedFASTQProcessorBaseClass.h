@@ -4,8 +4,8 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#ifndef FASTQINDEX_ZLIBHELPER_H
-#define FASTQINDEX_ZLIBHELPER_H
+#ifndef FASTQINDEX_ZLIBBASEDFASTQPROCESSORBASECLASS_H
+#define FASTQINDEX_ZLIBBASEDFASTQPROCESSORBASECLASS_H
 
 #include "common/CommonStructsAndConstants.h"
 #include "common/ErrorAccumulator.h"
@@ -159,7 +159,7 @@ public:
 
     bool checkStreamForBlockEnd();
 
-    void checkAndResetSlidingWindow();
+    void resetSlidingWindowIfNecessary();
 
     bool decompressNextChunkOfData(bool checkForStreamEnd, int flushMode);
 
@@ -167,4 +167,4 @@ public:
 };
 
 
-#endif //FASTQINDEX_ZLIBHELPER_H
+#endif //FASTQINDEX_ZLIBBASEDFASTQPROCESSORBASECLASS_H

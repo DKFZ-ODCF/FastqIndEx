@@ -25,7 +25,7 @@ protected:
 
     u_int64_t count;
 
-    uint extractionMultiplier;
+    uint recordSize;
 
     bool enableDebugging;
 
@@ -51,7 +51,7 @@ public:
             ExtractMode mode,
             u_int64_t start,
             u_int64_t count,
-            uint extractionMultiplier,
+            uint recordSize,
             bool enableDebugging = false
     );
 
@@ -61,7 +61,7 @@ public:
 
     bool isExtractor() override { return true; };
 
-    bool checkPremises() override;
+    bool fulfillsPremises() override;
 
     unsigned char _run() override;
 

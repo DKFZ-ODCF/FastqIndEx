@@ -36,7 +36,7 @@ public:
 
     PathSink(const path &file, bool forceOverwrite = false);
 
-    bool checkPremises() override;
+    bool fulfillsPremises() override;
 
     bool open() override;
 

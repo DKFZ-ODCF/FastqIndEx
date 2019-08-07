@@ -60,7 +60,7 @@ public:
         return true;
     }
 
-    bool checkPremises() override {
+    bool fulfillsPremises() override {
         return stream == &std::cout || stream == &std::cerr;
     }
 

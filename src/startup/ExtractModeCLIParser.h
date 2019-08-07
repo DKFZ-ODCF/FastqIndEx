@@ -23,7 +23,7 @@ public:
 
     _UInt64ValueArg createStartingReadArg(CmdLine *cmdLineParser) const;
 
-    _IntValueArg createExtractionMultiplierArg(CmdLine *cmdLineParser) const;
+    _IntValueArg createrecordSizeArg(CmdLine *cmdLineParser) const;
 
     _StringValueArg createOutputFileArg(CmdLine *cmdLineParser) const;
 

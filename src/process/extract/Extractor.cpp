@@ -27,31 +27,32 @@ Extractor::Extractor(const shared_ptr<Source> &fastqfile,
                      const shared_ptr<Source> &indexFile,
                      const shared_ptr<Sink> &resultSink,
                      bool forceOverwrite,
-                     ExtractMode mode, u_int64_t start, u_int64_t count, uint extractionMulitplier,
+                     ExtractMode mode, u_int64_t start, u_int64_t count, uint recordSize,
                      bool enableDebugging) :
         ZLibBasedFASTQProcessorBaseClass(fastqfile, indexFile, enableDebugging),
         mode(mode), start(start), count(count) {
     this->indexReader = make_shared<IndexReader>(indexFile);
     this->resultSink = resultSink;
-    this->extractionMultiplier = extractionMulitplier == 0 ? 4 : extractionMulitplier;
-    this->roundtripBuffer = new string[extractionMulitplier];
+    this->recordSize = recordSize == 0 ? DEFAULT_RECORD_SIZE : recordSize;
+    this->roundtripBuffer = new string[recordSize];
 
 }
 
 Extractor::~Extractor() { delete[] roundtripBuffer; }
 
-bool Extractor::checkPremises() {
+bool Extractor::fulfillsPremises() {
     if (mode == ExtractMode::lines && count == 0) {
         addErrorMessage("Can't extract a line count of 0 lines. The value needs to be a positive number.");
         return false;
     }
 
     if (mode == ExtractMode::segment && start >= count) {
-        addErrorMessage("The specified segment exceeds the segment count.");
+        addErrorMessage("The specified segment number '", to_string(start + 1), "' exceeds the segment count of '",
+                        to_string(count), "'.");
         return false;
     }
 
-    if (!resultSink->checkPremises()) {
+    if (!resultSink->fulfillsPremises()) {
         return false;
     }
 
@@ -61,30 +62,14 @@ bool Extractor::checkPremises() {
     if (!couldOpen)
         return false;
 
-    // Check line counts and extraction multiplier!
+    // Check line counts and record size!
     auto totalLines = indexReader->getIndexHeader().linesInIndexedFile;
-    if (totalLines % extractionMultiplier != 0) {
-        addErrorMessage(string("The total number of lines cannot be divided fully by the extraction multiplier.") +
-                        "The total number of lines in the source files must be a multiple of the extraction multiplier.");
+    if (totalLines % recordSize != 0) {
+        addErrorMessage("The total number of lines '", to_string(totalLines),
+                        "'is not a multiple of the record size '", to_string(recordSize), "'.");
         return false;
     }
     return true;
-}
-
-high_resolution_clock::time_point measurement;
-
-void timerStart() {
-    measurement = high_resolution_clock::now();
-}
-
-void timerStop(const string &message) {
-    auto result = duration_cast<microseconds>(high_resolution_clock::now() - measurement).count();
-//    cerr << "Measurement for: " << message << " took " << (result ) << "µs\n";
-}
-
-void timerRestart(const string &message) {
-    timerStop(message);
-    timerStart();
 }
 
 void Extractor::calculateStartingLineAndLineCount() {
@@ -93,32 +78,20 @@ void Extractor::calculateStartingLineAndLineCount() {
         lineCount = count;
     } else if (mode == ExtractMode::segment) {
         auto totalLines = indexReader->getIndexHeader().linesInIndexedFile;
-        auto totalRecords = totalLines / extractionMultiplier;
+        auto totalRecords = totalLines / recordSize;
         auto recordsPerSegment = totalRecords / count;
         auto leftoverRecords = totalRecords % count;
         auto recordsInLastSegment = recordsPerSegment + leftoverRecords;
 
-        lineCount = recordsPerSegment * extractionMultiplier;
+        lineCount = recordsPerSegment * recordSize;
         startingLine = start * lineCount;
         if (start == count - 1) { // Last segment
-            lineCount = recordsInLastSegment * extractionMultiplier;
+            lineCount = recordsInLastSegment * recordSize;
         }
     }
 }
 
-bool Extractor::extract() {
-    auto resultFileStream = shared_ptr<ofstream>(nullptr);
-    ofstream outfilestream;
-    ostream *out;
-    if (!useFile)
-        out = &cout;
-    else {
-        outfilestream.open(resultSink->toString());
-        out = &outfilestream;
-    }
-
-    calculateStartingLineAndLineCount();
-
+tuple<u_int64_t, shared_ptr<IndexEntry>> Extractor::findIndexEntryForExtraction() {
     shared_ptr<IndexEntry> previousEntry = indexReader->readIndexEntry();
     shared_ptr<IndexEntry> startingIndexLine = previousEntry;
 
@@ -132,9 +105,21 @@ bool Extractor::extract() {
         startingIndexLine = entry;
     }
 
+    return {indexEntryNumber, startingIndexLine};
+}
+
+bool Extractor::extract() {
+//    ofstream outfilestream;
+//    ostream *out;
+//    outfilestream.open(resultSink->toString());
+//    out = &outfilestream;
+
+
     if (!initializeZStreamForRawInflate()) {
         return false;
     }
+    calculateStartingLineAndLineCount();
+    auto[indexEntryNumber, startingIndexLine] = findIndexEntryForExtraction();
 
     fastqFile->open();
     off_t initialOffset = startingIndexLine->blockOffsetInRawFile;
@@ -143,9 +128,10 @@ bool Extractor::extract() {
     if (startBits > 0)
         initialOffset--;
     fastqFile->setReadStart(initialOffset); // This is for S3. Could be integrated into seek. Dont' know yet.
-    zlibResult = fastqFile->seek(initialOffset, true);
-    if (zlibResult == -1) {
-        addErrorMessage("");
+    auto seekResult = fastqFile->seek(initialOffset, true);
+    if (seekResult == -1) {
+        addErrorMessage("Could not jump to position '", to_string(initialOffset),
+                        "' in file '", fastqFile->toString(), "'");
         fastqFile->close();
         return false;
     }
@@ -157,7 +143,7 @@ bool Extractor::extract() {
             ret = fastqFile->lastError() ? Z_ERRNO : Z_DATA_ERROR;
             errorWasRaised = true;
         }
-        // This will pop up a clang-tidy warning, but as Mark Adler does it, I don't want to change it.
+        // The following line will pop up a clang-tidy warning, but as Mark Adler does it, I don't want to change it.
         zlibResult = inflatePrime(&zStream, startBits, ret >> (8 - startBits));
     }
     if (startingIndexLine->compressedDictionarySize > 0) {
@@ -177,8 +163,6 @@ bool Extractor::extract() {
         return false;
     }
 
-    timerRestart("Final extractor init");
-
     IndexStatsRunner::printIndexEntryToConsole(startingIndexLine, indexEntryNumber, true);
 
     // The number of lines which will be skipped in the found starting block
@@ -188,24 +172,23 @@ bool Extractor::extract() {
     bool finalAbort = false;
     do {
         do {
-
-            if (!readCompressedDataFromSource()) {
+            bool readCompressedDataWasSuccessful = readCompressedDataFromSource();
+            if (!readCompressedDataWasSuccessful) {
                 errorWasRaised = true;
                 break;
             }
 
             // Process read data or until end of stream
             do {
-                checkAndResetSlidingWindow();
-
-                bool checkForStreamEnd = false;
+                resetSlidingWindowIfNecessary();
 
                 clearCurrentCompressedBlock();
 
+                bool checkForStreamEnd = false;
                 if (!decompressNextChunkOfData(checkForStreamEnd, Z_NO_FLUSH))
                     break;
 
-                if (!processDecompressedChunkOfData(out, currentDecompressedBlock.str(), startingIndexLine))
+                if (!processDecompressedChunkOfData(currentDecompressedBlock.str(), startingIndexLine))
                     continue;
 
                 // Tell the extractor, that the inner loop was called at least once, so we don't remove the first line of
@@ -218,14 +201,13 @@ bool Extractor::extract() {
 
         storeLinesOfCurrentBlockForDebugMode();
 
-        keepExtracting = checkAndPrepareForNextConcatenatedPart(finalAbort);
+        keepExtracting = prepareForNextConcatenatedPartIfNecessary(finalAbort);
     } while (keepExtracting);
 
     // Free the file pointer and close the file.
     fastqFile->close();
 
-    if (outfilestream.is_open())
-        outfilestream.close();
+    resultSink->close();
 
     inflateEnd(&zStream);
 
@@ -235,7 +217,7 @@ bool Extractor::extract() {
     return !errorWasRaised;
 }
 
-bool Extractor::checkAndPrepareForNextConcatenatedPart(bool finalAbort) {
+bool Extractor::prepareForNextConcatenatedPartIfNecessary(bool finalAbort) {
     if (finalAbort) return false;
 
     totalBytesIn += 8 + 10; // Plus 8 Byte (for what? they are missing...) and 10 Byte for the next header
@@ -250,7 +232,7 @@ bool Extractor::checkAndPrepareForNextConcatenatedPart(bool finalAbort) {
         return false;
     }
 
-    checkAndResetSlidingWindow();
+    resetSlidingWindowIfNecessary();
     memset(window, 0, WINDOW_SIZE);
     memset(input, 0, CHUNK_SIZE);
     zStream.avail_in = CHUNK_SIZE;
@@ -262,15 +244,14 @@ bool Extractor::checkAndPrepareForNextConcatenatedPart(bool finalAbort) {
     return true;
 }
 
-bool
-Extractor::processDecompressedChunkOfData(ostream *out, string str, const shared_ptr<IndexEntry> &startingIndexLine) {
+bool Extractor::processDecompressedChunkOfData(string str, const shared_ptr<IndexEntry> &startingIndexLine) {
     if (extractedLines >= lineCount)
         return false;
     vector<string> splitLines = StringHelper::splitStr(str);
     totalSplitCount += splitLines.size();
 
     // In the case, that we invoke this method the first time, the index entry
-    bool removeIncompleteFirstLine = firstPass && startingIndexLine->offsetOfFirstValidLine > 0;
+    bool removeIncompleteFirstLine = firstPass && startingIndexLine->offsetToNextLineStart > 0;
     if (removeIncompleteFirstLine) splitLines.erase(splitLines.begin());
     firstPass = false;
 
@@ -301,13 +282,13 @@ Extractor::processDecompressedChunkOfData(ostream *out, string str, const shared
     } else {                            // Output
         u_int64_t iStart = skip;
         if (iStart == 0) { // We start right away, also use incompleteLastLine.
-            storeOrOutputLine(out, incompleteLastLine + splitLines[0]);
+            storeOrOutputLine(incompleteLastLine + splitLines[0]);
             extractedLines++;
             iStart = 1;
         }
         // iStart is 0 or 1
         for (int i = iStart; i < splitLines.size() && extractedLines < lineCount; ++i) {
-            storeOrOutputLine(out, splitLines[i]);
+            storeOrOutputLine(splitLines[i]);
             extractedLines++;
         }
     }
@@ -317,14 +298,17 @@ Extractor::processDecompressedChunkOfData(ostream *out, string str, const shared
     return result;
 }
 
-void Extractor::storeOrOutputLine(ostream *outStream, string line) {
-    roundtripBufferPosition = extractedLines % extractionMultiplier;
-    roundtripBuffer[roundtripBufferPosition] = line;
+void Extractor::storeOrOutputLine(string line) {
+    // For later! Roundtrip buffers could be an easy option to recognize if an empty line was forgotten.
+    //    roundtripBufferPosition = extractedLines % recordSize;
+    //    roundtripBuffer[roundtripBufferPosition] = line;
 
     if (enableDebugging)
         storedLines.emplace_back(line);
-    else
-        (*outStream) << line << "\n";
+    else {
+        resultSink->write(line);
+        resultSink->write("\n");
+    }
 }
 
 void Extractor::storeLinesOfCurrentBlockForDebugMode() {

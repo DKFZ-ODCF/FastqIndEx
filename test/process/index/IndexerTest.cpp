@@ -109,7 +109,7 @@ SUITE (INDEXER_SUITE_TESTS) {
             auto blockData = _blockData[i];
             auto split = StringHelper::splitStr(blockData);
             auto expectedNumberOfLines = expectedNumberOfLinesInBlock[i];
-            auto expectedFirstLineOffset = expectedIndexEntries[i].offsetOfFirstValidLine;
+            auto expectedFirstLineOffset = expectedIndexEntries[i].offsetToNextLineStart;
             auto expectedStartingLine = expectedIndexEntries[i].startingLineInEntry;
 
             uint64_t off = 0;
@@ -118,7 +118,7 @@ SUITE (INDEXER_SUITE_TESTS) {
             auto entry = indexer.createIndexEntryFromBlockData(blockData, split, off, lastBlockEndedWithNewline,
                                                                &currentBlockEndedWithNewline, &numberOfLinesInBlock);
                     CHECK(entry->blockOffsetInRawFile == 0);
-                    CHECK(entry->offsetOfFirstValidLine == expectedFirstLineOffset);
+                    CHECK(entry->offsetToNextLineStart == expectedFirstLineOffset);
                     CHECK(entry->startingLineInEntry == expectedStartingLine);
                     CHECK(numberOfLinesInBlock == expectedNumberOfLines);
 
@@ -138,7 +138,7 @@ SUITE (INDEXER_SUITE_TESTS) {
                                     false,
                                     true
         );
-                CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.
+                CHECK(indexer->fulfillsPremises());  // We need to make sure things are good. Also this opens the I-Writer.
 
         bool result = indexer->createIndex();
 
@@ -192,7 +192,7 @@ SUITE (INDEXER_SUITE_TESTS) {
                                     false,
                                     true
         );
-                CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.
+                CHECK(indexer->fulfillsPremises());  // We need to make sure things are good. Also this opens the I-Writer.
 
         result = indexer->createIndex();
 
@@ -235,7 +235,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         auto indexer = new Indexer(make_shared<PathSource>(fastq), make_shared<PathSink>(index),
                                    BlockDistanceStorageStrategy::getDefault(), true, false, false,
                                    true);
-                CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.
+                CHECK(indexer->fulfillsPremises());  // We need to make sure things are good. Also this opens the I-Writer.
 
         bool result = indexer->createIndex();
 
@@ -327,7 +327,7 @@ SUITE (INDEXER_SUITE_TESTS) {
                 BlockDistanceStorageStrategy::from(blockSize),
                 true, false, false, true
         ); // Tell the indexer to store entries. This is solely a debug feature but it
-                CHECK(indexer->checkPremises());  // We need to make sure things are good. Also this opens the I-Writer.
+                CHECK(indexer->fulfillsPremises());  // We need to make sure things are good. Also this opens the I-Writer.
 
         bool result = indexer->createIndex();
 

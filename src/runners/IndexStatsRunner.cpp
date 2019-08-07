@@ -18,9 +18,9 @@ bool IndexStatsRunner::allowsReadFromStreamedSource() {
     return true;
 }
 
-bool IndexStatsRunner::checkPremises() {
+bool IndexStatsRunner::fulfillsPremises() {
     // There is no FASTQ file here
-//    auto res = ActualRunner::checkPremises();
+//    auto res = ActualRunner::fulfillsPremises();
     auto res2 = this->indexReader->tryOpenAndReadHeader();
     return res2;
 }
@@ -70,7 +70,7 @@ void IndexStatsRunner::printIndexEntryToConsole(const shared_ptr<IndexEntry> &en
     _ostream << "  Raw offset:    " << entry->blockOffsetInRawFile << "\n";
     _ostream << "  Starting line: " << entry->startingLineInEntry << "\n";
     _ostream << "    Record (/4): " << (entry->startingLineInEntry / 4) << "\n";
-    _ostream << "  Line offset:   " << entry->offsetOfFirstValidLine << "\n";
+    _ostream << "  Line offset:   " << entry->offsetToNextLineStart << "\n";
     _ostream << "  Bits:          " << entry->bits << "\n";
 }
 

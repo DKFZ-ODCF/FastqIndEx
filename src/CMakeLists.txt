@@ -19,6 +19,9 @@ add_library(
         common/CommonStructsAndConstants.cpp common/CommonStructsAndConstants.h
         common/ErrorAccumulator.cpp common/ErrorAccumulator.h
         common/ErrorMessages.cpp common/ErrorMessages.h
+        common/IndexHeader.cpp common/IndexHeader.h
+        common/IndexEntry.cpp common/IndexEntry.h
+        common/IndexEntryV1.cpp common/IndexEntryV1.h
         common/IOHelper.cpp common/IOHelper.h
         common/StringHelper.cpp common/StringHelper.h
         process/base/ZLibBasedFASTQProcessorBaseClass.cpp process/base/ZLibBasedFASTQProcessorBaseClass.h

@@ -84,10 +84,10 @@ public:
         return instance;
     }
 
-    static void close() {
+    static void closeIfOpened() {
         lock_guard<mutex> lock(S3Service::clientInstanceAccessorMutex);
 
-        // If the instance is open, close it.
+        // If the instance is open, close it by resetting the shared_ptr.
         instance.reset();
     }
 

@@ -16,7 +16,7 @@ SUITE (SUITE_INDEXERRUNNER_TESTS) {
     TEST (TEST_INDEXERRUNNER_CREATION) {
         TestResourcesAndFunctions res(SUITE_INDEXERRUNNER_TESTS, TEST_PRINTCLIOPTIONSRUNNER_CREATION);
         DoNothingRunner r;
-                CHECK(r.checkPremises());
+                CHECK(r.fulfillsPremises());
                 CHECK(r.isCLIOptionsPrinter());
                 CHECK(!r.isExtractor());
                 CHECK(!r.isIndexer());

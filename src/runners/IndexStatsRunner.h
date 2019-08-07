@@ -27,7 +27,7 @@ public:
 
     bool allowsReadFromStreamedSource() override;
 
-    bool checkPremises() override;
+    bool fulfillsPremises() override;
 
     unsigned char _run() override;
 

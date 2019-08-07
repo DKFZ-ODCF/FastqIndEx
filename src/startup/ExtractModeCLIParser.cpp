@@ -20,7 +20,7 @@ ExtractorRunner *ExtractModeCLIParser::parse(int argc, const char **argv) {
 
     auto debugSwitch = createDebugSwitchArg(cmdLineParser.get());
 
-    auto extractionMultiplierArg = createExtractionMultiplierArg(cmdLineParser.get());
+    auto recordSizeArg = createrecordSizeArg(cmdLineParser.get());
     auto numberOfReadsArg = createNumberOfReadsArg(cmdLineParser.get());
     auto startingReadArg = createStartingReadArg(cmdLineParser.get());
 
@@ -60,9 +60,9 @@ ExtractorRunner *ExtractModeCLIParser::parse(int argc, const char **argv) {
     if (enableDebugging)
         ErrorAccumulator::setVerbosity(3);
 
-    int _extractionMultiplier = extractionMultiplierArg->getValue();
-    if (_extractionMultiplier <= 0)
-        _extractionMultiplier = 0;
+    int _recordSize = recordSizeArg->getValue();
+    if (_recordSize <= 0)
+        _recordSize = 0;
 
     u_int64_t start{0}, count{0};
     ExtractMode extractMode = ExtractMode::lines;
@@ -72,8 +72,8 @@ ExtractorRunner *ExtractModeCLIParser::parse(int argc, const char **argv) {
         count = segmentCountArg->getValue();
         extractMode = ExtractMode::segment;
     } else {
-        start = startingReadArg->getValue() * _extractionMultiplier;
-        count = numberOfReadsArg->getValue() * _extractionMultiplier;
+        start = startingReadArg->getValue() * _recordSize;
+        count = numberOfReadsArg->getValue() * _recordSize;
     }
 
     auto runner = new ExtractorRunner(
@@ -84,7 +84,7 @@ ExtractorRunner *ExtractModeCLIParser::parse(int argc, const char **argv) {
             extractMode,
             start,
             count,
-            _extractionMultiplier,
+            _recordSize,
             enableDebugging
     );
 
@@ -94,33 +94,34 @@ ExtractorRunner *ExtractModeCLIParser::parse(int argc, const char **argv) {
 _StringValueArg ExtractModeCLIParser::createOutputFileArg(CmdLine *cmdLineParser) const {
     return _makeStringValueArg(
             "o", "outfile",
-            "The uncompressed output FASTQ or textfile which shall be created or - (default) for stdout.",
+            string("The uncompressed output FASTQ or textfile which shall be created or - (default) for stdout.") +
+            " Also accepts an S3 target.",
             false,
             "-", cmdLineParser);
 }
 
-_IntValueArg ExtractModeCLIParser::createExtractionMultiplierArg(CmdLine *cmdLineParser) const {
+_IntValueArg ExtractModeCLIParser::createrecordSizeArg(CmdLine *cmdLineParser) const {
     return _makeIntValueArg(
-            "e", "extractionmultiplier",
-            string("Defines a multiplier by which the startingline parameter will be multiplied. For FASTQ files ") +
-            "this is 4 (record size), but you could use 1 for e.g. regular text files.",
+            "e", "recordSize",
+            string("Defines the number of lines in a record. For FASTQ files ") +
+            "this is value " + to_string(DEFAULT_RECORD_SIZE) + ", but you could use 1 for e.g. regular text files.",
             false,
-            4, cmdLineParser);
+            DEFAULT_RECORD_SIZE, cmdLineParser);
 }
 
 _UInt64ValueArg ExtractModeCLIParser::createStartingReadArg(CmdLine *cmdLineParser) const {
     return _makeUInt64ValueArg(
-            "s", "startingread",
-            "Defines the first line (multiplied by extractionmultiplier) which should be extracted.",
+            "s", "startingRecord",
+            "Defines the first record which shall be extracted.",
             false,
             0, cmdLineParser);
 }
 
 _UInt64ValueArg ExtractModeCLIParser::createNumberOfReadsArg(CmdLine *cmdLineParser) const {
     return _makeUInt64ValueArg(
-            "n", "numberofreads",
-            string("Defines the number of reads which should be extracted. The size of each read is defined by ") +
-            "extractionmultiplier.",
+            "n", "numberOfRecords",
+            string("Defines the number of records which should be extracted. The size of each read is defined by ") +
+            "recordSize.",
             false,
             10, cmdLineParser);
 }
@@ -129,7 +130,7 @@ _UIntValueArg ExtractModeCLIParser::createSegmentIdentifierArg(CmdLine *cmdLineP
     return _makeUIntValueArg(
             "S", "segment",
             string("Defines the segment which shall be extracted from the file. This will turn on segment ") +
-            "extraction mode and FastqIndEx will ignore startringread and numberofreads. The extractionmultiplier" +
+            "extraction mode and FastqIndEx will ignore startringread and numberofreads. The recordSize" +
             "parameter will still be used.",
             false,
             0, cmdLineParser);
@@ -137,7 +138,7 @@ _UIntValueArg ExtractModeCLIParser::createSegmentIdentifierArg(CmdLine *cmdLineP
 
 _UIntValueArg ExtractModeCLIParser::createSegmentCountArg(CmdLine *cmdLineParser) const {
     return _makeUIntValueArg(
-            "N", "segmentcount",
+            "N", "segmentCount",
             string("Defines the number of segments for segment extraction mode. The file is virtually divided into") +
             "N segments and you can select the extracted segment using S. Internally, this will be matched to proper"
             "line (record) numbers.",

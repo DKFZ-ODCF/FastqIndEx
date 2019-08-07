@@ -18,17 +18,17 @@ ExtractorRunner::ExtractorRunner(
         ExtractMode mode,
         u_int64_t start,
         u_int64_t count,
-        uint extractionMultiplier,
+        uint recordSize,
         bool enableDebugging
 ) : IndexReadingRunner(fastqfile, indexFile) {
 
     this->start = start;
     this->count = count;
-    this->extractionMultiplier = extractionMultiplier;
+    this->recordSize = recordSize;
     this->enableDebugging = enableDebugging;
     this->extractor.reset(
             new Extractor(fastqfile, indexFile, resultfile, forceOverwrite, mode, start, count,
-                          extractionMultiplier, enableDebugging)
+                          recordSize, enableDebugging)
     );
 }
 
@@ -37,9 +37,9 @@ ExtractorRunner::ExtractorRunner(
  * files. This check will open and close the index file with a basic version of IndexReader. However, the reader
  * will be destroyed and the file will be unlocked! Might be bad.
  */
-bool ExtractorRunner::checkPremises() {
-    bool baseClassChecksPassed = ActualRunner::checkPremises();
-    bool extractorTestsPassed = extractor->checkPremises();
+bool ExtractorRunner::fulfillsPremises() {
+    bool baseClassChecksPassed = ActualRunner::fulfillsPremises();
+    bool extractorTestsPassed = extractor->fulfillsPremises();
     return baseClassChecksPassed && extractorTestsPassed;
 }
 

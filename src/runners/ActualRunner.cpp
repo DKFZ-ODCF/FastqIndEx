@@ -18,7 +18,7 @@ ActualRunner::ActualRunner(const shared_ptr<Source> &fastqfile) {
     this->fastqFile = fastqfile;
 }
 
-bool ActualRunner::checkPremises() {
+bool ActualRunner::fulfillsPremises() {
 
     // Fastq needs to be a (pipe AND piping allowed) or an ((existing file OR symlink with a file) AND readable)
     bool fastqIsValid = false;
@@ -40,9 +40,9 @@ bool ActualRunner::checkPremises() {
     return fastqIsValid;
 }
 
-bool IndexReadingRunner::checkPremises() {
-    bool fastqIsValid = ActualRunner::checkPremises();
-    bool indexIsValid = indexFile->checkPremises();
+bool IndexReadingRunner::fulfillsPremises() {
+    bool fastqIsValid = ActualRunner::fulfillsPremises();
+    bool indexIsValid = indexFile->fulfillsPremises();
 
     return fastqIsValid && indexIsValid;
 }
@@ -60,10 +60,10 @@ vector<string> IndexReadingRunner::getErrorMessages() {
     }
 }
 
-bool IndexWritingRunner::checkPremises() {
+bool IndexWritingRunner::fulfillsPremises() {
 
-    bool fastqIsValid = ActualRunner::checkPremises();
-    bool indexIsValid = indexFile->checkPremises();
+    bool fastqIsValid = ActualRunner::fulfillsPremises();
+    bool indexIsValid = indexFile->fulfillsPremises();
 //    // Index files are automatically overwritten but need to have write access!
 //    bool indexIsValid = true;
 //    // It is totally ok, if the index does not exist. We'll create it then.

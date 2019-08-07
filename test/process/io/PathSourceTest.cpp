@@ -5,7 +5,7 @@
  */
 
 const char *const PATH_SOURCE_TEST_SUITE = "Test suite for the PathSource class";
-const char *const PATH_SOURCE_CONSTRUCT = "Test construction and checkPremises()";
+const char *const PATH_SOURCE_CONSTRUCT = "Test construction and fulfillsPremises()";
 const char *const PATH_SOURCE_OPEN = "Test open and close";
 const char *const PATH_SOURCE_OPENLOCKED = "Test open and close with lock - unlock";
 const char *const PATH_SOURCE_AQUIRELOCK_LATER = "Test suite for the PathSource class";
@@ -22,7 +22,7 @@ SUITE (PATH_SOURCE_TEST_SUITE) {
 
         auto ps = res.getResource(TEST_FASTQ_SMALL);
         PathSource p(ps);
-                CHECK(p.checkPremises());
+                CHECK(p.fulfillsPremises());
                 CHECK(p.getPath() == ps);
                 CHECK(p.exists());
                 CHECK(!p.hasLock());

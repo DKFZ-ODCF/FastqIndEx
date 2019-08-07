@@ -18,6 +18,10 @@
 using namespace std;
 using experimental::filesystem::path;
 
+/**
+ * Extraction can be either done on a per line / record base (starting record, number of records) or segement wise
+ * (selected segment, number of segments).
+ */
 enum ExtractMode {
     lines,
     segment
@@ -44,15 +48,28 @@ private:
      */
     u_int64_t count;
 
+    /**
+     * The first line which shall be extracted from the FASTQ. This is a multiple of recordSize.
+     */
     u_int64_t startingLine{0};
 
+    /**
+     * The number of lines which shall be extracted from the FASTQ file. This is a multiple of recordSize.
+     */
     u_int64_t lineCount{0};
 
-    uint extractionMultiplier;
+    /**
+     * The size of a record as in number of lines. E.g. a FASTQ record consists of four lines (which is also the default
+     * in this application.
+     */
+    uint recordSize;
 
+    /**
+     * Defines, where the extracted data will be stored.
+     */
     shared_ptr<Sink> resultSink;
 
-    bool useFile{false};
+//    bool useFile{false};
 
     /**
      * If the extractor shall write a new fastq file, this indicates, that the file will be overwritten.
@@ -79,7 +96,7 @@ private:
 public:
 
     /**
-     * @param fastqfile         The file from which we will extract data
+     * @param fastqFile         The file from which we will extract data
      * @param indexFile         The index file for this file
      * @param resultSink        The result file or
      * @param forceOverwrite    If the resultfile exists, we can overwrite it with this flag
@@ -88,11 +105,11 @@ public:
      * @param count             Extract a maximum of lineCount lines OR define the number of total segments
      * @param enableDebugging   Used for interactive debugging and unit tests
      */
-    explicit Extractor(const shared_ptr<Source> &fastqfile,
+    explicit Extractor(const shared_ptr<Source> &fastqFile,
                        const shared_ptr<Source> &indexFile,
                        const shared_ptr<Sink> &resultSink,
                        bool forceOverwrite,
-                       ExtractMode mode, u_int64_t start, u_int64_t count, uint extractionMulitplier,
+                       ExtractMode mode, u_int64_t start, u_int64_t count, uint recordSize,
                        bool enableDebugging);
 
     virtual ~Extractor();
@@ -112,7 +129,7 @@ public:
     /**
      * Will call tryOpenAndReadHeader on the internal indexReader.
      */
-    bool checkPremises();
+    bool fulfillsPremises();
 
     /**
      * For debugging and testing , will be overriden by extract(). Sets the initial amount of lines which will be
@@ -138,6 +155,11 @@ public:
     void calculateStartingLineAndLineCount();
 
     /**
+     * Find the index entry in the index file, which is closest to the starting line.
+     */
+    tuple<u_int64_t, shared_ptr<IndexEntry>> findIndexEntryForExtraction();
+
+    /**
      * For now directly to cout?
      * @param start
      * @param count
@@ -154,17 +176,17 @@ public:
      * @param startingIndexLine The index entry which was used to step into the gzip file.
      * @return true, if something was written out or false otherwise.
      */
-    bool processDecompressedChunkOfData(ostream *out, string str, const shared_ptr<IndexEntry> &startingIndexLine);
+    bool processDecompressedChunkOfData(string str, const shared_ptr<IndexEntry> &startingIndexLine);
 
-    bool checkAndPrepareForNextConcatenatedPart(bool finalAbort);
+    bool prepareForNextConcatenatedPartIfNecessary(bool finalAbort);
 
-    void storeOrOutputLine(ostream *outStream, string line);
+    void storeOrOutputLine(string line);
 
     void storeLinesOfCurrentBlockForDebugMode();
 
     /**
-     * Overriden to also pass through (copywise, safe but slow but also only with a few entries and in error cases)
-     * error messages from the used IndexReader and ZLibHelper instance.
+     * Overridden to also pass through (each element is copied, this is safe and slower than references, but it is only
+     * done with a few entries and in error cases) error messages from the used IndexReader and ZLibHelper instance.
      * @return Merged vector of the objects error messages + the index writers error messages.
      */
     vector<string> getErrorMessages() override;

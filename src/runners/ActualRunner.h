@@ -46,7 +46,7 @@ public:
      * Used to check
      * @return
      */
-    bool checkPremises() override;
+    bool fulfillsPremises() override;
 
     /**
      * This is only valid for the Indexer. The Extractor cannot extract from piped input, as we need to hop around
@@ -88,7 +88,7 @@ public:
 
     shared_ptr<Source> getIndexFile() { return indexFile; }
 
-    bool checkPremises() override;
+    bool fulfillsPremises() override;
 
     vector<string> getErrorMessages() override;
 };
@@ -116,7 +116,7 @@ public:
 
     shared_ptr<Sink> getIndexFile() { return indexFile; }
 
-    bool checkPremises() override;
+    bool fulfillsPremises() override;
 
     vector<string> getErrorMessages() override;
 };

@@ -12,7 +12,7 @@ int main(int argc, const char *argv[]) {
     shared_ptr<Runner> runner = starter->createRunner(argc, argv);
 
     int exitCode = 0;
-    if (!runner->checkPremises()) {
+    if (!runner->fulfillsPremises()) {
         cerr << "There were errors preventing FastqIndEx to start:\n";
         for (auto const &message : runner->getErrorMessages()) {
             cerr << "\t" << message << "\n";
@@ -22,7 +22,7 @@ int main(int argc, const char *argv[]) {
         exitCode = runner->run();
     }
 
-    S3Service::close();
+    S3Service::closeIfOpened();
 
     delete starter;
     return exitCode;

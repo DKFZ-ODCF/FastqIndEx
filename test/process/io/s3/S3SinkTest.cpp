@@ -5,7 +5,7 @@
  */
 
 const char *const S3_SINK_TEST_SUITE = "Test suite for the S3Sink class";
-const char *const S3_SINK_CONSTRUCT = "Test construction and checkPremises()";
+const char *const S3_SINK_CONSTRUCT = "Test construction and fulfillsPremises()";
 const char *const S3_SINK_OPEN = "Test open and close";
 const char *const S3_SINK_OPENLOCKED = "Test open and close with lock_unlock";
 const char *const S3_SINK_AQUIRELOCK_LATER = "Test aquire lock after file open";
@@ -28,7 +28,7 @@ SUITE (S3_SINK_TEST_SUITE) {
         TestResourcesAndFunctions res(S3_SINK_TEST_SUITE, S3_SINK_CONSTRUCT);
 
         auto p = createTestSink();
-                CHECK(p->checkPremises());
+                CHECK(p->fulfillsPremises());
                 CHECK(!p->exists());
                 CHECK(!p->hasLock());
                 CHECK(!p->isOpen());
@@ -46,11 +46,11 @@ SUITE (S3_SINK_TEST_SUITE) {
 
 //        auto p2 = S3Sink(res.createEmptyFile("noOverwrite"));
 //                CHECK(p2.exists());
-//                CHECK(!p2.checkPremises());
+//                CHECK(!p2.fulfillsPremises());
 //
 //        auto p3 = S3Sink(res.createEmptyFile("overwrite"), true);
 //                CHECK(p3.exists());
-//                CHECK(p3.checkPremises());
+//                CHECK(p3.fulfillsPremises());
     }
 
 

@@ -4,8 +4,8 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "../../src/common/CommonStructsAndConstants.h"
-#include "../TestResourcesAndFunctions.h"
+#include "common/CommonStructsAndConstants.h"
+#include "common/IndexHeader.h"
 #include <UnitTest++/UnitTest++.h>
 
 const char *SUITE_COMMONSTRUCTS_TESTS = "CommonStructsTests";
@@ -51,7 +51,7 @@ SUITE (SUITE_COMMONSTRUCTS_TESTS) {
                 CHECK_EQUAL(8, sizeof(indexEntry.blockOffsetInRawFile));
                 CHECK_EQUAL(8, sizeof(indexEntry.startingLineInEntry));
                 CHECK_EQUAL(1, sizeof(indexEntry.bits));
-                CHECK_EQUAL(4, sizeof(indexEntry.offsetOfFirstValidLine));
+                CHECK_EQUAL(4, sizeof(indexEntry.offsetToNextLineStart));
                 CHECK_EQUAL(WINDOW_SIZE, sizeof(indexEntry.dictionary));
 
         Bytef dictionaryCheck[WINDOW_SIZE]{0};
@@ -59,7 +59,7 @@ SUITE (SUITE_COMMONSTRUCTS_TESTS) {
         // Now initial values
                 CHECK_EQUAL(0, indexEntry.blockID);
                 CHECK_EQUAL(0, indexEntry.bits);
-                CHECK_EQUAL(0, indexEntry.offsetOfFirstValidLine);
+                CHECK_EQUAL(0, indexEntry.offsetToNextLineStart);
                 CHECK_EQUAL(0, indexEntry.blockOffsetInRawFile);
                 CHECK_EQUAL(0, indexEntry.startingLineInEntry);
 
@@ -70,7 +70,7 @@ SUITE (SUITE_COMMONSTRUCTS_TESTS) {
         IndexEntryV1 indexEntry(1, 10, 5, 20, 1000);
                 CHECK_EQUAL(1, indexEntry.bits);
                 CHECK_EQUAL(10, indexEntry.blockID);
-                CHECK_EQUAL(5, indexEntry.offsetOfFirstValidLine);
+                CHECK_EQUAL(5, indexEntry.offsetToNextLineStart);
                 CHECK_EQUAL(20, indexEntry.blockOffsetInRawFile);
                 CHECK_EQUAL(1000, indexEntry.startingLineInEntry);
     }

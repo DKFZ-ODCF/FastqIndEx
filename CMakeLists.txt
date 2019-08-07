@@ -33,6 +33,7 @@ set(aws-checksums_DIR ${AWS_DIR}/lib64/aws-checksums/cmake)
 set(aws-cpp-sdk-s3_DIR ${AWS_DIR}/lib64/cmake/aws-cpp-sdk-s3)
 
 # Make cmake aware of an existing conda environment and try to load zlib and tclap from there.
+# The variable CONDA_DEFAULT_ENV is set, if a Conda environment is active.
 set(CONDA_DEFAULT_ENV $ENV{CONDA_DEFAULT_ENV})
 set(CONDA_PREFIX $ENV{CONDA_PREFIX})
 set(TCLAP_INCLUDE_DIR ../tclap-1.2.1/include)

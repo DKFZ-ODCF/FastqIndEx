@@ -57,13 +57,13 @@ bool ZLibBasedFASTQProcessorBaseClass::readCompressedDataFromSource() {
     int result = this->fastqFile->read(input, CHUNK_SIZE);
 
     if (result == -1) {
-        this->addErrorMessage("There was an error during fread.");
+        this->addErrorMessage("There was an error while trying to read the FASTQ file '", fastqFile->toString(), "'.");
         return false;
     } else
         zStream.avail_in = (uInt) result;
 
     if (zStream.avail_in == 0) {
-        this->addErrorMessage("There was no data available in the stream");
+        this->addErrorMessage("There was no data available in the compressed stream");
         return false;
     }
     zStream.next_in = input;
@@ -71,7 +71,7 @@ bool ZLibBasedFASTQProcessorBaseClass::readCompressedDataFromSource() {
 }
 
 /**
- * If at end of block, consider adding an index entry (note that if
+ * At the end of the block, consider adding an index entry (note that if
  * data_type indicates an end-of-block, then all of the
  * uncompressed data from that block has been delivered, and none
  * of the compressed data after that block has been consumed,
@@ -79,6 +79,15 @@ bool ZLibBasedFASTQProcessorBaseClass::readCompressedDataFromSource() {
  * entry point after the zlib or gzip header, and assures that the
  * index always has at least one access point; we avoid creating an
  * access point after the offset block by checking bit 6 of data_type
+ *
+ * data_type is set by inflate as taken from: https://www.zlib.net/manual.html
+ * The Z_BLOCK option assists in appending to or combining deflate streams. To assist in this, on return inflate()
+ * always sets strm->data_type to the number of unused bits in the last byte taken from strm->next_in, plus 64 if
+ * inflate() is currently decoding the last block in the deflate stream, plus 128 if inflate() returned immediately
+ * after decoding an end-of-block code or decoding the complete header up to just before the first byte of the deflate
+ * stream.
+ *
+ * So shortly said: Both 64 and 128 tell you, that no unused bits are leftover.
  *
  * @param strm z_stream reference to the struct instance used for decompression
  * @return true, if at end of block.
@@ -95,7 +104,7 @@ bool ZLibBasedFASTQProcessorBaseClass::checkStreamForBlockEnd() {
  * @param zStream
  * @param window
  */
-void ZLibBasedFASTQProcessorBaseClass::checkAndResetSlidingWindow() {
+void ZLibBasedFASTQProcessorBaseClass::resetSlidingWindowIfNecessary() {
     if (zStream.avail_out == 0) {
         zStream.avail_out = WINDOW_SIZE;
         zStream.next_out = window;
@@ -111,14 +120,15 @@ bool ZLibBasedFASTQProcessorBaseClass::decompressNextChunkOfData(bool checkForSt
 
     zlibResult = inflate(&zStream, flushMode);
     u_int64_t readBytes = availableInBeforeInflate - zStream.avail_in;
-    u_int64_t writtenBytes = availableOutBeforeInflate - zStream.avail_out;// - windowPositionBeforeInflate;
+    u_int64_t writtenBytes = availableOutBeforeInflate - zStream.avail_out;
 
     totalBytesIn += readBytes;
     totalBytesOut += writtenBytes;
 
     // The window buffer used by inflate will be filled at somewhere between 0 <= n <= WINDOW_SIZE
     // as we work with a string append method, we need to copy the read data to a fresh buffer first.
-    Bytef cleansedWindowForCout[CLEAN_WINDOW_SIZE]{0}; // +1 for a definitely 0-terminated c-string!
+    Bytef cleansedWindowForCout[CLEAN_WINDOW_SIZE]{
+            0}; // +1 more Byte than WINDOW_SIZE for a definitely 0-terminated c-string!
     std::memcpy(cleansedWindowForCout, window + windowPositionBeforeInflate, writtenBytes);
 
     if (zlibResult == Z_NEED_DICT) {

@@ -137,7 +137,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
         auto entry = ir->readIndexEntryV1();
                 CHECK(entry);
                 CHECK_EQUAL(0, entry->bits);
-                CHECK_EQUAL(0, entry->offsetOfFirstValidLine);
+                CHECK_EQUAL(0, entry->offsetToNextLineStart);
                 CHECK_EQUAL(10, entry->blockOffsetInRawFile);
                 CHECK_EQUAL(0, entry->startingLineInEntry);
                 CHECK_ARRAY_EQUAL(emptyWindow, entry->dictionary, sizeof(emptyWindow));
@@ -169,7 +169,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 //        auto entry = ir->readIndexEntryV1();
 //                CHECK(entry);
 //                CHECK_EQUAL(7, entry->bits);
-//                CHECK_EQUAL(0, entry->offsetOfFirstValidLine);
+//                CHECK_EQUAL(0, entry->offsetToNextLineStart);
 //                CHECK_EQUAL(10, entry->blockOffsetInRawFile);
 //                CHECK_EQUAL(0, entry->startingLineInEntry);
     }

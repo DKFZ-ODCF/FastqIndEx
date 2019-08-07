@@ -63,13 +63,13 @@ SUITE (INDEXENTRY_STORAGESTRATEGY_SUITE_TESTS) {
     }
 
     TEST (TEST_BYTESTRATEGY_PARSESTRINGVALUE) {
-        // Invalid values first
-                CHECK_EQUAL(GB, ByteDistanceStorageStrategy::parseStringValue(""));
-                CHECK_EQUAL(GB, ByteDistanceStorageStrategy::parseStringValue("ab"));
-                CHECK_EQUAL(GB, ByteDistanceStorageStrategy::parseStringValue("3a"));
-                CHECK_EQUAL(GB, ByteDistanceStorageStrategy::parseStringValue("3.0k"));
+        // Invalid values first => Will result in -1
+                CHECK_EQUAL(-1, ByteDistanceStorageStrategy::parseStringValue(""));
+                CHECK_EQUAL(-1, ByteDistanceStorageStrategy::parseStringValue("ab"));
+                CHECK_EQUAL(-1, ByteDistanceStorageStrategy::parseStringValue("3a"));
+                CHECK_EQUAL(-1, ByteDistanceStorageStrategy::parseStringValue("3.0k"));
 
-        // Default and regular values
+        // Valid values
                 CHECK_EQUAL(3 * MB, ByteDistanceStorageStrategy::parseStringValue("3"));
 
                 CHECK_EQUAL(3 * kB, ByteDistanceStorageStrategy::parseStringValue("3k"));
@@ -77,7 +77,6 @@ SUITE (INDEXENTRY_STORAGESTRATEGY_SUITE_TESTS) {
                 CHECK_EQUAL(3 * MB, ByteDistanceStorageStrategy::parseStringValue("3m"));
                 CHECK_EQUAL(3 * MB, ByteDistanceStorageStrategy::parseStringValue("3M"));
 
-        // CHECK_EQUAL won't work here!
                 CHECK_EQUAL(3 * GB, ByteDistanceStorageStrategy::parseStringValue("3g"));
                 CHECK_EQUAL(3 * GB, ByteDistanceStorageStrategy::parseStringValue("3G"));
                 CHECK_EQUAL(3 * TB, ByteDistanceStorageStrategy::parseStringValue("3t"));

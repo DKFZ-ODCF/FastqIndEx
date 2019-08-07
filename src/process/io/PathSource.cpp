@@ -14,7 +14,7 @@ PathSource::~PathSource() {
     close();
 }
 
-bool PathSource::checkPremises() {
+bool PathSource::fulfillsPremises() {
     path _path = file;
     bool isValid = exists();
     if (isValid) {

@@ -58,7 +58,7 @@ public:
         return open();
     }
 
-    bool checkPremises() override {
+    bool fulfillsPremises() override {
         return true;
     }
 
@@ -89,7 +89,7 @@ public:
 
         auto[success, tempFilePath] = IOHelper::createTempFile("FastqIndEx_S3TemporaryIndex");
         if (!success) {
-            addErrorMessage("Could not create a temporary file for the S3 sink");
+            addErrorMessage("Could not create an intermediate temporary file for the S3 output file.");
             return false;
         }
 

@@ -54,19 +54,19 @@ bool PathSource::close() {
     return true;
 }
 
-int PathSource::read(Bytef *targetBuffer, int numberOfBytes) {
+int64_t PathSource::read(Bytef *targetBuffer, int numberOfBytes) {
     fStream.read(reinterpret_cast<char *>(targetBuffer), numberOfBytes);
-    int amountRead = fStream.gcount();
-    return (int) amountRead;
+    int64_t amountRead = fStream.gcount();
+    return amountRead;
 }
 
 int PathSource::readChar() {
     Byte result = 0;
-    int res = this->read(&result, 1);
+    int res = static_cast<int>(this->read(&result, 1));
     return res < 0 ? res : (int) result;
 }
 
-int PathSource::seek(int64_t nByte, bool absolute) {
+int64_t PathSource::seek(int64_t nByte, bool absolute) {
     if (lastError()) {
         // Seek / Read can run over file borders and it might be necessary to just reopen it. We do this here.
         close();
@@ -80,11 +80,11 @@ int PathSource::seek(int64_t nByte, bool absolute) {
     return (!fStream.fail() && !fStream.bad()) ? 1 : 0;
 }
 
-int PathSource::skip(uint64_t nBytes) {
+int64_t PathSource::skip(int64_t nBytes) {
     return seek(nBytes, false);
 }
 
-uint64_t PathSource::tell() {
+int64_t PathSource::tell() {
     if (fStream.is_open())
         return fStream.tellg();
     return 0;
@@ -131,6 +131,6 @@ bool PathSource::unlock() {
     return !hasLock();
 }
 
-int PathSource::rewind(uint64_t nByte) {
+int64_t PathSource::rewind(int64_t nByte) {
     return seek(-nByte, false);
 }

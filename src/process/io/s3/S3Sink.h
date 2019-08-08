@@ -50,7 +50,7 @@ public:
             Sink(forceOverwrite) {
     }
 
-    virtual ~S3Sink() {
+    ~S3Sink() override {
         close();
     }
 
@@ -108,13 +108,10 @@ public:
         if (!isOpen())
             return true;
 
-        bool ok = true;
-        if (ok) {
-            auto result = fqiS3Client.putFile(tempFile->toString());
-            ok = result.requestWasSuccessful && result.result;
-            if (result.result)
-                ErrorAccumulator::always("Uploaded FQI file to bucket s3://", fqiS3Client.getBucketName());
-        }
+        auto result = fqiS3Client.putFile(tempFile->toString());
+        bool ok = result.requestWasSuccessful && result.result;
+        if (result.result)
+            ErrorAccumulator::always("Uploaded FQI file to bucket s3://", fqiS3Client.getBucketName());
 
 
         if (tempFile) {
@@ -157,7 +154,7 @@ public:
         return tempFile && tempFile->exists();
     }
 
-    u_int64_t size() override {
+    int64_t size() override {
         return tempFile ? tempFile->size() : 0;
     }
 
@@ -174,11 +171,11 @@ public:
         return tempFile && tempFile->canWrite();
     }
 
-    int seek(int64_t nByte, bool absolute) override {
+    int64_t seek(int64_t nByte, bool absolute) override {
         return tempFile ? tempFile->seek(nByte, absolute) : 0;
     }
 
-    int skip(uint64_t nByte) override {
+    int64_t skip(int64_t nByte) override {
         return tempFile ? tempFile->skip(nByte) : 0;
     }
 
@@ -186,7 +183,7 @@ public:
         return fqiS3Client.getS3Path();
     }
 
-    uint64_t tell() override {
+    int64_t tell() override {
         return tempFile ? tempFile->tell() : 0;
     }
 

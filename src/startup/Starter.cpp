@@ -6,15 +6,12 @@
 
 #include "process/io/Source.h"
 #include "process/io/PathSource.h"
-#include "process/io/StreamSource.h"
 #include "runners/ExtractorRunner.h"
 #include "runners/IndexerRunner.h"
 #include "ExtractModeCLIParser.h"
 #include "IndexModeCLIParser.h"
 #include "IndexStatsModeCLIParser.h"
-#include "ModeCLIParser.h"
 #include "Starter.h"
-#include <cstring>
 #include <tclap/CmdLine.h>
 
 Starter *Starter::instance = nullptr;

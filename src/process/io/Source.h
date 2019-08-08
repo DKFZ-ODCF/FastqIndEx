@@ -22,26 +22,26 @@ using namespace std::experimental::filesystem;
  */
 class Source : public IOBase {
 protected:
-    uint64_t totalReadBytes{0};
+    int64_t totalReadBytes{0};
 
-    uint64_t readStart{0};
+    int64_t readStart{0};
 
     Source() = default;
 
-    virtual ~Source() = default;
-
 public:
+
+     ~Source() override = default;
 
     virtual bool openWithReadLock()  = 0;
 
-    virtual const u_int64_t getTotalReadBytes() { return totalReadBytes; }
+    virtual int64_t getTotalReadBytes() { return totalReadBytes; }
 
     /**
      * Currently only for S3 sources, where we cannot seek in the source stream and need to define something like a
      * range, when opening the file. This method only sets readStart and all code using this will need to be implemented
      * in the target classes.
      */
-    virtual void setReadStart(u_int64_t startBytes) {
+    virtual void setReadStart(int64_t startBytes) {
         readStart = startBytes;
     }
 
@@ -51,7 +51,7 @@ public:
      * @param numberOfBytes The number of characters which shall be read.
      * @return The number of read characters.
      */
-    virtual int read(Bytef *targetBuffer, int numberOfBytes) = 0;
+    virtual int64_t read(Bytef *targetBuffer, int numberOfBytes) = 0;
 
     /**
      * Like getc / fgetc, this tries to read one Byte of data from the source.

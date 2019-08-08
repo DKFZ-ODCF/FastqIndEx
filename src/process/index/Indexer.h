@@ -93,9 +93,9 @@ private:
      */
     bool lastBlockEndedWithNewline = true;
 
-    u_int64_t lineCountForNextIndexEntry{0};
+    int64_t lineCountForNextIndexEntry{0};
 
-    u_int64_t numberOfConcatenatedFiles{1};
+    int64_t numberOfConcatenatedFiles{1};
 
     long blockID{-1};                   // Number of the currently processed block.
 
@@ -120,14 +120,14 @@ public:
      */
     Indexer(const shared_ptr<Source> &fastqfile,
             const shared_ptr<Sink> &index,
-            shared_ptr<IndexEntryStorageStrategy> storageStrategy,
+            const shared_ptr<IndexEntryStorageStrategy> &storageStrategy,
             bool enableDebugging = false,
             bool forceOverwrite = false,
             bool forbidWriteFQI = false,
             bool compressDictionaries = true
     );
 
-    virtual ~Indexer() = default;
+    ~Indexer() override = default;
 
     void setDictionaryCompression(bool value) {
         this->compressDictionaries = value;
@@ -173,16 +173,16 @@ public:
      */
     const vector<shared_ptr<IndexEntryV1>> &getStoredEntries() { return storedEntries; }
 
-    const uint64_t getNumberOfConcatenatedFiles() { return numberOfConcatenatedFiles; }
+    int64_t getNumberOfConcatenatedFiles() { return numberOfConcatenatedFiles; }
 
     shared_ptr<IndexEntryV1> createIndexEntryFromBlockData(const string &currentBlockString,
                                                            const vector<string> &lines,
-                                                           u_int64_t &blockOffsetInRawFile,
+                                                           int64_t &blockOffsetInRawFile,
                                                            bool lastBlockEndedWithNewline,
                                                            bool *currentBlockEndedWithNewLine,
                                                            u_int32_t *numberOfLinesInBlock);
 
-    void storeDictionaryForEntry(z_stream *strm, shared_ptr<IndexEntryV1> entry);
+    void storeDictionaryForEntry(z_stream *strm, const shared_ptr<IndexEntryV1>& entry);
 
     bool writeIndexEntryIfPossible(shared_ptr<IndexEntryV1> &entry, const vector<string> &lines, bool blockIsEmpty);
 

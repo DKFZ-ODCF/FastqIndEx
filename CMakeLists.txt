@@ -7,8 +7,8 @@ cmake_minimum_required(VERSION 3.13)
 
 set(CMAKE_CXX_STANDARD 17)
 # -pedantic -ansi -Winit-self -Wmissing-declarations -Wextra -Winit-self -Wold-style-cast -Woverloaded-virtual -Wuninitialized
-SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fPIC -Wreturn-type")
-SET(CMAKE_C_FLAGS_DEBUG "-O0 -g -fPIC -Wreturn-type")
+SET(CMAKE_C_FLAGS_DEBUG "-O0 -g -fPIC")
+SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fPIC")
 
 set(CMAKE_EXE_LINKER_FLAGS " -static-libstdc++ -static-libgcc")
 #add_definitions(" -DCURL_STATICLIB")

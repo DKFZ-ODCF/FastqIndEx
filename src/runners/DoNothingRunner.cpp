@@ -5,8 +5,6 @@
  */
 
 #include "DoNothingRunner.h"
-#include "startup/Starter.h"
-#include <iostream>
 
 using namespace std;
 

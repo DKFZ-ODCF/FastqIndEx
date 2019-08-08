@@ -11,7 +11,6 @@
 #include "process/io/Source.h"
 #include "process/io/ConsoleSink.h"
 #include "process/io/StreamSource.h"
-#include "runners/ExtractorRunner.h"
 #include "ModeCLIParser.h"
 #include <tclap/CmdLine.h>
 
@@ -149,12 +148,11 @@ shared_ptr<Sink> ModeCLIParser::processIndexFileSink(const string &_indexFile,
 shared_ptr<Sink> ModeCLIParser::processFileSink(const string &file,
                                                 bool forceOverwrite,
                                                 const S3ServiceOptions &s3ServiceOptions) {
-    string fileValue = file;
-    if (fileValue == "-") {
+    if (file == "-") {
         return ConsoleSink::create();
-    } else if (isS3Path(fileValue)) {
-        return S3Sink::from(fileValue, forceOverwrite, s3ServiceOptions);
+    } else if (isS3Path(file)) {
+        return S3Sink::from(file, forceOverwrite, s3ServiceOptions);
     } else {
-        return PathSink::from(fileValue, forceOverwrite);
+        return PathSink::from(file, forceOverwrite);
     }
 }

@@ -33,7 +33,7 @@ public:
 
     vector<string> getErrorMessages() override;
 
-    static void printIndexEntryToConsole(const shared_ptr<IndexEntry> &entry, u_int64_t entryNumber, bool toCErr = true);
+    static void printIndexEntryToConsole(const shared_ptr<IndexEntry> &entry, int64_t entryNumber, bool toCErr = true);
 };
 
 

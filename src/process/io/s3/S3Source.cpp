@@ -11,8 +11,6 @@
 #include <aws/core/auth/AWSCredentialsProvider.h>
 #include <aws/s3/S3Client.h>
 #include <aws/s3/model/GetObjectRequest.h>
-#include <unistd.h>
-#include <cstdlib>
 
 S3Source::S3Source(const string &s3Path, const S3ServiceOptions &s3ServiceOptions) :
         fqiS3Client(s3Path, s3ServiceOptions) {
@@ -22,7 +20,7 @@ S3Source::~S3Source() {
     close();
 }
 
-void S3Source::setReadStart(u_int64_t startBytes) {
+void S3Source::setReadStart(int64_t startBytes) {
     if (isOpen()) {
         always("Reset S3Source with new Range: [", to_string(startBytes), "-", to_string(size()), "]");
         close();
@@ -102,7 +100,7 @@ bool S3Source::close() {
     return true;
 }
 
-int S3Source::read(Bytef *targetBuffer, int numberOfBytes) {
+int64_t S3Source::read(Bytef *targetBuffer, int numberOfBytes) {
     return this->streamSource->read(targetBuffer, numberOfBytes);
 }
 
@@ -110,18 +108,18 @@ int S3Source::readChar() {
     return this->streamSource->readChar();
 }
 
-int S3Source::seek(int64_t nByte, bool absolute) {
+int64_t S3Source::seek(int64_t nByte, bool absolute) {
     if (absolute) {
         return this->streamSource->seek(nByte - readStart, true);
     } else
         return this->streamSource->seek(nByte, false);
 }
 
-int S3Source::skip(uint64_t nBytes) {
+int64_t S3Source::skip(int64_t nBytes) {
     return streamSource->seek(nBytes, false);
 }
 
-uint64_t S3Source::tell() {
+int64_t S3Source::tell() {
     return readStart + streamSource->tell();
 }
 
@@ -188,11 +186,11 @@ bool S3Source::unlock() {
     return true;
 }
 
-const u_int64_t S3Source::getTotalReadBytes() {
+int64_t S3Source::getTotalReadBytes() {
     return Source::getTotalReadBytes();
 }
 
-int S3Source::rewind(uint64_t nByte) {
+int64_t S3Source::rewind(int64_t nByte) {
     return streamSource->rewind(nByte);
 }
 

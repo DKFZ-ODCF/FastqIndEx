@@ -31,7 +31,7 @@ SUITE (TEST_ZLIBBASE_SUITE) {
     TEST (TEST_ZLIBBASE_CREATION) {
         TestResourcesAndFunctions res(TEST_ZLIBBASE_SUITE, TEST_ZLIBBASE_CREATION);
 
-        path fastq = res.getResource(string(TEST_FASTQ_LARGE));
+        path fastq = TestResourcesAndFunctions::getResource(string(TEST_FASTQ_LARGE));
         path index = res.filePath("test2.fastq.gz.fqi");
 
         ZLibBasedFASTQProcessorBaseTestClass mock(fastq, index);

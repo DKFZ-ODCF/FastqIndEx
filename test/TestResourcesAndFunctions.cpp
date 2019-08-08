@@ -8,9 +8,6 @@
 #include <cstdio>
 #include <cstring>
 #include <experimental/filesystem>
-#include <fstream>
-#include <cstdio>
-#include <sys/stat.h>
 #include <iostream>
 #include <UnitTest++/UnitTest++.h>
 #include <common/IOHelper.h>
@@ -108,10 +105,10 @@ void TestResourcesAndFunctions::CreateEmptyFile(const path &_path) {
     stream.close();
 }
 
-std::string TestResourcesAndFunctions::format(const std::string &format, ...) {
+std::string TestResourcesAndFunctions::format(std::string format, ...) {
     va_list args;
     va_start(args, format);
-    size_t len = std::vsnprintf(nullptr, 0, format.c_str(), args);
+    size_t len = std::vsnprintf(nullptr, 0, format.c_str(), args);// TODO
     va_end(args);
     std::vector<char> vec(len + 1);
     va_start(args, format);
@@ -219,7 +216,7 @@ string TestResourcesAndFunctions::readFile(const path &file) {
     std::string str;
 
     t.seekg(0, std::ios::end);
-    str.reserve(t.tellg());
+    str.reserve(t.tellg());// TODO
     t.seekg(0, std::ios::beg);
 
     str.assign((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
@@ -229,7 +226,7 @@ string TestResourcesAndFunctions::readFile(const path &file) {
 bool TestResourcesAndFunctions::compareVectorContent(const vector<string> &reference, const vector<string> &actual,
                                                      uint32_t referenceOffset) {
     int64_t firstDiff{-1};
-    for (int i = 0; i < std::min(reference.size() - referenceOffset, actual.size()); i++) {
+    for (u_int64_t i = 0; i < std::min(reference.size() - referenceOffset, actual.size()); i++) {
         if (reference[i + referenceOffset] != actual[i]) {
             firstDiff = i;
             break;

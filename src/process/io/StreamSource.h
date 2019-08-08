@@ -19,7 +19,7 @@ protected:
 
     istream *inputStream{nullptr};
 
-    uint64_t currentPosition{0};
+    int64_t currentPosition{0};
 
     /**
      * Last 8 read chunks from the input source.
@@ -31,7 +31,7 @@ protected:
      */
     deque<int> rewindBufferEntryLength;
 
-    int rewoundBytes{0};
+    int64_t rewoundBytes{0};
 
     int maxSegmentsInBuffer{8};
 
@@ -58,7 +58,7 @@ public:
         maxSegmentsInBuffer(maxSegmentsInBuffer),
         defaultChunkSizeForReads(defaultChunkSizeForReads) {};
 
-    const u_int64_t getTotalReadBytes() override;
+    int64_t getTotalReadBytes() override;
 
     /**
      * Returns the pointer to the used stream.
@@ -68,9 +68,9 @@ public:
         return inputStream;
     }
 
-    int skip(uint64_t nByte) override;
+    int64_t skip(int64_t nByte) override;
 
-    uint64_t tell() override;
+    int64_t tell() override;
 
     int lastError() override;
 
@@ -80,31 +80,31 @@ public:
 
     bool exists() override;
 
-    uint64_t size() override;
+    int64_t size() override;
 
     bool isFile() override;
 
     bool isStream() override;
 
-    int read(Bytef *targetBuffer, int numberOfBytes) override;
+    int64_t read(Bytef *targetBuffer, int numberOfBytes) override;
 
-    int readFromBuffer(Bytef *targetBuffer, int numberOfBytes);
+    int64_t readFromBuffer(Bytef *targetBuffer, int numberOfBytes);
 
-    int readFromStream(Bytef *targetBuffer, int numberOfBytes);
+    int64_t readFromStream(Bytef *targetBuffer, int numberOfBytes);
 
     int readChar() override;
 
-    int seek(int64_t nByte, bool absolute) override;
+    int64_t seek(int64_t nByte, bool absolute) override;
 
-    int rewind(uint64_t nByte) override;
+    int64_t rewind(int64_t nByte) override;
 
-    int getRewindBufferSize();
+    int64_t getRewindBufferSize();
 
     char *joinRewindBuffer();
 
-    int getSegmentsInRewindBuffer() { return rewindBuffer.size(); };
+    int64_t getSegmentsInRewindBuffer() { return rewindBuffer.size(); };
 
-    int getRewoundBytes() { return rewoundBytes; }
+    int64_t getRewoundBytes() { return rewoundBytes; }
 
     bool canRead() override;
 

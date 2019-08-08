@@ -114,7 +114,7 @@ bool PathSink::exists() {
     return std::experimental::filesystem::exists(file);
 }
 
-u_int64_t PathSink::size() {
+int64_t PathSink::size() {
     if (exists())
         return file_size(file);
     return 0;
@@ -132,7 +132,7 @@ bool PathSink::canWrite() {
     return access(toString().c_str(), W_OK) == 0;
 }
 
-int PathSink::seek(int64_t nByte, bool absolute) {
+int64_t PathSink::seek(int64_t nByte, bool absolute) {
     if (lastError()) {
         // Seek / Read can run over file borders and it might be necessary to just reopen it. We do this here.
         close();
@@ -146,7 +146,7 @@ int PathSink::seek(int64_t nByte, bool absolute) {
     return (!fStream.fail() && !fStream.bad()) ? 1 : 0;
 }
 
-int PathSink::skip(uint64_t nBytes) {
+int64_t PathSink::skip(int64_t nBytes) {
     return seek(nBytes, false);
 }
 
@@ -154,7 +154,7 @@ string PathSink::toString() {
     return file.string();
 }
 
-uint64_t PathSink::tell() {
+int64_t PathSink::tell() {
     if (fStream.is_open())
         return fStream.tellg();
     return 0;
@@ -177,6 +177,6 @@ bool PathSink::unlock() {
     return !hasLock();
 }
 
-int PathSink::rewind(uint64_t nByte) {
+int64_t PathSink::rewind(int64_t nByte) {
     return seek(-nByte, false);
 }

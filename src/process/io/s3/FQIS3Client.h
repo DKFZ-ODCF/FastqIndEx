@@ -41,9 +41,12 @@ struct FQIS3ClientRequestBooleanResult {
 
 struct ObjectListEntry {
     string name;
-    u_int64_t size;
+    int64_t size;
 
-    ObjectListEntry(const string &name, u_int64_t size) : name(name), size(size) {}
+    ObjectListEntry(const string &name, int64_t size) {
+        this->name = name;
+        this->size = size;
+    }
 };
 
 /**
@@ -71,7 +74,7 @@ public:
         auto split = StringHelper::splitStr(s3Path, '/'); // s3://bucket/object
 
         if (split.size() != 4) {
-            addErrorMessage("The provided s3 string '", s3Path, "' must look like s3://<bucket>/<object>");
+            addErrorMessage("The S3 string '", s3Path, "' must look like s3://<bucket>/<object>");
         } else {
             bucket_name = split[2];
             object_name = split[3];
@@ -104,7 +107,7 @@ public:
 
         auto outcome = s3Request(*S3Service::getInstance()->getClient().get());
         if (!outcome.IsSuccess()) {
-            auto error = outcome.GetError();
+            const auto &error = outcome.GetError();
             addErrorMessage("S3 error: ", string(error.GetExceptionName()), ": ", string(error.GetMessage()));
             result = false;
         } else {
@@ -141,7 +144,7 @@ public:
         auto list = getObjectList();
         bool found = false;
         if (std::get<0>(list)) {
-            for (auto entry : std::get<1>(list)) {
+            for (const auto &entry : std::get<1>(list)) {
                 if (entry.name == object_name) {
                     found = true;
                     break;
@@ -162,7 +165,7 @@ public:
         if (!success)
             return {false, 0};
 
-        for (auto entry : list) {
+        for (const auto& entry : list) {
             if (entry.name == object_name) {
                 found = true;
                 size = entry.size;
@@ -199,8 +202,8 @@ public:
      * @param buffer   Where to store to. This buffer needs to be large enough to hold the data!
      * @return A tuple with a success indicator and the amount of read Bytes.
      */
-    tuple<bool, u_int64_t> readBlockOfData(u_int64_t position, u_int64_t length, Bytef *buffer) {
-        u_int64_t readBytes{0};
+    tuple<bool, int64_t> readBlockOfData(int64_t position, int64_t length, Bytef *buffer) {
+        int64_t readBytes{0};
         bool success = performS3Request<GetObjectOutcome>([&](S3Client &client) -> GetObjectOutcome {
             GetObjectRequest object_request;
             object_request.SetBucket(bucket_name.c_str());
@@ -209,12 +212,12 @@ public:
             if (get_object_outcome.IsSuccess()) {
                 auto &retrieved_file = get_object_outcome.GetResult().GetBody();
                 retrieved_file.seekg(position, ios_base::beg);
-                retrieved_file.readsome((char *) buffer, length);
+                retrieved_file.readsome(reinterpret_cast<char *>( buffer), length);
             }
             return get_object_outcome;
         });
 
-        return tuple<bool, u_int64_t>(success, readBytes);
+        return tuple<bool, int64_t>(success, readBytes);
     }
 
     vector<string> getErrorMessages() override {

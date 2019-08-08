@@ -12,22 +12,18 @@
 #include <string>
 #include <zconf.h>
 
-using std::shared_ptr;
-
-struct IndexEntryV1;
-
 /**
  * Used to identify a file as a file created by this binary.
  */
 extern const uint MAGIC_NUMBER;
 
-extern const u_int64_t kB;
+extern const int64_t kB;
 
-extern const u_int64_t MB;
+extern const int64_t MB;
 
-extern const u_int64_t GB;
+extern const int64_t GB;
 
-extern const u_int64_t TB;
+extern const int64_t TB;
 
 extern const int DEFAULT_RECORD_SIZE;
 
@@ -36,12 +32,12 @@ extern const int DEFAULT_RECORD_SIZE;
  * I'd prefer to set the following value as constant ints, but C++ then refuses to initialize arrays with the nice {0}
  * syntax. Though it works, when the constants are in a class.
  */
-#define WINDOW_SIZE 32768
+#define WINDOW_SIZE 32768U
 
 /**
  * Chunk size for raw data from compressed file
  */
-#define CHUNK_SIZE 16384
+#define CHUNK_SIZE 16384U
 
 /**
  * As we mix strings, stringstreams and cstrings, a buffer with this size is used to ensure, that the decompressed data

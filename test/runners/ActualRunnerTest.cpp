@@ -5,16 +5,15 @@
  */
 
 #include "../../src/common/ErrorMessages.h"
-#include "../../src/runners/ActualRunner.h"
 #include "../../src/runners/ExtractorRunner.h"
 #include "../../src/runners/IndexerRunner.h"
 #include "../../src/process/io/PathSink.h"
 #include "../../src/process/io/StreamSource.h"
 #include "../TestConstants.h"
 #include "../TestResourcesAndFunctions.h"
-#include <cstdio>
 #include <experimental/filesystem>
 #include <iostream>
+#include <memory>
 #include <UnitTest++/UnitTest++.h>
 
 using std::experimental::filesystem::path;
@@ -43,15 +42,15 @@ path indexFile(TestResourcesAndFunctions *res) {
 }
 
 shared_ptr<PathSink> _indexFile(TestResourcesAndFunctions *res) {
-    return shared_ptr<PathSink>(new PathSink(indexFile(res)));
+    return std::make_shared<PathSink>(indexFile(res));
 }
 
 SUITE (SUITE_ID) {
 
     TEST (TEST_FILEPATH_HELPER_METHOD) {
         TestResourcesAndFunctions res(SUITE_ID, TEST_FILEPATH_HELPER_METHOD);
-                CHECK(fastqFile(&res) == res.getTestPath().string() + "/" + FASTQ_FILENAME);
-                CHECK(indexFile(&res) == res.getTestPath().string() + "/" + INDEX_FILENAME);
+                CHECK(fastqFile(&res).string() == res.getTestPath().string() + "/" + FASTQ_FILENAME);
+                CHECK(indexFile(&res).string() == res.getTestPath().string() + "/" + INDEX_FILENAME);
     }
 
     TEST (TEST_CHECK_PREMISES_WITH_ALLOWED_PIPE) {
@@ -72,7 +71,7 @@ SUITE (SUITE_ID) {
 
     TEST (TEST_CHECK_PREMISES_WITH_MISSING_FASTQ) {
         TestResourcesAndFunctions res(SUITE_ID, TEST_CHECK_PREMISES_WITH_MISSING_FASTQ);
-        IndexerRunner *runner = new IndexerRunner(_fastqFile(&res), _indexFile(&res), BlockDistanceStorageStrategy::getDefault());
+        auto runner = new IndexerRunner(_fastqFile(&res), _indexFile(&res), BlockDistanceStorageStrategy::getDefault());
         bool result = runner->fulfillsPremises();
                 CHECK(!result);
 //                CHECK(runner->getErrorMessages().size() == 1);

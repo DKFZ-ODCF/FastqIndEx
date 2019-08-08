@@ -44,7 +44,7 @@ unsigned char IndexStatsRunner::_run() {
     for (int i = 0; i < start; i++)
         this->indexReader->readIndexEntry();
 
-    int toRead = this->indexReader->getIndicesLeft();
+    int64_t toRead = this->indexReader->getIndicesLeft();
     if (amount > 0) {
         toRead = amount;
     }
@@ -62,7 +62,7 @@ unsigned char IndexStatsRunner::_run() {
     }
 }
 
-void IndexStatsRunner::printIndexEntryToConsole(const shared_ptr<IndexEntry> &entry, u_int64_t entryNumber,
+void IndexStatsRunner::printIndexEntryToConsole(const shared_ptr<IndexEntry> &entry, int64_t entryNumber,
                                                 bool toCErr) {
     auto &_ostream = toCErr ? cout : cerr;
     _ostream << "Entry number:    " << entryNumber << "\n";
@@ -75,7 +75,7 @@ void IndexStatsRunner::printIndexEntryToConsole(const shared_ptr<IndexEntry> &en
 }
 
 vector<string> IndexStatsRunner::getErrorMessages() {
-    vector<string> l = ErrorAccumulator::getErrorMessages();
+    vector<string> l = IndexReadingRunner::getErrorMessages();
     vector<string> r = indexReader->getErrorMessages();
     return mergeToNewVector(l, r);
 }

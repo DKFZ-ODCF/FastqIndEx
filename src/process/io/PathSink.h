@@ -34,13 +34,13 @@ public:
         return make_shared<PathSink>(file, forceOverwrite);
     }
 
-    PathSink(const path &file, bool forceOverwrite = false);
+    explicit PathSink(const path &file, bool forceOverwrite = false);
 
     bool fulfillsPremises() override;
 
     bool open() override;
 
-    bool openWithWriteLock();
+    bool openWithWriteLock() override;
 
     path getPath() {
         return file;
@@ -74,7 +74,7 @@ public:
 
     bool exists() override;
 
-    u_int64_t size() override;
+    int64_t size() override;
 
     bool empty() override;
 
@@ -82,13 +82,13 @@ public:
 
     bool canWrite() override;
 
-    int seek(int64_t nByte, bool absolute) override;
+    int64_t seek(int64_t nByte, bool absolute) override;
 
-    int skip(uint64_t nByte) override;
+    int64_t skip(int64_t nByte) override;
 
     string toString() override;
 
-    uint64_t tell() override;
+    int64_t tell() override;
 
     int lastError() override;
 
@@ -98,7 +98,7 @@ public:
 
     bool unlock() override;
 
-    int rewind(uint64_t nByte) override;
+    int64_t rewind(int64_t nByte) override;
 };
 
 #endif //FASTQINDEX_PATHSINK_H

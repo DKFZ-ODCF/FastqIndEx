@@ -20,6 +20,7 @@
 #include <aws/s3/S3Client.h>
 
 #include <experimental/filesystem>
+#include <memory>
 #include <string>
 #include <mutex>
 
@@ -63,7 +64,7 @@ private:
         auto cfg = Aws::Client::ClientConfiguration();
         config.fillAWSCredentials(credentials);
         config.fillAWSClientConfiguration(cfg);
-        client = shared_ptr<S3Client>(new S3Client(credentials, cfg));
+        client = std::make_shared<S3Client>(credentials, cfg);
     };
 public:
 

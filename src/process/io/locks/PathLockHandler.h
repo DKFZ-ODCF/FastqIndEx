@@ -55,9 +55,9 @@ public:
 
     explicit PathLockHandler(path file);
 
-    ~PathLockHandler();
+    ~PathLockHandler() override;
 
-    const path &getIndexFile() const;
+    path getIndexFile();
 
     /**
      * Use this to open the output file.

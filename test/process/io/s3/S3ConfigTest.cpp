@@ -48,8 +48,8 @@ SUITE (S3_CONFIG_TESTS) {
         }
 
         S3TestConfig(TestResourcesAndFunctions *res, const string &credentialsFile, const string &configFile)
-                : res(res), S3Config(S3ServiceOptions(res->getResource(credentialsFile),
-                                                      res->getResource(configFile), "default")) {
+                : res(res), S3Config(S3ServiceOptions(TestResourcesAndFunctions::getResource(credentialsFile),
+                                                      TestResourcesAndFunctions::getResource(configFile), "default")) {
             readAndValidate();
         }
 
@@ -92,8 +92,8 @@ SUITE (S3_CONFIG_TESTS) {
     TEST (TEST_RESOLVE_CFG_FILES_DEFAULT_CREDENTIALS) {
         TestResourcesAndFunctions res(S3_CONFIG_TESTS, TEST_RESOLVE_CFG_FILES_DEFAULT_CREDENTIALS);
 
-        path credentials = "";
-        path config = "";
+        path credentials = path("");
+        path config = path("");
 
         res.createEmptyFile("credentials");
         res.createEmptyFile("config");
@@ -110,8 +110,8 @@ SUITE (S3_CONFIG_TESTS) {
     TEST (TEST_RESOLVE_CFG_FILES_MISSING_CREDENTIALS) {
         TestResourcesAndFunctions res(S3_CONFIG_TESTS, TEST_RESOLVE_CFG_FILES_MISSING_CREDENTIALS);
 
-        path credentials = "";
-        path config = "";
+        path credentials = path("");
+        path config = path("");
 
         res.createEmptyFile("config");
 
@@ -125,7 +125,7 @@ SUITE (S3_CONFIG_TESTS) {
     TEST (TEST_RESOLVE_CFG_FILES_SET_CONFIG) {
         TestResourcesAndFunctions res(S3_CONFIG_TESTS, TEST_RESOLVE_CFG_FILES_SET_CONFIG);
 
-        path credentials = "";
+        path credentials = path("");
         path config = res.createEmptyFile("testConf");
 
         // Also test if the proper config section was set
@@ -138,8 +138,8 @@ SUITE (S3_CONFIG_TESTS) {
     TEST (TEST_RESOLVE_CFG_FILES_DEFAULT_CONFIG) {
         TestResourcesAndFunctions res(S3_CONFIG_TESTS, TEST_RESOLVE_CFG_FILES_DEFAULT_CONFIG);
 
-        path credentials = "";
-        path config = "";
+        path credentials = path("");
+        path config = path("");
 
         res.createEmptyFile("config");
 
@@ -153,8 +153,8 @@ SUITE (S3_CONFIG_TESTS) {
     TEST (TEST_RESOLVE_CFG_FILES_MISSING_CONFIG) {
         TestResourcesAndFunctions res(S3_CONFIG_TESTS, TEST_RESOLVE_CFG_FILES_MISSING_CONFIG);
 
-        path credentials = "";
-        path config = "";
+        path credentials = path("");
+        path config = path("");
 
         // Also test if the proper config section was set
         S3TestConfig cfg(&res, credentials, config, "something");

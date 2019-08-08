@@ -4,17 +4,12 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "../../../src/common/IOHelper.h"
-#include "../../../src/common/StringHelper.h"
-#include "../../../src/process/extract/Extractor.h"
-#include "../../../src/process/index/Indexer.h"
-#include "../../../src/process/io/PathSource.h"
-#include "../../../src/process/io/PathSink.h"
+#include "common/StringHelper.h"
+#include "process/extract/Extractor.h"
+#include "process/index/Indexer.h"
+#include "process/io/PathSink.h"
 #include "process/io/ConsoleSink.h"
-#include "../../../src/runners/ExtractorRunner.h"
-#include "../../../src/runners/Runner.h"
-#include "../../TestResourcesAndFunctions.h"
-#include <fstream>
+#include "TestResourcesAndFunctions.h"
 #include <iostream>
 #include <UnitTest++/UnitTest++.h>
 #include <zlib.h>
@@ -35,9 +30,9 @@ const char *const TEST_EXTRACT_SEGMENTS = "Test segment extraction mode.";
 void runRangedExtractionTest(const path &fastq,
                              const path &index,
                              const vector<string> &decompressedSourceContent,
-                             const u_int64_t firstLine,
-                             const u_int64_t lineCount,
-                             const u_int64_t expectedLineCount) {
+                             const int64_t firstLine,
+                             const int64_t lineCount,
+                             const uint64_t expectedLineCount) {
     auto *extractor = new Extractor(
             make_shared<PathSource>(fastq),
             make_shared<PathSource>(index),
@@ -47,7 +42,7 @@ void runRangedExtractionTest(const path &fastq,
     bool ok = extractor->extract();
             CHECK(ok);
     if (!ok) {
-        for (int i = 0; i < extractor->getErrorMessages().size(); i++) {
+        for (uint64_t i = 0; i < extractor->getErrorMessages().size(); i++) {
             cout << extractor->getErrorMessages()[i] << "\n";
         }
     }
@@ -68,7 +63,7 @@ bool initializeComplexTest(const path &fastq,
                            const int blockInterval,
                            u_int64_t decompressedLineCount,
                            vector<string> *decompressedSourceContent) {
-/**
+    /**
      * Create the index fresh from the FASTQ, so we do not need to store the index file in our resources, also makes
      * debugging the indexer easier.
      */
@@ -96,10 +91,10 @@ bool initializeComplexTest(const path &fastq,
             ConsoleSink::create(),
             false, ExtractMode::lines, 0, 10,
             DEFAULT_RECORD_SIZE, true);
-    bool premisesMet = extractor->fulfillsPremises();
-            CHECK(premisesMet);
+    bool premisesFulfilled = extractor->fulfillsPremises();
+            CHECK(premisesFulfilled);
     delete extractor;
-    if (!premisesMet)
+    if (!premisesFulfilled)
         return false;
 
     /**
@@ -177,7 +172,7 @@ SUITE (INDEXER_SUITE_TESTS) {
             auto split = StringHelper::splitStr(bd);
             bool currentBlockEndedWithNewline;
             u_int32_t numberOfLinesInBlock;
-            u_int64_t offset = 0;
+            int64_t offset = 0;
             auto entry = indexer.createIndexEntryFromBlockData(bd, split, offset, lastBlockEndedWithNewline,
                                                                &currentBlockEndedWithNewline,
                                                                &numberOfLinesInBlock);
@@ -186,9 +181,9 @@ SUITE (INDEXER_SUITE_TESTS) {
         }
 
         uint startingLines[]{0, 4, 8, 12, 16, 18};
-        int indexEntryID[]{0, 1, 2, 7, 9, 7};
-        int startingBlockIDs[]{0, 1, 2, 7, 8, 7};
-        int expectedLines[]{4, 4, 4, 4, 4, 2};
+        uint indexEntryID[]{0, 1, 2, 7, 9, 7};
+        uint startingBlockIDs[]{0, 1, 2, 7, 8, 7};
+        uint expectedLines[]{4, 4, 4, 4, 4, 2};
 
         // The Extractor works a bit differently than the Indexer. In the Indexer, we decompress whole blocks, whereas
         // in the Extractor, we decompress chunk-wise (technical reasons, the flush mode Z_BLOCK does not work). One
@@ -211,7 +206,7 @@ SUITE (INDEXER_SUITE_TESTS) {
             extractor.calculateStartingLineAndLineCount(); // Needs to be done, otherwise startingLine and linecount are not set.
             extractor.setSkip(startingLine - indexEntry->startingLineInEntry);
 
-            for (int j = startingBlockIDs[i]; j < _blockData.size(); j++) {
+            for (uint64_t j = startingBlockIDs[i]; j < _blockData.size(); j++) {
                 extractor.processDecompressedChunkOfData(_blockData[j], indexEntry->toIndexEntry());
             }
                     CHECK(extractor.getStoredLines().size() == expectedLines[i]);
@@ -273,7 +268,7 @@ SUITE (INDEXER_SUITE_TESTS) {
 
         runRangedExtractionTest(fastq, index, decompressedSourceContent, 2740, 160000, 157260);
         runRangedExtractionTest(fastq, index, decompressedSourceContent, 14223, 4000, 4000);
-        for (u_int64_t i = 0, j = 0; i < 150000; i += 17500, j++) {
+        for (int64_t i = 0, j = 0; i < 150000; i += 17500, j++) {
             runRangedExtractionTest(fastq, index, decompressedSourceContent, 2740 + i, 4000 + j, 4000 + j);
         }
         runRangedExtractionTest(fastq, index, decompressedSourceContent, 80000, 100000, 80000);
@@ -321,13 +316,13 @@ SUITE (INDEXER_SUITE_TESTS) {
 //
 //        uint segments = 24;
 //        uint linesInSourceFASTQ = 160000;
-//        u_int64_t expectedStartingLines[]{
+//        int64_t expectedStartingLines[]{
 //                0, 6664, 13328, 19992, 26656, 33320,
 //                39984, 46648, 53312, 59976, 66640, 73304,
 //                79968, 86632, 93296, 99960, 106624, 113288,
 //                119952, 126616, 133280, 139944, 146608, 153272
 //        };
-//        u_int64_t expectedLineCount[]{
+//        int64_t expectedLineCount[]{
 //                6664, 6664, 6664, 6664, 6664, 6664,
 //                6664, 6664, 6664, 6664, 6664, 6664,
 //                6664, 6664, 6664, 6664, 6664, 6664,

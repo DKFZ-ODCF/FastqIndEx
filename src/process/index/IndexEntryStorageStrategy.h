@@ -40,7 +40,7 @@ public:
      * @param block      The compressed blocks number
      * @return
      */
-    virtual bool shallStore(shared_ptr<IndexEntryV1> indexEntry, u_int64_t blockID, bool blockIsEmpty) = 0;
+    virtual bool shallStore(shared_ptr<IndexEntryV1> indexEntry, int64_t blockID, bool blockIsEmpty) = 0;
 
     /**
      * Set the internal postponeWrite variable to false;
@@ -54,7 +54,7 @@ public:
      * BEFORE you call shallStore.
      * @param filesize  The size of the file for which this strategy is used.
      */
-    virtual void useFilesizeForCalculation(u_int64_t filesize) {};
+    virtual void useFileSizeForCalculation(int64_t filesize) {};
 
     bool wasPostponed() { return postponeWrite; }
 };
@@ -76,6 +76,8 @@ protected:
 
 public:
 
+    static const uint DEFAULT_BLOCKINTERVAL = 2048;
+
     static shared_ptr<BlockDistanceStorageStrategy> getDefault() {
         return from(-1);
     }
@@ -84,8 +86,8 @@ public:
         return make_shared<BlockDistanceStorageStrategy>(blockInterval, useSafeDistanceCheck);
     }
 
-    static u_int32_t calculateIndexBlockInterval(u_int64_t fileSize) {
-        u_int64_t testSize = fileSize / GB;
+    static u_int32_t calculateIndexBlockInterval(int64_t fileSize) {
+        int64_t testSize = fileSize / GB;
 
         if (testSize <= 1)
             return 16;
@@ -102,20 +104,32 @@ public:
         if (testSize <= 64)
             return 1024;
         if (testSize <= 128)
-            return 2048;
+            return DEFAULT_BLOCKINTERVAL;
         if (testSize <= 256)
             return 4096;
         return 8192;
     }
 
-    BlockDistanceStorageStrategy(int blockInterval, bool useSafeDistanceCheck) :
-            blockInterval(blockInterval), useSafeDistanceCheck(useSafeDistanceCheck) {}
+    BlockDistanceStorageStrategy(int blockInterval, bool useSafeDistanceCheck) {
+        this->blockInterval = blockInterval;
+        this->useSafeDistanceCheck = useSafeDistanceCheck;
+        if (this->blockInterval <= 0)
+            this->blockInterval = -1;
+    }
 
-    int getBlockInterval() const {
+    int getBlockInterval() {
         return blockInterval;
     }
 
-    bool shallStore(shared_ptr<IndexEntryV1> indexEntry, u_int64_t blockID, bool blockIsEmpty) override {
+    /**
+     * It is allowed to have the blockInterval set to -1. In that case it is allowed to automatically
+     * set the value by calling useFilesizeForCalculation(). However, if it is still -1, we apply a default value here.
+     */
+    bool shallStore(shared_ptr<IndexEntryV1> indexEntry, int64_t blockID, bool blockIsEmpty) override {
+        if (blockInterval == -1) {
+            blockInterval = DEFAULT_BLOCKINTERVAL;
+        }
+
         // Only write back every nth entry. As we need the large window / dictionary of 32kb, we'll need to save
         // some space here. Think of large NovaSeq FASTQ files with ~200GB! We can't store approximately 3.6m index
         // entries which would be around 115GB for an index file
@@ -134,8 +148,8 @@ public:
         u_int64_t offsetOfLastEntry = 0;
         bool failsafeDistanceIsReached = true;
         if (useSafeDistanceCheck) {
-            u_int64_t failsafeDistance = blockInterval * 16384;
-            if (lastStoredEntry.get() != nullptr)
+            u_int64_t failsafeDistance = static_cast<u_int64_t>(blockInterval) * 16384;
+            if (lastStoredEntry != nullptr)
                 offsetOfLastEntry = lastStoredEntry->blockOffsetInRawFile;
             failsafeDistanceIsReached = (blockOffset - offsetOfLastEntry) > (failsafeDistance);
         }
@@ -152,9 +166,9 @@ public:
         return shouldWrite;
     }
 
-    void useFilesizeForCalculation(u_int64_t filesize) override {
+    void useFileSizeForCalculation(int64_t filesize) override {
         if (blockInterval == -1) {
-            if (filesize == -1) {
+            if (filesize == 0) {
                 blockInterval = 2048; // Like for files > 128GB.
             } else {
                 blockInterval = calculateIndexBlockInterval(filesize);
@@ -177,22 +191,24 @@ private:
 
 public:
 
+    static const int64_t DEFAULT_MININDEXENTRY_BYTEDISTANCE = 256 * 1024 * 1024; // Can't use extern const here.
+
     static shared_ptr<ByteDistanceStorageStrategy> getDefault() {
         return from("1G");
     }
 
-    static shared_ptr<ByteDistanceStorageStrategy> from(string value) {
+    static shared_ptr<ByteDistanceStorageStrategy> from(const string &value) {
         return make_shared<ByteDistanceStorageStrategy>(value);
     }
 
-    static int64_t parseStringValue(string str) {
-        if(str == "-1")
+    static int64_t parseStringValue(const string &str) {
+        if (str == "-1")
             return -1;
 
         long long result = 0;
         if (regex_match(str.c_str(), regex("[0-9]+[kmgtKMGT]"))) {
             result = stoll(str.substr(0, str.length() - 1));
-            char unit = tolower(str.c_str()[str.length() - 1]);
+            char unit = static_cast<char>(tolower(str.c_str()[str.length() - 1]));
             if (unit == 'k') {
                 result *= kB;
             } else if (unit == 'm') {
@@ -205,11 +221,14 @@ public:
         } else if (std::regex_match(str.c_str(), regex("[0-9]+"))) {
             result = stoll(str) * MB;
         }
+
         if (result <= 0) return -1;
+
+        return result;
     }
 
-    static u_int64_t calculateDistanceBasedOnFileSize(u_int64_t fileSize) {
-        u_int64_t distance = fileSize / 512;
+    static int64_t calculateDistanceBasedOnFileSize(int64_t fileSize) {
+        int64_t distance = fileSize / 512;
 
         if (distance <= 256 * kB)
             return 256 * kB;
@@ -219,24 +238,42 @@ public:
 
     explicit ByteDistanceStorageStrategy(int64_t minIndexEntryByteDistance) {
         this->minIndexEntryByteDistance = minIndexEntryByteDistance;
+        if (this->minIndexEntryByteDistance <= 0)
+            this->minIndexEntryByteDistance = -1;
     }
 
     explicit ByteDistanceStorageStrategy(const string &minIndexEntryByteDistance) {
         this->minIndexEntryByteDistance = parseStringValue(minIndexEntryByteDistance);
+        if (this->minIndexEntryByteDistance <= 0)
+            this->minIndexEntryByteDistance = -1;
     }
 
-    int64_t getMinIndexEntryByteDistance() const {
+    int64_t getMinIndexEntryByteDistance() {
         return minIndexEntryByteDistance;
     }
 
-    bool shallStore(shared_ptr<IndexEntryV1> indexEntry, u_int64_t blockID, bool blockIsEmpty) override {
+    /**
+     * It is allowed to have the minIndexEntryByteDistance set to -1. In that case it is allowed to automatically
+     * set the value by calling useFilesizeForCalculation(). However, if it is still -1, we apply a default value here.
+     */
+    bool shallStore(shared_ptr<IndexEntryV1> indexEntry, int64_t blockID, bool blockIsEmpty) override {
+        if (minIndexEntryByteDistance == -1)
+            minIndexEntryByteDistance = DEFAULT_MININDEXENTRY_BYTEDISTANCE; // Set to default! Shall we warn here?
+
         if (blockIsEmpty)
             return false;
 
+        // Obviously the first entry, always store it.
+        if (!this->lastStoredEntry) {
+            this->lastStoredEntry = indexEntry;
+            return true;
+        }
+
         bool shallWrite = false;
 
-        if (!this->lastStoredEntry ||
-            indexEntry->blockOffsetInRawFile - this->lastStoredEntry->blockOffsetInRawFile > minIndexEntryByteDistance)
+        u_int64_t blockOffsetDelta = indexEntry->blockOffsetInRawFile - this->lastStoredEntry->blockOffsetInRawFile;
+
+        if (blockOffsetDelta > static_cast<uint64_t>(minIndexEntryByteDistance))
             shallWrite = true;
 
         if (shallWrite)
@@ -244,10 +281,10 @@ public:
         return shallWrite;
     }
 
-    void useFilesizeForCalculation(u_int64_t filesize) override {
+    void useFileSizeForCalculation(int64_t filesize) override {
         if (minIndexEntryByteDistance == -1) {
-            if (filesize == -1) {
-                minIndexEntryByteDistance = 2048; // Like for files > 128GB.
+            if (filesize == 0) {
+                minIndexEntryByteDistance = DEFAULT_MININDEXENTRY_BYTEDISTANCE; // Like for files > 128GB.
             } else {
                 minIndexEntryByteDistance = calculateDistanceBasedOnFileSize(filesize);
             }

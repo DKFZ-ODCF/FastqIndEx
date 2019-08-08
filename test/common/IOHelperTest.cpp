@@ -37,7 +37,7 @@ SUITE (IOHELPER_TESTS) {
     TEST (TEST_REPORT_WITH_ACCUMULATOR) {
         ErrorAccumulator accumulator;
 
-                CHECK(accumulator.getErrorMessages().size() == 0);
+                CHECK(accumulator.getErrorMessages().empty());
 
         IOHelper::report(stringstream("abc"), &accumulator);
                 CHECK(accumulator.getErrorMessages().size() == 1);
@@ -51,7 +51,7 @@ SUITE (IOHELPER_TESTS) {
 
     TEST (TEST_GETUSERHOMEDIRECTORY) {
         // ? How to test this properly?
-                CHECK(IOHelper::getUserHomeDirectory() != "");
+                CHECK(IOHelper::getUserHomeDirectory().string() != "");
     }
 
     TEST (TEST_CREATE_TEMPDIR) {
@@ -90,7 +90,7 @@ SUITE (IOHELPER_TESTS) {
         auto file = res.filePath("aMissingFile.txt");
         ErrorAccumulator accumulator;
 
-                CHECK(false == IOHelper::checkFileReadability(file, "something", &accumulator));
+                CHECK(!IOHelper::checkFileReadability(file, "something", &accumulator));
         const vector<string> &messages = accumulator.getErrorMessages();
         stringstream expectedError;
         expectedError << "The something file '" << file.string() << "' could not be found or is inaccessible.";
@@ -104,7 +104,7 @@ SUITE (IOHELPER_TESTS) {
         auto file = res.filePath("aMissingFile.txt");
         ErrorAccumulator accumulator;
 
-                CHECK(false == IOHelper::checkFileReadability(file, "something", &accumulator));
+                CHECK(!IOHelper::checkFileReadability(file, "something", &accumulator));
 //        const vector<string> &messages = accumulator.getErrorMessages();
 //        stringstream expectedError;
 //        expectedError << "The 'something' file '" << file.string() << "' could not be found or is not accessible.";
@@ -117,10 +117,10 @@ SUITE (IOHELPER_TESTS) {
     TEST (TEST_CHECK_FILE_READABILITY_SUCCEED) {
         TestResourcesAndFunctions res(IOHELPER_TESTS, TEST_CHECK_FILE_READABILITY_SUCCEED);
 
-        auto file = res.getResource("TestTextFile.txt");
+        auto file = TestResourcesAndFunctions::getResource("TestTextFile.txt");
         ErrorAccumulator accumulator;
 
-                CHECK(true == IOHelper::checkFileReadability(file, "something", &accumulator));
+                CHECK(IOHelper::checkFileReadability(file, "something", &accumulator));
                 CHECK(accumulator.getErrorMessages().empty());
     }
 

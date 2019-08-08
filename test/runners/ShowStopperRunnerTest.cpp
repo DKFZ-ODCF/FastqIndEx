@@ -4,7 +4,6 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "runners/Runner.h"
 #include "runners/DoNothingRunner.h"
 #include "../TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>

@@ -23,34 +23,34 @@ typedef shared_ptr<SwitchArg> _SwitchArg;
 typedef shared_ptr<ValueArg<string>> _StringValueArg;
 typedef shared_ptr<ValueArg<int>> _IntValueArg;
 typedef shared_ptr<ValueArg<uint>> _UIntValueArg;
-typedef shared_ptr<ValueArg<u_int64_t>> _UInt64ValueArg;
+typedef shared_ptr<ValueArg<int64_t>> _UInt64ValueArg;
 
 class ModeCLIParser : public ErrorAccumulator {
 
 protected:
 
     static _StringValueArg
-    _makeStringValueArg(string _short, string _long, string _desc, bool req, string _default, CmdLine *parser) {
+    _makeStringValueArg(const string& _short, const string& _long, const string& _desc, bool req, const string& _default, CmdLine *parser) {
         return make_shared<ValueArg<string>>(_short, _long, _desc, req, _default, "string", *parser);
     }
 
     static _IntValueArg
-    _makeIntValueArg(string _short, string _long, string _desc, bool req, int _default, CmdLine *parser) {
+    _makeIntValueArg(const string& _short, const string& _long, const string& _desc, bool req, int _default, CmdLine *parser) {
         return make_shared<ValueArg<int>>(_short, _long, _desc, req, _default, "int", *parser);
     }
 
     static _UIntValueArg
-    _makeUIntValueArg(string _short, string _long, string _desc, bool req, int _default, CmdLine *parser) {
+    _makeUIntValueArg(const string& _short, const string& _long, const string& _desc, bool req, int _default, CmdLine *parser) {
         return make_shared<ValueArg<uint>>(_short, _long, _desc, req, _default, "uint", *parser);
     }
 
     static _UInt64ValueArg
-    _makeUInt64ValueArg(string _short, string _long, string _desc, bool req, int _default, CmdLine *parser) {
-        return make_shared<ValueArg<u_int64_t>>(_short, _long, _desc, req, _default, "u_int64_t", *parser);
+    _makeUInt64ValueArg(const string& _short, const string& _long, const string& _desc, bool req, int _default, CmdLine *parser) {
+        return make_shared<ValueArg<int64_t>>(_short, _long, _desc, req, _default, "int64_t", *parser);
     }
 
     static _SwitchArg
-    _makeSwitchArg(string _short, string _long, string _desc, CmdLine *parser, bool _default = false) {
+    _makeSwitchArg(const string& _short, const string& _long, const string& _desc, CmdLine *parser, bool _default = false) {
         return make_shared<SwitchArg>(_short, _long, _desc, *parser, _default);
     }
 
@@ -88,7 +88,7 @@ public:
     tuple<shared_ptr<UnlabeledValueArg<string>>, shared_ptr<ValuesConstraint<string>>>
     createAllowedModeArg(const string &mode, CmdLine *cmdLineParser) const;
     
-    static bool isS3Path(string str) {
+    static bool isS3Path(const string& str) {
         string_view _str = str;
         string prefix = "s3://";
         return _str.size() > prefix.size() && _str.substr(0, prefix.size()) == prefix;

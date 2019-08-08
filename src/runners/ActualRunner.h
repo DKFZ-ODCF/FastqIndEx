@@ -36,11 +36,11 @@ protected:
      * @param fastqfile
      * @param indexFile
      */
-    ActualRunner(const shared_ptr<Source> &fastqfile);
+    explicit ActualRunner(const shared_ptr<Source> &fastqfile);
 
 public:
 
-    virtual ~ActualRunner() = default;
+    ~ActualRunner() override = default;
 
     /**
      * Used to check
@@ -109,10 +109,11 @@ public:
 
     IndexWritingRunner(const shared_ptr<Source> &fastqfile,
                        const shared_ptr<Sink> &indexFile) :
-            ActualRunner(fastqfile),
-            indexFile(indexFile) {}
+            ActualRunner(fastqfile) {
+        this->indexFile = indexFile;
+    }
 
-    virtual ~IndexWritingRunner() = default;
+    ~IndexWritingRunner() override = default;
 
     shared_ptr<Sink> getIndexFile() { return indexFile; }
 

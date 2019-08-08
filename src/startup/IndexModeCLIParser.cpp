@@ -6,7 +6,6 @@
 
 #include "IndexModeCLIParser.h"
 #include "process/io/StreamSource.h"
-#include "process/io/s3/S3Source.h"
 #include "process/io/s3/S3Sink.h"
 #include "ModeCLIParser.h"
 #include <tclap/CmdLine.h>

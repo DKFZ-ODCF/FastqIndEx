@@ -69,28 +69,52 @@ private:
      */
     shared_ptr<Sink> resultSink;
 
-//    bool useFile{false};
-
     /**
      * If the extractor shall write a new fastq file, this indicates, that the file will be overwritten.
      */
-    bool forceOverwrite;
+    bool forceOverwrite{};
 
-    // If a block starts with an offset, this can be used to complete the unfinished line of the last block (if necessary)
+    /**
+     * The index entry, which is closest to the requested starting line.
+     * This value is set by findIndexEntryForExtraction()
+     */
+    shared_ptr<IndexEntry> usedIndexEntry;
+
+    /**
+     * A custom count for the index startingIndexEntry. It is for documentation.
+     * This value is set by findIndexEntryForExtraction()
+     */
+    int64_t usedIndexEntryNumber{0};
+
+    /**
+     * If a block starts with an offset, this can be used to complete the unfinished line of the last block (if necessary)
+     */
     string unfinishedLineInLastBlock;
 
     string incompleteLastLine;
 
     u_int64_t extractedLines = 0;
 
-    // The number of lines which will be skipped in the found starting block
+    /**
+     * The number of lines which will be skipped in the found starting block
+     */
     u_int64_t skip = 0;
 
-    // Keep track of all split lines. Merely for debugging
+    /**
+     * Keep track of all split lines. Merely for debugging
+     */
     u_int64_t totalSplitCount = 0;
 
+    /**
+     * The roundtrip buffer is a concept which might be implemented in the future. The idea behind this is, that the
+     * roundtripBuffer is an array of size recordSize and if the extractor somehow misses to extract an empty line at
+     * the end (Some FASTQs have a lot of empty lines), the extractor will still output a full entry.
+     */
     string *roundtripBuffer = nullptr;
 
+    /**
+     * Current position in the roundtripBuffer between [0;recordSize[
+     */
     uint roundtripBufferPosition = 0;
 
 public:
@@ -109,22 +133,22 @@ public:
                        const shared_ptr<Source> &indexFile,
                        const shared_ptr<Sink> &resultSink,
                        bool forceOverwrite,
-                       ExtractMode mode, u_int64_t start, u_int64_t count, uint recordSize,
+                       ExtractMode mode, int64_t start, int64_t count, uint recordSize,
                        bool enableDebugging);
 
-    virtual ~Extractor();
+    ~Extractor() override;
 
     ExtractMode getExtractMode() { return mode; }
 
     shared_ptr<Sink> getResultSink() { return resultSink; }
 
-    u_int64_t getStart() { return start; }
+    int64_t getStart() { return start; }
 
-    u_int64_t getCount() { return count; }
+    int64_t getCount() { return count; }
 
-    u_int64_t getStartingLine() { return startingLine; }
+    int64_t getStartingLine() { return startingLine; }
 
-    u_int64_t getLineCount() { return lineCount; }
+    int64_t getLineCount() { return lineCount; }
 
     /**
      * Will call tryOpenAndReadHeader on the internal indexReader.
@@ -155,9 +179,24 @@ public:
     void calculateStartingLineAndLineCount();
 
     /**
-     * Find the index entry in the index file, which is closest to the starting line.
+     * Find the index entry in the index file, which is closest to the starting line. Fills the variables:
+     * - usedIndexEntry
+     * - usedIndexEntryNumber
      */
-    tuple<u_int64_t, shared_ptr<IndexEntry>> findIndexEntryForExtraction();
+    void findIndexEntryForExtraction();
+
+    /**
+     * Open the FASTQ file and prepare initially prepare the zStream.
+     * If the method fails, fastqFile will not be closed automatically.
+     * @return true, if the operation was successful.
+     */
+    bool openFastqAndPrepareZStream();
+
+    /**
+     * If the method fails, fastqFile will not be closed automatically.
+     * @return true, if the operation was successful.
+     */
+    bool setDictionaryForZStream();
 
     /**
      * For now directly to cout?
@@ -176,11 +215,11 @@ public:
      * @param startingIndexLine The index entry which was used to step into the gzip file.
      * @return true, if something was written out or false otherwise.
      */
-    bool processDecompressedChunkOfData(string str, const shared_ptr<IndexEntry> &startingIndexLine);
+    bool processDecompressedChunkOfData(const string &str, const shared_ptr<IndexEntry> &startingIndexLine);
 
     bool prepareForNextConcatenatedPartIfNecessary(bool finalAbort);
 
-    void storeOrOutputLine(string line);
+    void storeOrOutputLine(const string &line);
 
     void storeLinesOfCurrentBlockForDebugMode();
 

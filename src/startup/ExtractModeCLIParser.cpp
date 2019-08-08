@@ -6,7 +6,6 @@
 
 #include "ExtractModeCLIParser.h"
 #include "process/io/s3/S3Sink.h"
-#include "process/io/s3/S3Source.h"
 
 #include <tclap/CmdLine.h>
 
@@ -60,11 +59,11 @@ ExtractorRunner *ExtractModeCLIParser::parse(int argc, const char **argv) {
     if (enableDebugging)
         ErrorAccumulator::setVerbosity(3);
 
-    int _recordSize = recordSizeArg->getValue();
-    if (_recordSize <= 0)
-        _recordSize = 0;
+    uint recordSize = recordSizeArg->getValue();
+    if (recordSize <= 0)
+        recordSize = 0;
 
-    u_int64_t start{0}, count{0};
+    int64_t start{0}, count{0};
     ExtractMode extractMode = ExtractMode::lines;
     if (segmentIdentifierArg->isSet()) {
         // Enable segment extraction mode
@@ -72,8 +71,8 @@ ExtractorRunner *ExtractModeCLIParser::parse(int argc, const char **argv) {
         count = segmentCountArg->getValue();
         extractMode = ExtractMode::segment;
     } else {
-        start = startingReadArg->getValue() * _recordSize;
-        count = numberOfReadsArg->getValue() * _recordSize;
+        start = startingReadArg->getValue() * recordSize;
+        count = numberOfReadsArg->getValue() * recordSize;
     }
 
     auto runner = new ExtractorRunner(
@@ -84,7 +83,7 @@ ExtractorRunner *ExtractModeCLIParser::parse(int argc, const char **argv) {
             extractMode,
             start,
             count,
-            _recordSize,
+            recordSize,
             enableDebugging
     );
 
@@ -100,8 +99,8 @@ _StringValueArg ExtractModeCLIParser::createOutputFileArg(CmdLine *cmdLineParser
             "-", cmdLineParser);
 }
 
-_IntValueArg ExtractModeCLIParser::createrecordSizeArg(CmdLine *cmdLineParser) const {
-    return _makeIntValueArg(
+_UIntValueArg ExtractModeCLIParser::createrecordSizeArg(CmdLine *cmdLineParser) const {
+    return _makeUIntValueArg(
             "e", "recordSize",
             string("Defines the number of lines in a record. For FASTQ files ") +
             "this is value " + to_string(DEFAULT_RECORD_SIZE) + ", but you could use 1 for e.g. regular text files.",

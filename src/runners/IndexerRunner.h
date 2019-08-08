@@ -34,14 +34,14 @@ public:
     IndexerRunner(
             const shared_ptr<Source> &fastqfile,
             const shared_ptr<Sink> &indexFile,
-            shared_ptr<IndexEntryStorageStrategy> storageStrategy,
+            const shared_ptr<IndexEntryStorageStrategy>& storageStrategy,
             bool enableDebugging = false,
             bool forceOverwrite = false,
             bool forbidWriteFQI = false,
             bool compressDictionaries = true
     );
 
-    virtual ~IndexerRunner();
+    ~IndexerRunner() override;
 
     bool isIndexer() override { return true; }
 

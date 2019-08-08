@@ -7,7 +7,6 @@
 #include "process/io/PathSink.h"
 #include "process/io/PathSource.h"
 #include "runners/IndexerRunner.h"
-#include "runners/Runner.h"
 #include "TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
 

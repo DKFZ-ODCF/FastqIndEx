@@ -37,12 +37,12 @@ private:
 
     bool compressionIsActive = true;
 
-    u_int64_t numberOfWrittenEntries{0};
+    int64_t numberOfWrittenEntries{0};
 
     /**
      * Must be set after the the index process via setNumberOfLinesInFile
      */
-    u_int64_t numberOfLinesInFile{0};
+    int64_t numberOfLinesInFile{0};
 
 //    std::fstream fStream = std::fstream();
 
@@ -53,9 +53,9 @@ public:
     explicit IndexWriter(const shared_ptr<Sink> &indexFile, bool forceOverwrite = false,
                          bool compressionIsActive = true);
 
-    virtual ~IndexWriter();
+    ~IndexWriter() override;
 
-    void setNumberOfLinesInFile(u_int64_t numberOfLinesInFile) {
+    void setNumberOfLinesInFile(int64_t numberOfLinesInFile) {
         this->numberOfLinesInFile = numberOfLinesInFile;
     }
 
@@ -73,7 +73,11 @@ public:
 
     void flush();
 
-    bool close();
+    bool close() {
+        if(indexFile.get())
+            return indexFile->close();
+        return true;
+    };
 
     void finalize();
 

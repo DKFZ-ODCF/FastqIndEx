@@ -18,23 +18,23 @@ SUITE (SUITE_COMMONSTRUCTS_TESTS) {
     TEST (TEST_INDEX_HEADER_CONSTRUCT1) {
         IndexHeader indexHeader(1, sizeof(IndexEntryV1), 2, true);
         // Apply sanity checks for the size of the IndexHeader
-                CHECK_EQUAL(512, sizeof(IndexHeader));
-                CHECK_EQUAL(4, sizeof(indexHeader.indexWriterVersion));
-                CHECK_EQUAL(4, sizeof(indexHeader.sizeOfIndexEntry));
-                CHECK_EQUAL(4, sizeof(indexHeader.magicNumber));
-                CHECK_EQUAL(4, sizeof(indexHeader.blockInterval));
-                CHECK_EQUAL(8, sizeof(indexHeader.numberOfEntries));
-                CHECK_EQUAL(8, sizeof(indexHeader.linesInIndexedFile));
-                CHECK_EQUAL(1, sizeof(indexHeader.dictionariesAreCompressed));
-                CHECK_EQUAL(59 * 8, sizeof(indexHeader.reserved));
+                CHECK_EQUAL(512U, sizeof(IndexHeader));
+                CHECK_EQUAL(4U, sizeof(indexHeader.indexWriterVersion));
+                CHECK_EQUAL(4U, sizeof(indexHeader.sizeOfIndexEntry));
+                CHECK_EQUAL(4U, sizeof(indexHeader.magicNumber));
+                CHECK_EQUAL(4U, sizeof(indexHeader.blockInterval));
+                CHECK_EQUAL(8U, sizeof(indexHeader.numberOfEntries));
+                CHECK_EQUAL(8U, sizeof(indexHeader.linesInIndexedFile));
+                CHECK_EQUAL(1U, sizeof(indexHeader.dictionariesAreCompressed));
+                CHECK_EQUAL(59U * 8, sizeof(indexHeader.reserved));
 
         // Check content
                 CHECK_EQUAL(MAGIC_NUMBER, indexHeader.magicNumber);
-                CHECK_EQUAL(1, indexHeader.indexWriterVersion);
+                CHECK_EQUAL(1U, indexHeader.indexWriterVersion);
                 CHECK_EQUAL(sizeof(IndexEntryV1), indexHeader.sizeOfIndexEntry);
 
         bool allZeroed = true;
-        int count = sizeof(indexHeader.reserved) / sizeof(u_int64_t);
+        int count = sizeof(indexHeader.reserved) / sizeof(int64_t);
         for (int i = 0; i < count; i++) {
             allZeroed = allZeroed & (indexHeader.reserved[i] == 0);
         }
@@ -46,33 +46,33 @@ SUITE (SUITE_COMMONSTRUCTS_TESTS) {
         // Perform some sanity checks first to make sure, that the format did not change
         // by accident. Be aware, that the struct V1 will have a padding of 2Byte applied.
         // Its size is 2Byte higher than the accumulated size of the single elements.
-                CHECK_EQUAL(32800, sizeof(IndexEntryV1));
-                CHECK_EQUAL(8, sizeof(indexEntry.blockID));
-                CHECK_EQUAL(8, sizeof(indexEntry.blockOffsetInRawFile));
-                CHECK_EQUAL(8, sizeof(indexEntry.startingLineInEntry));
-                CHECK_EQUAL(1, sizeof(indexEntry.bits));
-                CHECK_EQUAL(4, sizeof(indexEntry.offsetToNextLineStart));
+                CHECK_EQUAL(32800U, sizeof(IndexEntryV1));
+                CHECK_EQUAL(8U, sizeof(indexEntry.blockID));
+                CHECK_EQUAL(8U, sizeof(indexEntry.blockOffsetInRawFile));
+                CHECK_EQUAL(8U, sizeof(indexEntry.startingLineInEntry));
+                CHECK_EQUAL(1U, sizeof(indexEntry.bits));
+                CHECK_EQUAL(4U, sizeof(indexEntry.offsetToNextLineStart));
                 CHECK_EQUAL(WINDOW_SIZE, sizeof(indexEntry.dictionary));
 
         Bytef dictionaryCheck[WINDOW_SIZE]{0};
 
         // Now initial values
-                CHECK_EQUAL(0, indexEntry.blockID);
-                CHECK_EQUAL(0, indexEntry.bits);
-                CHECK_EQUAL(0, indexEntry.offsetToNextLineStart);
-                CHECK_EQUAL(0, indexEntry.blockOffsetInRawFile);
-                CHECK_EQUAL(0, indexEntry.startingLineInEntry);
+                CHECK_EQUAL(0U, indexEntry.blockID);
+                CHECK_EQUAL(0U, indexEntry.bits);
+                CHECK_EQUAL(0U, indexEntry.offsetToNextLineStart);
+                CHECK_EQUAL(0U, indexEntry.blockOffsetInRawFile);
+                CHECK_EQUAL(0U, indexEntry.startingLineInEntry);
 
                 CHECK_ARRAY_EQUAL(dictionaryCheck, indexEntry.dictionary, sizeof(dictionaryCheck));
     }
 
     TEST (TEST_INDEX_EMPTY_CONSTRUCT1) {
         IndexEntryV1 indexEntry(1, 10, 5, 20, 1000);
-                CHECK_EQUAL(1, indexEntry.bits);
-                CHECK_EQUAL(10, indexEntry.blockID);
-                CHECK_EQUAL(5, indexEntry.offsetToNextLineStart);
-                CHECK_EQUAL(20, indexEntry.blockOffsetInRawFile);
-                CHECK_EQUAL(1000, indexEntry.startingLineInEntry);
+                CHECK_EQUAL(1U, indexEntry.bits);
+                CHECK_EQUAL(10U, indexEntry.blockID);
+                CHECK_EQUAL(5U, indexEntry.offsetToNextLineStart);
+                CHECK_EQUAL(20U, indexEntry.blockOffsetInRawFile);
+                CHECK_EQUAL(1000U, indexEntry.startingLineInEntry);
     }
 
     TEST (TEST_INDEX_COMPARE_HEADERS) {

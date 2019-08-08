@@ -8,7 +8,7 @@
 #include <cstring>
 
 
-const u_int64_t StreamSource::getTotalReadBytes() {
+int64_t StreamSource::getTotalReadBytes() {
     return Source::getTotalReadBytes();
 }
 
@@ -25,14 +25,14 @@ bool StreamSource::exists() {
 }
 
 /**
- * What is the proper size for a stream? uint64_t max?
+ * What is the proper size for a stream? int64_t max?
  * @return
  */
-uint64_t StreamSource::size() {
+int64_t StreamSource::size() {
     return -1;
 }
 
-int StreamSource::getRewindBufferSize() {
+int64_t StreamSource::getRewindBufferSize() {
     int total = 0;
     for (auto length : rewindBufferEntryLength) {
         total += length;
@@ -43,8 +43,8 @@ int StreamSource::getRewindBufferSize() {
 char *StreamSource::joinRewindBuffer() {
     char *buf = new char[getRewindBufferSize()];
     int bufPos = 0;
-    for (int i = 0; i < rewindBuffer.size(); i++) {
-        memcpy(buf + bufPos, rewindBuffer[i], rewindBufferEntryLength[i]);
+    for (u_int64_t i = 0; i < rewindBuffer.size(); i++) {
+        memcpy(buf + bufPos, rewindBuffer[i], static_cast<size_t>(rewindBufferEntryLength[i]));
         bufPos += rewindBufferEntryLength[i];
     }
     return buf;
@@ -61,7 +61,7 @@ bool StreamSource::isStream() { return true; }
  * @param numberOfBytes
  * @return
  */
-int StreamSource::read(Bytef *targetBuffer, int numberOfBytes) {
+int64_t StreamSource::read(Bytef *targetBuffer, int numberOfBytes) {
     if (rewoundBytes > 0) {
         return readFromBuffer(targetBuffer, numberOfBytes);
     } else {
@@ -69,11 +69,11 @@ int StreamSource::read(Bytef *targetBuffer, int numberOfBytes) {
     }
 }
 
-int StreamSource::readFromBuffer(Bytef *targetBuffer, int numberOfBytes) {
+int64_t StreamSource::readFromBuffer(Bytef *targetBuffer, int numberOfBytes) {
     char *buf = joinRewindBuffer();
-    int bufLen = getRewindBufferSize();
+    int64_t bufLen = getRewindBufferSize();
 
-    int copiedBytes = numberOfBytes;
+    int64_t copiedBytes = numberOfBytes;
     if (numberOfBytes > bufLen) {
         // Cut it, copy less!
         copiedBytes = bufLen;
@@ -85,7 +85,7 @@ int StreamSource::readFromBuffer(Bytef *targetBuffer, int numberOfBytes) {
 
     // Copy copiedBytes of data from the right side!
     if (targetBuffer != nullptr)
-        memcpy(targetBuffer, buf + bufLen - rewoundBytes, copiedBytes);
+        memcpy(targetBuffer, buf + bufLen - rewoundBytes, copiedBytes); // TODO
     rewoundBytes -= copiedBytes;
     currentPosition += copiedBytes;
 
@@ -94,16 +94,16 @@ int StreamSource::readFromBuffer(Bytef *targetBuffer, int numberOfBytes) {
     return copiedBytes;
 }
 
-int StreamSource::readFromStream(Bytef *targetBuffer, int numberOfBytes) {
+int64_t StreamSource::readFromStream(Bytef *targetBuffer, int numberOfBytes) {
     char *readBuffer = new char[numberOfBytes]{0};
     inputStream->sync();
 
     inputStream->read(readBuffer, numberOfBytes);
-    int amountRead = inputStream->gcount();
+    streamsize amountRead = inputStream->gcount();
 
     if (amountRead > 0) {
         if (targetBuffer != nullptr)
-            memcpy(targetBuffer, readBuffer, amountRead);
+            memcpy(targetBuffer, readBuffer, amountRead);// TODO
         rewindBuffer.emplace_back(readBuffer);
         rewindBufferEntryLength.emplace_back(amountRead);
         if (rewindBuffer.size() > maxSegmentsInBuffer) {
@@ -121,7 +121,7 @@ int StreamSource::readFromStream(Bytef *targetBuffer, int numberOfBytes) {
 
 int StreamSource::readChar() {
     Byte result = 0;
-    int res = this->read(&result, 1);
+    int res = static_cast<int>(this->read(&result, 1));
     return res < 0 ? res : (int) result;
 }
 
@@ -147,7 +147,7 @@ int StreamSource::readChar() {
  * @param absolute Absolute or relative position
  * @return -1 for a failure or the new position in the stream
  */
-int StreamSource::seek(int64_t nByte, bool absolute) {
+int64_t StreamSource::seek(int64_t nByte, bool absolute) {
     if (!absolute) {
         nByte = currentPosition + nByte;
     }
@@ -155,7 +155,7 @@ int StreamSource::seek(int64_t nByte, bool absolute) {
     if (nByte > currentPosition) {
         return skip(nByte);
     } else {
-        uint64_t difference = currentPosition - nByte;
+        int64_t difference = currentPosition - nByte;
         return rewind(difference);
     }
 }
@@ -164,7 +164,7 @@ int StreamSource::seek(int64_t nByte, bool absolute) {
  * @param nByte
  * @return
  */
-int StreamSource::rewind(uint64_t nByte) {
+int64_t StreamSource::rewind(int64_t nByte) {
 
     // Make sure, rewind won't go over the border.
     if (nByte > currentPosition) {
@@ -189,7 +189,7 @@ int StreamSource::rewind(uint64_t nByte) {
  * @param nByte
  * @return
  */
-int StreamSource::skip(uint64_t nByte) {
+int64_t StreamSource::skip(int64_t nByte) {
     if (nByte == 0) return true;
 
     int maxDefaultBufferSize = maxSegmentsInBuffer * defaultChunkSizeForReads;
@@ -202,18 +202,18 @@ int StreamSource::skip(uint64_t nByte) {
         }
     } else {
         // Fill buffer until nByte is reached.
-        uint64_t skip = nByte;
+        int64_t skip = nByte;
         for (; skip >= defaultChunkSizeForReads; skip -= defaultChunkSizeForReads) {
             this->read(nullptr, defaultChunkSizeForReads);
         }
         if (skip > 0) {
-            this->read(nullptr, skip);
+            this->read(nullptr, skip); // TODO
         }
     }
     return true;
 }
 
-uint64_t StreamSource::tell() {
+int64_t StreamSource::tell() {
     return currentPosition;
 }
 

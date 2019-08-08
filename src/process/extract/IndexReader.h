@@ -43,9 +43,9 @@ private:
      * Count of indices which can still be read from the index file. The number is calculated by utilizing the
      * IndexEntryV[n] size.
      */
-    u_int64_t indicesLeft{0};
+    int64_t indicesLeft{0};
 
-    u_int64_t indicesCount{0};
+    int64_t indicesCount{0};
     /**
      * Putting this into a smart pointer always raised: "Assertion `px != 0' failed" during object construction. I do
      * not know, why this happened, but I do a workaround by not using a smart pointer (or any pointer).
@@ -63,7 +63,7 @@ public:
 
     explicit IndexReader(const shared_ptr<Source> &indexFile);
 
-    virtual ~IndexReader();
+    ~IndexReader() override;
 
     /**
      * Try to aquire a lock for the indexFile and open it. Read the header from the file, if possible and
@@ -108,7 +108,7 @@ public:
 
     IndexHeader getIndexHeader() { return readHeader; }
 
-    u_int64_t getIndicesLeft() { return indicesLeft; }
+    int64_t getIndicesLeft() { return indicesLeft; }
 
 };
 

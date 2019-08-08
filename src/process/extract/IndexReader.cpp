@@ -37,9 +37,9 @@ bool IndexReader::tryOpenAndReadHeader() {
         return false;
     }
 
-    uintmax_t fileSize = indexFile->size();
+    int64_t fileSize = static_cast<int64_t>(indexFile->size());
 
-    size_t headerSize = sizeof(IndexHeader);
+    int64_t headerSize = static_cast<int64_t>(sizeof(IndexHeader));
     if (headerSize > fileSize) {
         addErrorMessage("The index file is too small and cannot be read.");
         indexFile->close();
@@ -110,7 +110,7 @@ bool IndexReader::tryOpenAndReadHeader() {
 
 IndexHeader IndexReader::readIndexHeader() {
     IndexHeader header;
-    indexFile->read((Bytef *) &header, sizeof(IndexHeader));
+    indexFile->read(reinterpret_cast<Bytef *>(&header), sizeof(IndexHeader));
 
     this->readHeader = header;
     headerWasRead = true;
@@ -157,11 +157,16 @@ shared_ptr<IndexEntry> IndexReader::readIndexEntry() {
     if (this->readHeader.indexWriterVersion == 1) {
         return readIndexEntryV1()->toIndexEntry();
     } // We do not need an else branch, a version range check is applied earlier.
+
+    // To avoid clang-tidy from complaining, we return an empty shared_ptr. And we also add an error message just to be
+    // sure.
+    addErrorMessage("BUG: It must not be possible to reach this code part in IndexReader::readIndexEntry()");
+    return shared_ptr<IndexEntry>(nullptr);
 }
 
 shared_ptr<IndexEntryV1> IndexReader::readIndexEntryV1() {
     if (!readerIsOpen) {
-        addErrorMessage("You have to open the IndexReader instance first with tryOpenAndReadHeader()");
+        addErrorMessage("BUG: You have to open the IndexReader instance first with tryOpenAndReadHeader()");
         return shared_ptr<IndexEntryV1>(nullptr);
     }
 
@@ -173,12 +178,13 @@ shared_ptr<IndexEntryV1> IndexReader::readIndexEntryV1() {
 
     auto entry = make_shared<IndexEntryV1>();
     int headerSize = sizeof(IndexEntryV1) - sizeof(entry->dictionary);
-    indexFile->read((Bytef *) entry.get(), headerSize);
+    indexFile->read(reinterpret_cast<Bytef *>(entry.get()), headerSize);
     if (entry->compressedDictionarySize == 0) { // No compression
-        indexFile->read((Bytef *) entry.get() + headerSize, sizeof(entry->dictionary));
+        indexFile->read(reinterpret_cast<Bytef *>(entry.get()) + headerSize, sizeof(entry->dictionary));
     } else {
-        memset((char *) entry->dictionary, 0, WINDOW_SIZE); // Set to 0 first, so we won't have any garbage issues.
-        indexFile->read((Bytef *) entry.get() + headerSize, entry->compressedDictionarySize);
+        memset(reinterpret_cast<char *>(entry->dictionary), 0,
+               WINDOW_SIZE); // Set to 0 first, so we won't have any garbage issues.
+        indexFile->read(reinterpret_cast<Bytef *>(entry.get()) + headerSize, entry->compressedDictionarySize);
     }
     indicesLeft--;
 

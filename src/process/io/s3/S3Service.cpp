@@ -15,7 +15,8 @@ shared_ptr<S3Service> S3Service::instance;
 S3ServiceOptions::S3ServiceOptions(
         const string &credentialsFile,
         const string &configFile,
-        const string &configSection)
-        : credentialsFile(credentialsFile),
-          configFile(configFile),
-          configSection(configSection) {}
+        const string &configSection) {
+    this->credentialsFile = path(credentialsFile);
+    this->configFile = path(configFile);
+    this->configSection = configSection;
+}

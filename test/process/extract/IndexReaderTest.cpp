@@ -30,9 +30,9 @@ const char *TEST_READ_INDEX_FROM_END_OF_FILE = "Read index entry at end of file"
 
 const size_t BASE_FILE_SIZE = sizeof(IndexEntryV1) + sizeof(IndexHeader);
 
-auto createCharArray(int size) {
+auto createCharArray(size_t size) {
     shared_ptr<char> arr(new char[size]);
-    memset(arr.get(), 0, size);
+    memset(arr.get(), 0, static_cast<size_t>(size));
     return arr;
 }
 
@@ -55,7 +55,7 @@ path writeTestFile(TestResourcesAndFunctions *res, size_t size) {
 SUITE (SUITE_INDEXREADER_TESTS) {
     TEST (TEST_READER_CREATION_WITH_EXISTING_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READER_CREATION_WITH_EXISTING_FILE);
-        path idx = res.getResource(TEST_INDEX_SMALL);
+        path idx = TestResourcesAndFunctions::getResource(TEST_INDEX_SMALL);
         auto ir = make_shared<IndexReader>(make_shared<PathSource>(idx));
                 CHECK(ir->tryOpenAndReadHeader());
                 CHECK(ir->getErrorMessages().empty());
@@ -96,23 +96,23 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 
     TEST (TEST_READ_HEADER_FROM_NEWLY_OPENED_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_HEADER_FROM_NEWLY_OPENED_FILE);
-        path idx = res.getResource(TEST_INDEX_SMALL);
+        path idx = TestResourcesAndFunctions::getResource(TEST_INDEX_SMALL);
         auto ir = make_shared<IndexReader>(make_shared<PathSource>(idx));
                 CHECK(ir->tryOpenAndReadHeader());
 
         auto header = ir->getIndexHeader(); // Will effectively return the already read header.
 
-        u_int64_t test[62] = {0};
+        int64_t test[62] = {0};
 
 //                CHECK(header.get() != nullptr);
-                CHECK_EQUAL(1, header.indexWriterVersion);
-                CHECK_EQUAL(67305985, header.magicNumber);
+                CHECK_EQUAL(1U, header.indexWriterVersion);
+                CHECK_EQUAL(67305985U, header.magicNumber);
                 CHECK_ARRAY_EQUAL(test, header.reserved, 59);
     }
 
     TEST (TEST_READ_INDEX_FROM_NEWLY_OPENED_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_NEWLY_OPENED_FILE);
-        path idx = res.getResource(TEST_INDEX_SMALL);
+        path idx = TestResourcesAndFunctions::getResource(TEST_INDEX_SMALL);
 
         auto ir = make_shared<IndexReader>(make_shared<PathSource>(idx));
                 CHECK(ir->tryOpenAndReadHeader());
@@ -123,7 +123,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 
     TEST (TEST_READ_INDEX_FROM_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_FILE);
-        path idx = res.getResource(TEST_INDEX_LARGE);
+        path idx = TestResourcesAndFunctions::getResource(TEST_INDEX_LARGE);
 
         auto ir = make_shared<IndexReader>(make_shared<PathSource>(idx));
                 CHECK(ir->tryOpenAndReadHeader());
@@ -136,24 +136,24 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 
         auto entry = ir->readIndexEntryV1();
                 CHECK(entry);
-                CHECK_EQUAL(0, entry->bits);
-                CHECK_EQUAL(0, entry->offsetToNextLineStart);
-                CHECK_EQUAL(10, entry->blockOffsetInRawFile);
-                CHECK_EQUAL(0, entry->startingLineInEntry);
+                CHECK_EQUAL(0U, entry->bits);
+                CHECK_EQUAL(0U, entry->offsetToNextLineStart);
+                CHECK_EQUAL(10U, entry->blockOffsetInRawFile);
+                CHECK_EQUAL(0U, entry->startingLineInEntry);
                 CHECK_ARRAY_EQUAL(emptyWindow, entry->dictionary, sizeof(emptyWindow));
 
         entry = ir->readIndexEntryV1();
                 CHECK(entry);
-                CHECK_EQUAL(6, entry->bits);
-                CHECK_EQUAL(219567, entry->blockOffsetInRawFile);
-        for (int i = 0; i < sizeof(emptyWindow); i++) {
+                CHECK_EQUAL(6U, entry->bits);
+                CHECK_EQUAL(219567U, entry->blockOffsetInRawFile);
+        for (uint64_t i = 0; i < sizeof(emptyWindow); i++) {
                     CHECK(entry->dictionary != nullptr);
         }
     }
 
     TEST (TEST_READ_SEVERAL_ENTRIES_FROM_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_SEVERAL_ENTRIES_FROM_FILE);
-        path idx = res.getResource(TEST_INDEX_LARGE);
+        path idx = TestResourcesAndFunctions::getResource(TEST_INDEX_LARGE);
         auto ir = make_shared<IndexReader>(make_shared<PathSource>(idx));
                 CHECK(ir->tryOpenAndReadHeader());
 
@@ -176,7 +176,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 
     TEST (TEST_READ_INDEX_FROM_END_OF_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_END_OF_FILE);
-        path idx = res.getResource(TEST_INDEX_SMALL);
+        path idx = TestResourcesAndFunctions::getResource(TEST_INDEX_SMALL);
         auto ir = make_shared<IndexReader>(make_shared<PathSource>(idx));
                 CHECK(ir->tryOpenAndReadHeader());
 

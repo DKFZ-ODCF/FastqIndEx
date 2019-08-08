@@ -10,6 +10,8 @@
 #include "CommonStructsAndConstants.h"
 #include "IndexEntry.h"
 
+using namespace std;
+
 /**
  * Represents an entry in a gz index file
  * The order of the entries is set so, that we have a reduced padding!
@@ -67,6 +69,14 @@ struct IndexEntryV1 : public VirtualIndexEntry {
      */
     Bytef dictionary[WINDOW_SIZE]{0};
 
+    static shared_ptr<IndexEntryV1> from(unsigned char bits,
+                                         u_int64_t blockID,
+                                         u_int32_t offsetOfFirstValidLine,
+                                         u_int64_t offsetInRawFile,
+                                         u_int64_t startingLineInEntry) {
+        return make_shared<IndexEntryV1>(bits, blockID, offsetOfFirstValidLine, offsetInRawFile, startingLineInEntry);
+    }
+
     IndexEntryV1(unsigned char bits,
                  u_int64_t blockID,
                  u_int32_t offsetOfFirstValidLine,
@@ -80,13 +90,30 @@ struct IndexEntryV1 : public VirtualIndexEntry {
 
     IndexEntryV1() = default;
 
-    bool operator==(const IndexEntryV1 &rhs) const;
+    bool operator==(const IndexEntryV1 &rhs) const {
+        return bits == rhs.bits &&
+               blockID == rhs.blockID &&
+               offsetToNextLineStart == rhs.offsetToNextLineStart &&
+               blockOffsetInRawFile == rhs.blockOffsetInRawFile &&
+               startingLineInEntry == rhs.startingLineInEntry;
+    }
 
     bool operator!=(const IndexEntryV1 &rhs) const {
         return !(rhs == *this);
     }
 
-    shared_ptr<IndexEntry> toIndexEntry();
+    shared_ptr<IndexEntry> toIndexEntry() {
+        auto indexLine = std::make_shared<IndexEntry>(
+                this->blockID,
+                this->bits,
+                this->offsetToNextLineStart,
+                this->blockOffsetInRawFile,
+                this->startingLineInEntry
+        );
+        memcpy(indexLine->window, this->dictionary, sizeof(this->dictionary));
+        indexLine->compressedDictionarySize = this->compressedDictionarySize;
+        return indexLine;
+    }
 };
 
 #endif //FASTQINDEX_INDEXENTRYV1_H

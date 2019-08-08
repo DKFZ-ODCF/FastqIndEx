@@ -44,8 +44,6 @@ public:
 
     Starter() = default;
 
-    path argumentToPath(ValueArg<string> &cliArg) const;
-
     DoNothingRunner *assembleSmallCmdLineParserAndParseOpts(int argc, const char **argv);
 
     IndexStatsRunner *assembleCmdLineParserForIndexStatsAndParseOpts(int argc, const char **argv);

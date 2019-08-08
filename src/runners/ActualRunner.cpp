@@ -5,12 +5,9 @@
  */
 
 #include "common/ErrorMessages.h"
-#include "process/io/PathSource.h"
 #include "process/io/StreamSource.h"
 #include "runners/ActualRunner.h"
-#include <error.h>
 #include <experimental/filesystem>
-#include <iostream>
 
 using experimental::filesystem::path;
 

@@ -52,7 +52,7 @@ public:
         return true;
     }
 
-    int rewind(uint64_t nByte) override {
+    int64_t rewind(int64_t nByte) override {
         return 0;
     }
 
@@ -65,7 +65,7 @@ public:
     }
 
     bool open() override {
-        return stream;
+        return true;//stream != nullptr;
     }
 
     bool close() override {
@@ -73,7 +73,7 @@ public:
     }
 
     bool isOpen() override {
-        return stream;
+        return true;//stream != nullptr;
     }
 
     bool eof() override {
@@ -97,10 +97,10 @@ public:
     }
 
     bool exists() override {
-        return stream;
+        return true;//stream;
     }
 
-    u_int64_t size() override {
+    int64_t size() override {
         return 0;
     }
 
@@ -113,14 +113,14 @@ public:
     }
 
     bool canWrite() override {
-        return stream;
+        return true;// stream;
     }
 
-    int seek(int64_t nByte, bool absolute) override {
+    int64_t seek(int64_t nByte, bool absolute) override {
         return 0;
     }
 
-    int skip(uint64_t nByte) override {
+    int64_t skip(int64_t nByte) override {
         return 0;
     }
 
@@ -133,7 +133,7 @@ public:
             return "unknown stream type or no stream";
     }
 
-    uint64_t tell() override {
+    int64_t tell() override {
         return 0;
     }
 

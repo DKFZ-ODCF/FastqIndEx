@@ -17,29 +17,29 @@ const char *TEST_STREAM_ISOURCE_OPERATIONS = "Test StreamSource operations";
 const char *TEST_STREAM_ISOURCE_SKIP = "Test StreamSource skip on large dataset";
 const char *TEST_STREAM_PSOURCE_OPERATIONS = "Test PathSource operations";
 
-path getAndCheckTextFile(TestResourcesAndFunctions *res) {
-    path textFile = res->getResource("TestTextFile.txt");
+path getAndCheckTextFile() {
+    path textFile = TestResourcesAndFunctions::getResource("TestTextFile.txt");
             CHECK(exists(textFile));
             CHECK(file_size(textFile) == 67);
     return textFile;
 }
 
-void runInputStreamTest(Source *Source, uint64_t expectedSize) {
+void runInputStreamTest(Source *Source, int64_t expectedSize) {
     /**
-         * File with the following content:
-         * First line
-         * Second line
-         * Third line
-         * Fourth line
-         * Fifth line
-         * Sixth line
-         */
+     * File with the following content:
+     * First line
+     * Second line
+     * Third line
+     * Fourth line
+     * Fifth line
+     * Sixth line
+     */
     Byte buf[128]{0};
     Source->open();
     auto readBytes = Source->read(buf, 5);
             CHECK(readBytes == 5);
             CHECK(Source->size() == expectedSize);
-            CHECK(string((const char *) buf) == string("First"));
+            CHECK(string(reinterpret_cast<const char *>( buf)) == string("First"));
     memset(buf, 0, 128);
             CHECK(Source->skip(1) != 0);
             CHECK(Source->readChar() == 'l'); // l of line
@@ -55,7 +55,7 @@ void runInputStreamTest(Source *Source, uint64_t expectedSize) {
 SUITE (SUITE_BIS_TESTS) {
     TEST (TEST_STREAM_PSOURCE_OPERATIONS) {
         TestResourcesAndFunctions res(SUITE_BIS_TESTS, TEST_STREAM_PSOURCE_OPERATIONS);
-        path textFile = getAndCheckTextFile(&res);
+        path textFile = getAndCheckTextFile();
 
         PathSource Source(textFile);
                 CHECK(Source.isFile());
@@ -66,7 +66,7 @@ SUITE (SUITE_BIS_TESTS) {
 
     TEST (testCanRead) {
         TestResourcesAndFunctions res(SUITE_BIS_TESTS, TEST_STREAM_ISOURCE_OPERATIONS);
-        path testFile = getAndCheckTextFile(&res);
+        path testFile = getAndCheckTextFile();
         ifstream testData(testFile);
 
         StreamSource Source(&testData);
@@ -78,14 +78,14 @@ SUITE (SUITE_BIS_TESTS) {
 
     TEST (testCanReadWontWorkWhenDatasourceIsDepleted) {
         TestResourcesAndFunctions res(SUITE_BIS_TESTS, TEST_STREAM_ISOURCE_OPERATIONS);
-        path testFile = getAndCheckTextFile(&res);
+        path testFile = getAndCheckTextFile();
         ifstream testData(testFile);
 
         Bytef buf[32768]{0};
         StreamSource Source(&testData, 4, 4);
         auto read = Source.read(buf, 32768);
                 CHECK(!Source.canRead());
-                CHECK(read == file_size(testFile));
+                CHECK(read == static_cast<int64_t>(file_size(testFile)));
 
         // Also, canRead can also be true, if a valid rewind was done.
 //                CHECK(false);
@@ -93,19 +93,19 @@ SUITE (SUITE_BIS_TESTS) {
 
     TEST (TEST_STREAM_ISOURCE_OPERATIONS) {
         TestResourcesAndFunctions res(SUITE_BIS_TESTS, TEST_STREAM_ISOURCE_OPERATIONS);
-        ifstream testData(getAndCheckTextFile(&res));
+        ifstream testData(getAndCheckTextFile());
 
         StreamSource Source(&testData);
                 CHECK(Source.isStream());
 
-        uint64_t expectedSize = -1; // Use overflow to get the max value.
+        int64_t expectedSize = -1; // Use overflow to get the max value.
 
         runInputStreamTest(&Source, expectedSize);
     }
 
     TEST (TEST_STREAM_ISOURCE_SKIP) {
         TestResourcesAndFunctions res(SUITE_BIS_TESTS, TEST_STREAM_ISOURCE_OPERATIONS);
-        ifstream testData(getAndCheckTextFile(&res));
+        ifstream testData(getAndCheckTextFile());
 
         StreamSource Source(&testData, 4, 4);
         Source.skip(16);

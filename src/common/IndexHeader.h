@@ -43,13 +43,13 @@ struct IndexHeader {
      * This value is not available when a header is created in write mode. It will be written at the end of indexing
      * process. However, the indexer and the extractor will work without it.
      */
-    u_int64_t numberOfEntries{0};
+    int64_t numberOfEntries{0};
 
     /**
      * Stores the amount of lines in the indexed file. This value is also written after the indexing is done.
      * However, the indexer and the extractor will work without it.
      */
-    u_int64_t linesInIndexedFile{0};
+    int64_t linesInIndexedFile{0};
 
     /**
      * Tell the IndexReader, if the entries are compressed. (1-byte padded to 8 bytes!) The value looks weird without
@@ -62,7 +62,7 @@ struct IndexHeader {
      * Reserved space for information which might be added in
      * the future.
      */
-    u_int64_t reserved[59]{0};
+    int64_t reserved[59]{0};
 
     explicit IndexHeader(u_int32_t binaryVersion, u_int32_t sizeOfIndexEntry, u_int32_t blockInterval, bool dictionariesAreCompressed) {
         this->indexWriterVersion = binaryVersion;

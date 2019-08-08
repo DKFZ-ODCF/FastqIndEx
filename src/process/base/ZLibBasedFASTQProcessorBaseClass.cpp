@@ -5,12 +5,9 @@
  */
 
 #include "process/io/PathSource.h"
-#include "process/extract/Extractor.h"
 #include "ZLibBasedFASTQProcessorBaseClass.h"
-#include <cstdio>
 #include <experimental/filesystem>
 #include <iostream>
-#include <unistd.h>
 #include <zlib.h>
 
 ZLibBasedFASTQProcessorBaseClass::ZLibBasedFASTQProcessorBaseClass(
@@ -54,16 +51,16 @@ bool ZLibBasedFASTQProcessorBaseClass::initializeZStream(int mode) {
 
 bool ZLibBasedFASTQProcessorBaseClass::readCompressedDataFromSource() {
     /* get some compressed data from input file */
-    int result = this->fastqFile->read(input, CHUNK_SIZE);
+    int64_t result = this->fastqFile->read(input, CHUNK_SIZE);
 
     if (result == -1) {
         this->addErrorMessage("There was an error while trying to read the FASTQ file '", fastqFile->toString(), "'.");
         return false;
     } else
-        zStream.avail_in = (uInt) result;
+        zStream.avail_in = static_cast<uInt>(result);
 
     if (zStream.avail_in == 0) {
-        this->addErrorMessage("There was no data available in the compressed stream");
+        this->addErrorMessage("There was no data available in the compressed stream.");
         return false;
     }
     zStream.next_in = input;
@@ -114,13 +111,13 @@ void ZLibBasedFASTQProcessorBaseClass::resetSlidingWindowIfNecessary() {
 bool ZLibBasedFASTQProcessorBaseClass::decompressNextChunkOfData(bool checkForStreamEnd, int flushMode) {
     // Inflate until out of input, output, or at end of block
     // Update the total input and output counters
-    u_int64_t availableInBeforeInflate = zStream.avail_in;
-    u_int64_t availableOutBeforeInflate = zStream.avail_out;
+    int64_t availableInBeforeInflate = zStream.avail_in;
+    int64_t availableOutBeforeInflate = zStream.avail_out;
     u_int32_t windowPositionBeforeInflate = WINDOW_SIZE - zStream.avail_out;
 
     zlibResult = inflate(&zStream, flushMode);
-    u_int64_t readBytes = availableInBeforeInflate - zStream.avail_in;
-    u_int64_t writtenBytes = availableOutBeforeInflate - zStream.avail_out;
+    int64_t readBytes = availableInBeforeInflate - zStream.avail_in;
+    int64_t writtenBytes = availableOutBeforeInflate - zStream.avail_out;
 
     totalBytesIn += readBytes;
     totalBytesOut += writtenBytes;
@@ -129,7 +126,7 @@ bool ZLibBasedFASTQProcessorBaseClass::decompressNextChunkOfData(bool checkForSt
     // as we work with a string append method, we need to copy the read data to a fresh buffer first.
     Bytef cleansedWindowForCout[CLEAN_WINDOW_SIZE]{
             0}; // +1 more Byte than WINDOW_SIZE for a definitely 0-terminated c-string!
-    std::memcpy(cleansedWindowForCout, window + windowPositionBeforeInflate, writtenBytes);
+    std::memcpy(cleansedWindowForCout, window + windowPositionBeforeInflate, writtenBytes);// TODO
 
     if (zlibResult == Z_NEED_DICT) {
         zlibResult = Z_DATA_ERROR;

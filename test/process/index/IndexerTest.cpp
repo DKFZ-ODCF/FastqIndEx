@@ -105,14 +105,14 @@ SUITE (INDEXER_SUITE_TESTS) {
 
         bool lastBlockEndedWithNewline = true;
 
-        for (int i = 0; i < _blockData.size(); i++) {
+        for (u_int64_t i = 0; i < _blockData.size(); i++) {
             auto blockData = _blockData[i];
             auto split = StringHelper::splitStr(blockData);
             auto expectedNumberOfLines = expectedNumberOfLinesInBlock[i];
             auto expectedFirstLineOffset = expectedIndexEntries[i].offsetToNextLineStart;
             auto expectedStartingLine = expectedIndexEntries[i].startingLineInEntry;
 
-            uint64_t off = 0;
+            int64_t off = 0;
             bool currentBlockEndedWithNewline;
             u_int32_t numberOfLinesInBlock;
             auto entry = indexer.createIndexEntryFromBlockData(blockData, split, off, lastBlockEndedWithNewline,
@@ -209,7 +209,7 @@ SUITE (INDEXER_SUITE_TESTS) {
                 CHECK(storedHeader);
                 CHECK_EQUAL(Indexer::INDEXER_VERSION, storedHeader->indexWriterVersion);
 
-                CHECK_EQUAL(1, storedEntries.size());
+                CHECK_EQUAL(1U, storedEntries.size());
                 CHECK(numberOfLinesInTestFASTQ == storedLineCount);
 
         result = TestResourcesAndFunctions::extractGZFile(concat, extractedFastq);
@@ -243,7 +243,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         auto storedEntries = indexer->getStoredEntries();
         auto storedLines = indexer->getStoredLines();
 
-        int numberOfLinesInTestFASTQ = 4000;
+        uint64_t numberOfLinesInTestFASTQ = 4000;
 
                 CHECK(result);
                 CHECK(exists(index));
@@ -252,7 +252,7 @@ SUITE (INDEXER_SUITE_TESTS) {
                 CHECK(storedHeader);
                 CHECK_EQUAL(Indexer::INDEXER_VERSION, storedHeader->indexWriterVersion);
 
-                CHECK_EQUAL(1, storedEntries.size());
+                CHECK_EQUAL(1U, storedEntries.size());
                 CHECK_EQUAL(numberOfLinesInTestFASTQ, storedLines.size());
 
         // Why is this a pointer? Just to get access to the file on the command line. It is written if the

@@ -74,7 +74,7 @@ public:
      */
     static path fullPath(const path &file);
 
-    static shared_ptr<map<string, string>> loadIniFile(path file, string section);
+    static shared_ptr<map<string, string>> loadIniFile(const path &file, const string &section);
 };
 
 #endif //FASTQINDEX_IOHELPER_H

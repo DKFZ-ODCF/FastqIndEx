@@ -14,14 +14,23 @@ include_directories(
         ${CMAKE_SOURCE_DIR}/src
 )
 
+# Glob together files in src and add compilation flags for debug. This is tod isable additional compiler checks for
+# external headers and sources. We can't change them so why check them.
+# We still will add all files manually later. Why? Because cmake won't necessarily find additional files and folders
+# automatically!
+#file(GLOB_RECURSE ALL_SOURCES ${PROJECT_SOURCE_DIR} *.cpp *.h)
+#message(${ALL_SOURCES})
+#set_source_files_properties(${ALL_SOURCES} PROPERTIES COMPILE_FLAGS "-std=c++11 -Wreturn-type -pedantic -ansi -Winit-self -Wmissing-declarations -Wextra -Winit-self -Wold-style-cast -Woverloaded-virtual -Wuninitialized")
+#set_source_files_properties(zlib.h PROPERTIES COMPILE_FLAGS -Wnoold-style-cast++)
+
 add_library(
         fastqindexlib
         common/CommonStructsAndConstants.cpp common/CommonStructsAndConstants.h
         common/ErrorAccumulator.cpp common/ErrorAccumulator.h
-        common/ErrorMessages.cpp common/ErrorMessages.h
         common/IndexHeader.cpp common/IndexHeader.h
+        common/ErrorMessages.cpp common/ErrorMessages.h
         common/IndexEntry.cpp common/IndexEntry.h
-        common/IndexEntryV1.cpp common/IndexEntryV1.h
+        common/IndexEntryV1.h
         common/IOHelper.cpp common/IOHelper.h
         common/StringHelper.cpp common/StringHelper.h
         process/base/ZLibBasedFASTQProcessorBaseClass.cpp process/base/ZLibBasedFASTQProcessorBaseClass.h
@@ -73,3 +82,5 @@ target_link_libraries(
         fastqindex
         fastqindexlib
 )
+
+set_target_properties(fastqindex PROPERTIES COMPILE_FLAGS "-Wreturn-type -pedantic -ansi -Winit-self -Wextra -Winit-self -Wold-style-cast -Woverloaded-virtual -Wuninitialized")

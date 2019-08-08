@@ -6,11 +6,8 @@
 
 #include "Indexer.h"
 #include "IndexEntryStorageStrategy.h"
-#include "runners/ActualRunner.h"
-#include "runners/IndexStatsRunner.h"
 #include "common/IOHelper.h"
 #include "common/StringHelper.h"
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <zlib.h>
@@ -23,7 +20,7 @@ const unsigned int Indexer::INDEXER_VERSION = 1;
 Indexer::Indexer(
         const shared_ptr<Source> &fastqfile,
         const shared_ptr<Sink> &index,
-        shared_ptr<IndexEntryStorageStrategy> storageStrategy,
+        const shared_ptr<IndexEntryStorageStrategy> &storageStrategy,
         bool enableDebugging,
         bool forceOverwrite,
         bool forbidWriteFQI,
@@ -75,7 +72,7 @@ bool Indexer::createIndex() {
 
     auto sizeOfFastq = fastqFile->size();
     // If not already set, recalculate the interval for index entries.
-    storageStrategy->useFilesizeForCalculation(sizeOfFastq);
+    storageStrategy->useFileSizeForCalculation(sizeOfFastq);
 
     // After init, store header, then start indexing
     auto header = createHeader();
@@ -243,7 +240,7 @@ bool Indexer::checkAndPrepareForNextConcatenatedPart() {
  * @param cleansedWindow
  */
 void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompressedBlock, z_stream *strm) {
-    u_int64_t blockOffset = offset;     // Store current blockOffsetInRawFile.
+    int64_t blockOffset = offset;     // Store current blockOffsetInRawFile.
     offset = totalBytesIn;          // Set new blockOffsetInRawFile.
     if (firstPass) {
         clearCurrentCompressedBlock();
@@ -293,7 +290,8 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
                                << "\n\t#L:  " << numberOfLinesInBlock
                                << "\n\toff: " << entry->offsetToNextLineStart
                                << "\n\tsl:  " << entry->startingLineInEntry
-                               << "\n\tsts: " << (storageStrategy->wasPostponed() ? "Postponed" : written ? "Written" : "Skipped")
+                               << "\n\tsts: "
+                               << (storageStrategy->wasPostponed() ? "Postponed" : written ? "Written" : "Skipped")
                                << "\n";
         if (blockIsEmpty) {
             partialBlockinfoStream << "EMPTY BLOCK!\n";
@@ -322,7 +320,7 @@ bool Indexer::writeIndexEntryIfPossible(shared_ptr<IndexEntryV1> &entry,
                                         const vector<string> &lines,
                                         bool blockIsEmpty) {
 
-    if(!storageStrategy->shallStore(entry, blockID, blockIsEmpty))
+    if (!storageStrategy->shallStore(entry, blockID, blockIsEmpty))
         return false;
 
     // Now, if we store the entry and dictionary compression is enable, do exactly that!
@@ -330,7 +328,11 @@ bool Indexer::writeIndexEntryIfPossible(shared_ptr<IndexEntryV1> &entry,
         Bytef compressedDictionary[WINDOW_SIZE]{0};              // Around 60% decrease in size.
         u_int64_t compressedBytes = WINDOW_SIZE;
         auto result = compress2(compressedDictionary, &compressedBytes, entry->dictionary, WINDOW_SIZE, 9);
-        entry->compressedDictionarySize = (u_int16_t) compressedBytes;
+        if (result != 0) {
+            addErrorMessage("Could not compress dictionary. zlib reports '", zStream.msg, "'.");
+            return false;
+        }
+        entry->compressedDictionarySize = static_cast<u_int16_t>( compressedBytes);
         memset(entry->dictionary, 0, WINDOW_SIZE);
         memcpy(entry->dictionary, compressedDictionary, compressedBytes);
     }
@@ -345,7 +347,7 @@ bool Indexer::writeIndexEntryIfPossible(shared_ptr<IndexEntryV1> &entry,
     return true;
 }
 
-void Indexer::storeDictionaryForEntry(z_stream *strm, shared_ptr<IndexEntryV1> entry) {
+void Indexer::storeDictionaryForEntry(z_stream *strm, const shared_ptr<IndexEntryV1> &entry) {
     // Compared to the original zran example, which uses two memcpy operations to retrieve the dictionary, we
     // use zlibs inflateGetDictionaryMethod. This looks more clean and works, whereas I could not get the
     // original memcpy operations to work.
@@ -357,12 +359,12 @@ void Indexer::storeDictionaryForEntry(z_stream *strm, shared_ptr<IndexEntryV1> e
 
 shared_ptr<IndexEntryV1> Indexer::createIndexEntryFromBlockData(const string &currentBlockString,
                                                                 const vector<string> &lines,
-                                                                u_int64_t &blockOffsetInRawFile,
+                                                                int64_t &blockOffsetInRawFile,
                                                                 bool lastBlockEndedWithNewline,
                                                                 bool *currentBlockEndedWithNewLine,
                                                                 u_int32_t *numberOfLinesInBlock) {
-    u_int32_t sizeOfCurrentBlock = currentBlockString.size();
-    *numberOfLinesInBlock = lines.size();
+    u_int64_t sizeOfCurrentBlock = currentBlockString.size();
+    *numberOfLinesInBlock = static_cast<u_int32_t>(lines.size());
 
     // Check the current block and see, if the last character is '\n'. If so, the blockOffsetInRawFile of the first
     // line in the next IndexEntry will be 0. Otherwise, we need to find the blockOffsetInRawFile.
@@ -370,7 +372,7 @@ shared_ptr<IndexEntryV1> Indexer::createIndexEntryFromBlockData(const string &cu
             sizeOfCurrentBlock == 0 ? lastBlockEndedWithNewline : currentBlockString[sizeOfCurrentBlock - 1] == '\n';
     bool hasAnyLineBreaks = false;
     auto currentBlockCString = currentBlockString.c_str();
-    for (int i = 0; i < currentBlockString.size(); i++) {
+    for (u_int64_t i = 0; i < currentBlockString.size(); i++) {
         if (currentBlockCString[i] == '\n') {
             hasAnyLineBreaks = true;
             break;
@@ -383,7 +385,7 @@ shared_ptr<IndexEntryV1> Indexer::createIndexEntryFromBlockData(const string &cu
     } else if (!lastBlockEndedWithNewline) {
         (*numberOfLinesInBlock)--;  // If the last block ended with an incomplete line (and not '\n'), reduce this.
         if (hasAnyLineBreaks)   // See case 3.1 in testlayout. a block with a \n at any position
-            offsetOfFirstLine = lines[0].size() + 1;
+            offsetOfFirstLine = static_cast<ushort>(lines[0].size() + 1);
     }
     //!*currentBlockEndedWithNewLine &&
     // Only store every n'th block.

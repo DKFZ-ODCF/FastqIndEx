@@ -21,9 +21,9 @@ protected:
 
     ExtractMode mode;
 
-    u_int64_t start;
+    int64_t start;
 
-    u_int64_t count;
+    int64_t count;
 
     uint recordSize;
 
@@ -49,8 +49,8 @@ public:
             const shared_ptr<Sink> &resultfile,
             bool forceOverwrite,
             ExtractMode mode,
-            u_int64_t start,
-            u_int64_t count,
+            int64_t start,
+            int64_t count,
             uint recordSize,
             bool enableDebugging = false
     );

@@ -25,7 +25,7 @@ path IOHelper::getUserHomeDirectory() {
     // The getuid() function shall always be successful and no return value is reserved to indicate the error.
     // Therefore, we have a valid uid and getpwuid should not fail as well. No further checks applied here.
     struct passwd *pw = getpwuid(getuid());
-    if(pw == nullptr) {
+    if (pw == nullptr) {
         auto s = stringstream();
         s << "FastqIndEx could not retrieve the user directory of the current user.";
         report(s, nullptr);
@@ -97,14 +97,14 @@ path IOHelper::fullPath(const path &file) {
     return path(string(buf));
 }
 
-shared_ptr<map<string, string>> IOHelper::loadIniFile(path file, string section) {
+shared_ptr<map<string, string>> IOHelper::loadIniFile(const path &file, const string& section) {
     auto resultMap = make_shared<map<string, string>>();
     CSimpleIniA configuration;
     configuration.SetUnicode(true);
-    auto result = configuration.LoadFile(file.string().c_str());
+    configuration.LoadFile(file.string().c_str());
     CSimpleIniA::TNamesDepend keys;
     configuration.GetAllKeys(section.c_str(), keys);
-    for (auto key : keys) {
+    for (const auto& key : keys) {
         auto val = configuration.GetValue(section.c_str(), key.pItem);
         (*resultMap)[string(key.pItem)] = string(val);
     }

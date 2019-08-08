@@ -31,9 +31,9 @@ private:
 
     bool sizeRequested{false};
 
-    u_int64_t _size{0};
+    int64_t _size{0};
 
-    u_int64_t position{0};
+    int64_t position{0};
 
     FQIS3Client fqiS3Client;
 
@@ -45,13 +45,13 @@ private:
 
     Aws::SDKOptions options;
 
-    FStream* s3FStream{nullptr};
+    FStream *s3FStream{nullptr};
 
     ifstream stream;
 
     shared_ptr<StreamSource> streamSource;
 
-    sem_t asyncGetSemaphore;
+    sem_t asyncGetSemaphore = sem_t();
 
 public:
 
@@ -71,7 +71,7 @@ public:
      */
     explicit S3Source(const string &s3Path, const S3ServiceOptions &s3ServiceOptions);
 
-    virtual ~S3Source();
+    ~S3Source() override;
 
     static void get_object_async_finished(const Aws::S3::S3Client *client,
                                           const Aws::S3::Model::GetObjectRequest &request,
@@ -80,7 +80,7 @@ public:
         if (outcome.IsSuccess()) {
             std::cerr << "get_object_async_finished: " << context->GetUUID() << std::endl;
         } else {
-            auto error = outcome.GetError();
+            const auto& error = outcome.GetError();
             std::cerr << "ERROR: " << error.GetExceptionName() << ": "
                       << error.GetMessage() << std::endl;
         }
@@ -91,7 +91,7 @@ public:
     }
 
     bool openS3() {
-        if(s3FStream)
+        if (s3FStream)
             return true;
 
         auto s3 = S3Service::getInstance();
@@ -153,13 +153,13 @@ public:
 
     bool unlock() override;
 
-    const u_int64_t getTotalReadBytes() override;
+    int64_t getTotalReadBytes() override;
 
-    bool isSymlink() { return false; }
+    bool isSymlink() override { return false; }
 
     bool isRegularFile() { return true; }
 
-    uint64_t size() override {
+    int64_t size() override {
         if (!sizeRequested) {
             _size = std::get<1>(fqiS3Client.getObjectSize());
             sizeRequested = true;
@@ -173,21 +173,21 @@ public:
 
     bool isStream() override { return true; };
 
-    int read(Bytef *targetBuffer, int numberOfBytes) override;
+    int64_t read(Bytef *targetBuffer, int numberOfBytes) override;
 
     int readChar() override;
 
-    int seek(int64_t nByte, bool absolute) override;
+    int64_t seek(int64_t nByte, bool absolute) override;
 
-    int skip(uint64_t nBytes) override;
+    int64_t skip(int64_t nBytes) override;
 
-    uint64_t tell() override;
+    int64_t tell() override;
 
     bool canRead() override;
 
     int lastError() override;
 
-    int rewind(uint64_t nByte) override;
+    int64_t rewind(int64_t nByte) override;
 
     vector<string> getErrorMessages() override {
         auto l = ErrorAccumulator::getErrorMessages();
@@ -200,7 +200,7 @@ public:
         }
     }
 
-    void setReadStart(u_int64_t startBytes) override;
+    void setReadStart(int64_t startBytes) override;
 
 
 };

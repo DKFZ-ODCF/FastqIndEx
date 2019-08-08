@@ -18,6 +18,9 @@ set(UnitTest++_DIR ../../unittest-cpp/install/lib/cmake/UnitTest++)
 
 find_package(UnitTest++ REQUIRED)
 
+# Disable additional compiler checks for external headers and sources. We can't change them so why check them.
+#set_source_files_properties("UnitTest++/Checks.h" PROPERTIES COMPILE_FLAGS "-Wnoold-style-cast++ -Wnosign-compare++")
+
 include_directories(
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/test
@@ -70,3 +73,4 @@ target_link_libraries(
 )
 
 add_test(NAME AllTests COMMAND testapp)
+set_target_properties(testapp PROPERTIES COMPILE_FLAGS "-Wreturn-type -pedantic -ansi -Winit-self -Wextra -Winit-self -Wold-style-cast -Woverloaded-virtual -Wuninitialized")

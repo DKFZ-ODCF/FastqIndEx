@@ -35,7 +35,7 @@ The version 1 header is exactly 512 Byte wide and can be described like:
 
 ``` bash
 |                                                                              (IndexHeader)                                                                             | 
-|    (u_int32_t)     |    (u_int32_t)   | (u_int32_t) |  (u_int32_t)  |   (u_int64_t)   |     (u_int64_t)    |           (bool)          |   (u_char)  | (u_int64_t)[59] |
+|    (u_int32_t)     |    (u_int32_t)   | (u_int32_t) |  (u_int32_t)  |   (int64_t)   |     (int64_t)    |           (bool)          |   (u_char)  | (int64_t)[59] |
 | indexWriterVersion | sizeOfIndexEntry | magicNumber | blockInterval | numberOfEntries | linesInIndexedFile | dictionariesAreCompressed | placeholder |     reserved    |
 ```
 
@@ -43,7 +43,7 @@ The version 1 index entry has an extracted width of 32800 Byte index entry can b
 
 ```bash
 |                                                                          IndexEntry                                                                         |
-|   (u_int64_t)   |      (u_int64_t)     |     (u_int64_t)     |      (u_int32_t)       | (u_int32_t) | (u_char) |        (u_int16_t)       | (u_char)[32768] |
+|   (int64_t)   |      (int64_t)     |     (int64_t)     |      (u_int32_t)       | (u_int32_t) | (u_char) |        (u_int16_t)       | (u_char)[32768] |
 |     blockID     | blockOffsetInRawFile | startingLineInEntry | offsetOfFirstValidLine |     bits    | reserved | compressedDictionarySize |    dictionary   |
 ```
 
@@ -51,7 +51,7 @@ If compression is enabled, this looks a bit different (note the last field diffe
 
 ```bash
 |                                                                                   IndexEntry                                                                                   |
-|   (u_int64_t)   |      (u_int64_t)     |     (u_int64_t)     |      (u_int32_t)       | (u_int32_t) | (u_char) |        (u_int16_t)       | (u_char)[compressedDictionarySize] |
+|   (int64_t)   |      (int64_t)     |     (int64_t)     |      (u_int32_t)       | (u_int32_t) | (u_char) |        (u_int16_t)       | (u_char)[compressedDictionarySize] |
 |     blockID     | blockOffsetInRawFile | startingLineInEntry | offsetOfFirstValidLine |     bits    | reserved | compressedDictionarySize |             dictionary             |
 ```
 

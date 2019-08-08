@@ -13,7 +13,7 @@ using namespace std;
 IndexerRunner::IndexerRunner(
         const shared_ptr<Source> &fastqFile,
         const shared_ptr<Sink> &indexFile,
-        shared_ptr<IndexEntryStorageStrategy> storageStrategy,
+        const shared_ptr<IndexEntryStorageStrategy>& storageStrategy,
         bool enableDebugging,
         bool forceOverwrite,
         bool forbidWriteFQI,
@@ -37,7 +37,7 @@ IndexerRunner::~IndexerRunner() {
 bool IndexerRunner::fulfillsPremises() {
     // indexer->fulfillsPremises() will call tryOpenAndReadHeader on the indexer.
     // Errors will be collected.
-    bool myPremises = ActualRunner::fulfillsPremises();
+    bool myPremises = IndexWritingRunner::fulfillsPremises();
     bool indexerPremises = indexer->fulfillsPremises();
     return myPremises && indexerPremises;
 }
@@ -52,7 +52,7 @@ unsigned char IndexerRunner::_run() {
 }
 
 vector<string> IndexerRunner::getErrorMessages() {
-    vector<string> l = ErrorAccumulator::getErrorMessages();
+    vector<string> l = IndexWritingRunner::getErrorMessages();
     vector<string> r = indexer->getErrorMessages();
     return mergeToNewVector(l, r);
 }

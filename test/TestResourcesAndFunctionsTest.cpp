@@ -44,7 +44,7 @@ SUITE (TestResourcesAndFunctionsTest) {
 
     TEST (testFilePath) {
         TestResourcesAndFunctions res("testFilePath");
-                CHECK(res.filePath("abc.def") == res.getTestPath().string() + "/abc.def");
+                CHECK(res.filePath("abc.def").string() == res.getTestPath().string() + "/abc.def");
     }
 
     TEST (testGetResource) {
@@ -56,7 +56,7 @@ SUITE (TestResourcesAndFunctionsTest) {
         // instead, we will have to walk a bit in the paths to get the right file.
         path expectedPath(
                 current_path().parent_path().parent_path().string() + string("/test/resources/test2.fastq.gz"));
-        path resourcePath = res.getResource(TEST_FASTQ_LARGE);
+        path resourcePath = TestResourcesAndFunctions::getResource(TEST_FASTQ_LARGE);
                 CHECK(exists(resourcePath));
                 CHECK(expectedPath == resourcePath);
     }

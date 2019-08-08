@@ -6,10 +6,7 @@
 
 #include "common/IOHelper.h"
 #include "S3Config.h"
-#include <aws/core/Aws.h>
 #include <aws/core/auth/AWSCredentialsProvider.h>
-#include <aws/s3/S3Client.h>
-#include <aws/s3/model/GetObjectRequest.h>
 #include <experimental/filesystem>
 #include <fstream>
 #include <SimpleIni.h>

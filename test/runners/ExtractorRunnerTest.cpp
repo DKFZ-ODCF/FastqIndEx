@@ -35,15 +35,15 @@ SUITE (SUITE_EXTRACTORRUNNER_TESTS) {
     TEST (TEST_EXTRACTORRUNNER_CREATION_VALID_FILES) {
         TestResourcesAndFunctions res(SUITE_EXTRACTORRUNNER_TESTS, TEST_EXTRACTORRUNNER_CREATION_VALID_FILES);
 
-        path fastq = res.getResource(TEST_FASTQ_SMALL);
-        path index = res.getResource(TEST_INDEX_SMALL);
+        path fastq = TestResourcesAndFunctions::getResource(TEST_FASTQ_SMALL);
+        path index = TestResourcesAndFunctions::getResource(TEST_INDEX_SMALL);
 
         ExtractorRunner r(make_shared<PathSource>(fastq),
                           make_shared<PathSource>(index),
                           ConsoleSink::create(),
                           false, ExtractMode::lines, 0, 100, 0, false);
-        bool premisesMet = r.fulfillsPremises();
-                CHECK(premisesMet);
+        bool premisesFulfilled = r.fulfillsPremises();
+                CHECK(premisesFulfilled);
                 CHECK(!r.isCLIOptionsPrinter());
                 CHECK(r.isExtractor());
                 CHECK(!r.isIndexer());

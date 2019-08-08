@@ -105,24 +105,25 @@ SUITE (PATH_SINK_TEST_SUITE) {
         string test1("AShortMessage");
         p.write(test1);
 
-                CHECK(p.tell() == test1.length());
+                CHECK(p.tell() == static_cast<int64_t >(test1.length()));
         p.seek(0, true);
                 CHECK(p.tell() == 0);
         p.seek(test1.length(), false);
-                CHECK(p.tell() == test1.length());
+                CHECK(p.tell() == static_cast<int64_t >(test1.length()));
         p.rewind(2);
-                CHECK(p.tell() == test1.length() - 2);
+                CHECK(p.tell() == static_cast<int64_t >(test1.length() - 2));
 
         p.seek(p.size() + 1, true);
-                CHECK(p.tell() == test1.length() + 1); // This is only working, because of our opening mode!
+                CHECK(p.tell() ==
+                      static_cast<int64_t >(test1.length() + 1)); // This is only working, because of our opening mode!
 //                CHECK(p.eof());                            // This is not working, because of our opening mode!
 
         const char *c_str = test1.c_str();
         p.write(c_str, 4);
-                CHECK(p.tell() == test1.length() + 5);
+                CHECK(p.tell() == static_cast<int64_t >(test1.length() + 5));
 
         p.write(c_str);
-                CHECK(p.tell() == 2 * test1.length() + 5);
+                CHECK(p.tell() == static_cast<int64_t >(2 * test1.length() + 5));
     }
 
     TEST (PATH_SINK_WRITE_OVERWRITEBYTES) {

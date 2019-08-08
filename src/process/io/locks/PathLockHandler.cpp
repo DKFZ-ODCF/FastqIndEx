@@ -6,7 +6,6 @@
 #include "PathLockHandler.h"
 #include <mutex>
 #include <sys/file.h>
-#include <iostream>
 #include <utility>
 using std::lock_guard;
 using std::mutex;
@@ -15,7 +14,7 @@ PathLockHandler::PathLockHandler(path file)  {
     this->lockedFile = std::move(file);
 }
 
-const path &PathLockHandler::getIndexFile() const {
+path PathLockHandler::getIndexFile() {
     return lockedFile;
 }
 
@@ -34,12 +33,13 @@ bool PathLockHandler::readLock() {
     if (this->readLockActive)
         return true;
     lockedFileHandle = fopen(lockedFile.c_str(), "rb");
+    // clang-tidy will complain about the bitwise operation in the next step. Ignore this.
     bool result = flock(fileno(lockedFileHandle), LOCK_SH | LOCK_NB) == 0;
     if (result)
         this->readLockActive = true;
     else {
         fclose(lockedFileHandle);
-        lockedFileHandle == nullptr;
+        lockedFileHandle = nullptr;
     }
     return result;
 }
@@ -60,7 +60,7 @@ bool PathLockHandler::writeLock() {
         this->writeLockActive = result;
     else {
         fclose(lockedFileHandle);
-        lockedFileHandle == nullptr;
+        lockedFileHandle = nullptr;
     }
     return result;
 }

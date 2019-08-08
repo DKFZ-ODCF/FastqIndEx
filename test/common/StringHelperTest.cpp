@@ -5,7 +5,6 @@
  */
 
 #include "../../src/common/StringHelper.h"
-#include "../TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
 
 const char *const STRINGHELPER_TESTS = "Test suite for IOHelper class";

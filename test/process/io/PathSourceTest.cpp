@@ -20,7 +20,7 @@ SUITE (PATH_SOURCE_TEST_SUITE) {
     TEST (PATH_SOURCE_CONSTRUCT) {
         TestResourcesAndFunctions res(PATH_SOURCE_TEST_SUITE, PATH_SOURCE_CONSTRUCT);
 
-        auto ps = res.getResource(TEST_FASTQ_SMALL);
+        auto ps = TestResourcesAndFunctions::getResource(TEST_FASTQ_SMALL);
         PathSource p(ps);
                 CHECK(p.fulfillsPremises());
                 CHECK(p.getPath() == ps);
@@ -44,7 +44,7 @@ SUITE (PATH_SOURCE_TEST_SUITE) {
     TEST (PATH_SOURCE_OPEN) {
         TestResourcesAndFunctions res(PATH_SOURCE_TEST_SUITE, PATH_SOURCE_OPEN);
 
-        auto ps = res.getResource(TEST_FASTQ_SMALL);
+        auto ps = TestResourcesAndFunctions::getResource(TEST_FASTQ_SMALL);
         PathSource p(ps);
 
         p.open();
@@ -55,7 +55,7 @@ SUITE (PATH_SOURCE_TEST_SUITE) {
 
     TEST (PATH_SOURCE_OPENLOCKED) {
         TestResourcesAndFunctions res(PATH_SOURCE_TEST_SUITE, PATH_SOURCE_OPENLOCKED);
-        auto ps = res.getResource(TEST_FASTQ_SMALL);
+        auto ps = TestResourcesAndFunctions::getResource(TEST_FASTQ_SMALL);
         PathSource p(ps);
                 CHECK(!p.isOpen());
 
@@ -72,7 +72,7 @@ SUITE (PATH_SOURCE_TEST_SUITE) {
     TEST (PATH_SOURCE_AQUIRELOCK_LATER) {
         TestResourcesAndFunctions res(PATH_SOURCE_TEST_SUITE, PATH_SOURCE_AQUIRELOCK_LATER);
 
-        auto ps = res.getResource(TEST_FASTQ_SMALL);
+        auto ps = TestResourcesAndFunctions::getResource(TEST_FASTQ_SMALL);
         PathSource p(ps);
                 CHECK(!p.isOpen());
 
@@ -88,7 +88,7 @@ SUITE (PATH_SOURCE_TEST_SUITE) {
     TEST (PATH_SOURCE_READ_TELL_SEEK) {
         TestResourcesAndFunctions res(PATH_SOURCE_TEST_SUITE, PATH_SOURCE_READ_TELL_SEEK);
 
-        auto ps = res.getResource(TEST_FASTQ_SMALL);
+        auto ps = TestResourcesAndFunctions::getResource(TEST_FASTQ_SMALL);
         PathSource p(ps);
         p.open();
 

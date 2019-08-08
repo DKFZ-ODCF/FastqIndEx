@@ -34,7 +34,7 @@ protected:
 
 public:
 
-    virtual ~Runner() = default;
+    ~Runner() override = default;
 
     /**
      * Can return an exit code between 0 and 255.

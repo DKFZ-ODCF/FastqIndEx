@@ -78,7 +78,7 @@ public:
      * @param ...    The range of parameters which should be put in place of the placeholders.
      * @return
      */
-    static std::string format(const std::string &format, ...);
+    static std::string format(std::string format, ...);
 
     static path getPathOfFQIBinary();
 

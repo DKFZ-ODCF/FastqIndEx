@@ -4,14 +4,11 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
+#include "common/ErrorAccumulator.h"
 #include <cstring>
 #include <iostream>
-#include <unistd.h>
 #include <mutex>
-#include "TestConstants.h"
-#include "UnitTest++/UnitTest++.h"
-#include "../src/common/ErrorAccumulator.h"
-#include <chrono>
+#include <UnitTest++/UnitTest++.h>
 
 using namespace std;
 
@@ -39,7 +36,7 @@ TEST (SANITY_MT_TEST) {
 /**
  * Trap for exit(). Detects, if exitIntentionally is set to true and reports a message if it is not.
  */
-void unintentionalTestApplicationExit(void) {
+void unintentionalTestApplicationExit() {
     if (!exitIntentionally)
         std::cout << "A test failed and forced the testapp to end unintentionally.\n"
                   << "This is probably the case because a method or library called exit, forcing the application to "

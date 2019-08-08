@@ -5,7 +5,6 @@
  */
 
 #include "ErrorAccumulator.h"
-#include <fstream>
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -46,7 +45,7 @@ void ErrorAccumulator::severe(const string &msg) {
 
 vector<string> ErrorAccumulator::getErrorMessages() { return errorMessages; }
 
-const void ErrorAccumulator::addErrorMessage(_cstr s0, _cstr s1, _cstr s2, _cstr s3, _cstr s4, _cstr s5) {
+void ErrorAccumulator::addErrorMessage(_cstr s0, _cstr s1, _cstr s2, _cstr s3, _cstr s4, _cstr s5) {
     ErrorAccumulator::debug(s0, s1, s2, s3, s4, s5);
     errorMessages.emplace_back(join(s0, s1, s2, s3, s4, s5));
 }

@@ -6,7 +6,6 @@
 
 #include <iostream>
 #include "ExtractorRunner.h"
-#include "process/extract/IndexReader.h"
 #include "process/extract/Extractor.h"
 #include "process/io/PathSource.h"
 
@@ -16,8 +15,8 @@ ExtractorRunner::ExtractorRunner(
         const shared_ptr<Sink> &resultfile,
         bool forceOverwrite,
         ExtractMode mode,
-        u_int64_t start,
-        u_int64_t count,
+        int64_t start,
+        int64_t count,
         uint recordSize,
         bool enableDebugging
 ) : IndexReadingRunner(fastqfile, indexFile) {
@@ -26,6 +25,7 @@ ExtractorRunner::ExtractorRunner(
     this->count = count;
     this->recordSize = recordSize;
     this->enableDebugging = enableDebugging;
+    this->mode = mode;
     this->extractor.reset(
             new Extractor(fastqfile, indexFile, resultfile, forceOverwrite, mode, start, count,
                           recordSize, enableDebugging)
@@ -38,17 +38,17 @@ ExtractorRunner::ExtractorRunner(
  * will be destroyed and the file will be unlocked! Might be bad.
  */
 bool ExtractorRunner::fulfillsPremises() {
-    bool baseClassChecksPassed = ActualRunner::fulfillsPremises();
+    bool baseClassChecksPassed = IndexReadingRunner::fulfillsPremises();
     bool extractorTestsPassed = extractor->fulfillsPremises();
     return baseClassChecksPassed && extractorTestsPassed;
 }
 
 unsigned char ExtractorRunner::_run() {
-    return extractor->extract() ? 0 : 1;
+    return extractor->extract() ? static_cast<char>(0) : static_cast<char>(1);
 }
 
 vector<string> ExtractorRunner::getErrorMessages() {
-    vector<string> l = ErrorAccumulator::getErrorMessages();
+    vector<string> l = IndexReadingRunner::getErrorMessages();
     vector<string> r = extractor->getErrorMessages();
     return mergeToNewVector(l, r);
 }

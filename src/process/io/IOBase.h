@@ -42,7 +42,7 @@ public:
 
     virtual bool exists() = 0;
 
-    virtual u_int64_t size() = 0;
+    virtual int64_t size() = 0;
 
     virtual bool empty() = 0;
 
@@ -55,16 +55,16 @@ public:
      * @param bytes
      * @return Number of rewound bytes
      */
-    virtual int seek(int64_t nByte, bool absolute) = 0;
+    virtual int64_t seek(int64_t nByte, bool absolute) = 0;
 
     /**
      * Seek forward the amount of nByte from the current position.
      * @param nByte Number of Bytes to skip forward.
      * @return The number of Bytes which were skipped.
      */
-    virtual int skip(uint64_t nByte) = 0;
+    virtual int64_t skip(int64_t nByte) = 0;
 
-    virtual int rewind(uint64_t nByte) {
+    virtual int64_t rewind(int64_t nByte) {
         return seek(-nByte, false);
     }
 
@@ -74,7 +74,7 @@ public:
      * Get the current position in the source.
      * @return
      */
-    virtual uint64_t tell() = 0;
+    virtual int64_t tell() = 0;
 
     virtual int lastError() = 0;
 };

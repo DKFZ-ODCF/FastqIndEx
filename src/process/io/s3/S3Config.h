@@ -92,7 +92,7 @@ protected:
 
 public:
 
-    S3Config() {};
+    S3Config() = default;
 
     /**
      * When constructing an S3Config object, you need at least a configuration file. We here try to adapt the aws cli
@@ -106,7 +106,7 @@ public:
      * @param configFile             A (valid) path to an existing file or an empty path object.
      * @param selectedConfigSection  The section identifier for the configuration files "default" by default
      */
-    S3Config(const S3ServiceOptions &s3Opts);
+    explicit S3Config(const S3ServiceOptions &s3Opts);
 
     /**
      * Resolve the configuration files, read them OR finally return false, if something went wrong. You can use
@@ -142,50 +142,68 @@ public:
 
     void fillAWSClientConfiguration(Aws::Client::ClientConfiguration &configuration);
 
-    bool hasOptionSet(string key) {
+    bool hasOptionSet(const string &key) {
         auto iterator = allValues.find(key);
         bool has = allValues.end() != iterator;
         //allValues.erase(iterator); // According to the cppreference example, BUT caused exceptions!
         return has;
     }
 
-    string getStringSafe(string key, string _default = "") {
+    string getStringSafe(const string &key, string _default = "") {
         if (!hasOptionSet(key))
             return _default;
         return allValues[key];
     }
 
-    int getIntSafe(string key, int _default = 0) {
+    int getIntSafe(const string &key, int _default = 0) {
         string value = getStringSafe(key, to_string(_default));
         int result = _default;
         try {
             result = stoi(allValues[key]);
-        } catch (invalid_argument) {
-            addErrorMessage("String '", value,
-                            "' cannot be converted to an integer.");
-        } catch (out_of_range) {
-            addErrorMessage("String '", value,
-                            "' is too large for an integer conversion.");
+        } catch (const invalid_argument &e) {
+            addErrorMessage("'", value, "' cannot be converted to an integer.");
+        } catch (const out_of_range &e) {
+            addErrorMessage("'", value, "' is too large for an integer conversion.");
         }
         return result;
     }
 
-    int getLongSafe(string key, int _default = 0) {
+    uint getUIntSafe(const string &key, uint _default = 0) {
         string value = getStringSafe(key, to_string(_default));
-        int result = _default;
+        uint result = _default;
+        try {
+            // Unfortunately, C++ does not offer the stoui method (or stou). Why? Nobody knows. I found
+            // the following code snippet here: https://stackoverflow.com/questions/8715213/why-is-there-no-stdstou
+
+            unsigned long intermediate = std::stoul(allValues[key]);
+            if (result > std::numeric_limits<unsigned>::max()) {
+                throw std::out_of_range("stou");
+            } else {
+                result = static_cast<uint>(intermediate);
+            }
+            return result;
+        } catch (const invalid_argument &e) {
+            addErrorMessage("'", value, "' cannot be converted to an unsigned integer.");
+        } catch (const out_of_range &e) {
+            addErrorMessage("'", value, "' is too large for an unsigned integer conversion.");
+        }
+        return result;
+    }
+
+    long getLongSafe(const string &key, long _default = 0) {
+        string value = getStringSafe(key, to_string(_default));
+        long result = _default;
         try {
             result = stol(allValues[key]);
-        } catch (invalid_argument) {
-            addErrorMessage("String '", value,
-                            "' is missing or cannot be converted to an integer.");
-        } catch (out_of_range) {
-            addErrorMessage("String '", value,
-                            "' is too large for a long conversion.");
+        } catch (const invalid_argument &e) {
+            addErrorMessage("'", value, "' cannot be converted to a long.");
+        } catch (const out_of_range &e) {
+            addErrorMessage("'", value, "' is too large for a long conversion.");
         }
         return result;
     }
 
-    bool getBoolSafe(string key, bool _default = 0) {
+    bool getBoolSafe(const string &key, bool _default = false) {
         string value = getStringSafe(key, to_string(_default));
         string str = value;
         bool result = _default;
@@ -198,14 +216,13 @@ public:
             else
                 throw invalid_argument("");
 
-        } catch (invalid_argument) {
-            addErrorMessage("String '", value,
-                            "' is missing or cannot be converted to bool. Must be either [T/t]rue or [F/f]alse.");
+        } catch (const invalid_argument &e) {
+            addErrorMessage("'", value, "' cannot be converted to bool. Must be either [T/t]rue or [F/f]alse.");
         }
         return result;
     }
 
-    Scheme getSchemeSafe(string key, Scheme _default) {
+    Scheme getSchemeSafe(const string &key, Scheme _default) {
         string value = getStringSafe(key, _default == Scheme::HTTPS ? "https" : "http");
         string str = value;
         Scheme result = _default;
@@ -217,9 +234,8 @@ public:
                 result = Scheme::HTTP;
             else
                 throw invalid_argument("");
-
-        } catch (invalid_argument) {
-            addErrorMessage("String '", value, "' is not a valid scheme, must be either Http or Https.");
+        } catch (const invalid_argument &e) {
+            addErrorMessage("'", value, "' is not a valid scheme, must be either Http or Https.");
         }
         return result;
     }
@@ -245,7 +261,9 @@ public:
 
 //    String getCaPath() { return getStringSafe("", defaultConfiguration.caPath); }
 
-    String getEndpointOverride() { return String(getStringSafe("host_base", string(defaultConfiguration.endpointOverride))); }
+    String getEndpointOverride() {
+        return String(getStringSafe("host_base", string(defaultConfiguration.endpointOverride)));
+    }
 
     String getProxyHost() { return String(getStringSafe("proxy_host", string(defaultConfiguration.proxyHost))); }
 
@@ -303,7 +321,7 @@ public:
 
 //    unsigned int getMaxConnections() { return getIntSafe("", defaultConfiguration.maxConnections); }
 
-    unsigned int getProxyPort() { return getIntSafe("proxy_port", defaultConfiguration.proxyPort); }
+    unsigned int getProxyPort() { return getUIntSafe("proxy_port", defaultConfiguration.proxyPort); }
 
 //    unsigned long getLowSpeedLimit() { return getLongSafe("", defaultConfiguration.lowSpeedLimit); }
 

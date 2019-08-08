@@ -51,7 +51,7 @@ protected:
     /**
      * The z_stream instance used by index / extract.
      */
-    z_stream zStream;
+    z_stream zStream = z_stream(); // Initialize to avoid
 
     /**
      * Input buffer which holds compressed data.
@@ -76,13 +76,13 @@ protected:
     /**
      * The total amount of Bytes read from the FASTQ file. 8 Byte to avoid 4 Byte integer overflow of zlib.
      */
-    u_int64_t totalBytesIn{0};
+    int64_t totalBytesIn{0};
 
     /**
      * The total amount of Bytes written to the internal buffer / window. 8 Byte to avoid 4 Byte integer overflow of
      * zlib.
      */
-    u_int64_t totalBytesOut{0};
+    int64_t totalBytesOut{0};
 
     /**
      * Stores results of zlib operations.

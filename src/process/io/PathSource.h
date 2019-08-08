@@ -37,7 +37,7 @@ public:
 
     bool unlock() override;
 
-    int rewind(uint64_t nByte) override;
+    int64_t rewind(int64_t nByte) override;
 
     /**
      * Create an instance of this object with a path source. This will be read by fread and so on.
@@ -45,7 +45,7 @@ public:
      */
     explicit PathSource(const path &file);
 
-    virtual ~PathSource();
+    ~PathSource() override;
 
     bool fulfillsPremises() override;
 
@@ -57,7 +57,7 @@ public:
 
     bool exists() override { return v1::exists(file); };
 
-    bool isSymlink() { return is_symlink(symlink_status(file)); }
+    bool isSymlink() override { return is_symlink(symlink_status(file)); }
 
     bool isRegularFile() {
         if (isSymlink()) {
@@ -67,7 +67,7 @@ public:
         }
     }
 
-    uint64_t size() override { return exists() ? file_size(file) : 0; }
+    int64_t size() override { return exists() ? file_size(file) : 0; }
 
     string absolutePath() { return file.string(); }
 
@@ -75,15 +75,15 @@ public:
 
     bool isStream() override { return false; };
 
-    int read(Bytef *targetBuffer, int numberOfBytes) override;
+    int64_t read(Bytef *targetBuffer, int numberOfBytes) override;
 
     int readChar() override;
 
-    int seek(int64_t nByte, bool absolute) override;
+    int64_t seek(int64_t nByte, bool absolute) override;
 
-    int skip(uint64_t nBytes) override;
+    int64_t skip(int64_t nBytes) override;
 
-    uint64_t tell() override;
+    int64_t tell() override;
 
     bool canRead() override;
 

@@ -73,4 +73,4 @@ target_link_libraries(
 )
 
 add_test(NAME AllTests COMMAND testapp)
-set_target_properties(testapp PROPERTIES COMPILE_FLAGS "-Wreturn-type -pedantic -ansi -Winit-self -Wextra -Winit-self -Wold-style-cast -Woverloaded-virtual -Wuninitialized")
+set_target_properties(testapp PROPERTIES COMPILE_FLAGS "-Wreturn-type -pedantic -ansi -Winit-self -Wextra -Wold-style-cast -Woverloaded-virtual -Wuninitialized")

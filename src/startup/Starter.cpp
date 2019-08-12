@@ -14,16 +14,6 @@
 #include "Starter.h"
 #include <tclap/CmdLine.h>
 
-Starter *Starter::instance = nullptr;
-
-Starter *Starter::getInstance() {
-    mutex lock;
-    lock.lock();
-    if (!Starter::instance) Starter::instance = new Starter();
-    lock.unlock();
-    return Starter::instance;
-}
-
 DoNothingRunner *Starter::assembleSmallCmdLineParserAndParseOpts(int argc, const char *argv[]) {
     CmdLine cmdLineParser("Command description message", '=', "0.0.1", false);
     vector<string> allowedValues;

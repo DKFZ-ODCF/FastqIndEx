@@ -23,12 +23,12 @@ void ErrorAccumulator::setVerbosity(int verbosity) {
 
 bool ErrorAccumulator::verbosityIsSetToDebug() { return verbosity >= 3; }
 
-void ErrorAccumulator::always(_cstr s0, _cstr s1, _cstr s2, _cstr s3, _cstr s4, _cstr s5) {
-    cerr << ErrorAccumulator::join(s0, s1, s2, s3, s4, s5) << "\n";
+void ErrorAccumulator::always(_cstr s0, _cstr s1, _cstr s2, _cstr s3, _cstr s4, _cstr s5, _cstr s6) {
+    cerr << ErrorAccumulator::join(s0, s1, s2, s3, s4, s5, s6) << "\n";
 }
 
-void ErrorAccumulator::debug(_cstr s0, _cstr s1, _cstr s2, _cstr s3, _cstr s4, _cstr s5) {
-    if (verbosityIsSetToDebug()) cerr << ErrorAccumulator::join(s0, s1, s2, s3, s4, s5) << "\n";
+void ErrorAccumulator::debug(_cstr s0, _cstr s1, _cstr s2, _cstr s3, _cstr s4, _cstr s5, _cstr s6) {
+    if (verbosityIsSetToDebug()) cerr << ErrorAccumulator::join(s0, s1, s2, s3, s4, s5, s6) << "\n";
 }
 
 void ErrorAccumulator::info(const string &msg) {
@@ -45,14 +45,14 @@ void ErrorAccumulator::severe(const string &msg) {
 
 vector<string> ErrorAccumulator::getErrorMessages() { return errorMessages; }
 
-void ErrorAccumulator::addErrorMessage(_cstr s0, _cstr s1, _cstr s2, _cstr s3, _cstr s4, _cstr s5) {
-    ErrorAccumulator::debug(s0, s1, s2, s3, s4, s5);
-    errorMessages.emplace_back(join(s0, s1, s2, s3, s4, s5));
+void ErrorAccumulator::addErrorMessage(_cstr s0, _cstr s1, _cstr s2, _cstr s3, _cstr s4, _cstr s5, _cstr s6) {
+    ErrorAccumulator::debug(s0, s1, s2, s3, s4, s5, s6);
+    errorMessages.emplace_back(join(s0, s1, s2, s3, s4, s5, s6));
 }
 
-string ErrorAccumulator::join(_cstr s0, _cstr s1, _cstr s2, _cstr s3, _cstr s4, _cstr s5) {
+string ErrorAccumulator::join(_cstr s0, _cstr s1, _cstr s2, _cstr s3, _cstr s4, _cstr s5, _cstr s6) {
     ostringstream stream(s0);
-    stream << s0 << s1 << s2 << s3 << s4 << s5;
+    stream << s0 << s1 << s2 << s3 << s4 << s5 << s6;
     return stream.str();
 }
 

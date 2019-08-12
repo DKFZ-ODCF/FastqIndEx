@@ -48,9 +48,9 @@ public:
 
     static bool verbosityIsSetToDebug();
 
-    static void always(_cstr s0, _cstr s1 = "", _cstr s2 = "", _cstr s3 = "", _cstr s4 = "", _cstr s5 = "");
+    static void always(_cstr s0, _cstr s1 = "", _cstr s2 = "", _cstr s3 = "", _cstr s4 = "", _cstr s5 = "", _cstr s6 = "");
 
-    static void debug(_cstr s0, _cstr s1 = "", _cstr s2 = "", _cstr s3 = "", _cstr s4 = "", _cstr s5 = "");
+    static void debug(_cstr s0, _cstr s1 = "", _cstr s2 = "", _cstr s3 = "", _cstr s4 = "", _cstr s5 = "", _cstr s6 = "");
 
     static void info(const string &msg);
 
@@ -64,9 +64,9 @@ public:
      * This would actually be a perfect example for a variadic function but handling variadic functions is tricky as
      * the 'va_...()' macros don't know about the number of passed arguments.
      */
-    void addErrorMessage(_cstr s0, _cstr s1 = "", _cstr s2 = "", _cstr s3 = "", _cstr s4 = "", _cstr s5 = "");
+    void addErrorMessage(_cstr s0, _cstr s1 = "", _cstr s2 = "", _cstr s3 = "", _cstr s4 = "", _cstr s5 = "", _cstr s6 = "");
 
-    static string join(_cstr s0, _cstr s1 = "", _cstr s2 = "", _cstr s3 = "", _cstr s4 = "", _cstr s5 = "");
+    static string join(_cstr s0, _cstr s1 = "", _cstr s2 = "", _cstr s3 = "", _cstr s4 = "", _cstr s5 = "", _cstr s6 = "");
 
     /**
      * This method can be used, if two vectors should be merged. Note, that we always copy the content of the two source

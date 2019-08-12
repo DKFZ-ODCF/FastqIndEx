@@ -13,6 +13,13 @@
 #include <zconf.h>
 
 /**
+ * In any case, this value would need to be const. But as we do not have the value when the variable is created, we
+ * will just keep it here. At the end, it only stores the path to the test binary and is used for tests only.
+ */
+extern char FQI_BINARY[16384];
+extern char S3HELPER_BINARY[16384];
+
+/**
  * Used to identify a file as a file created by this binary.
  */
 extern const uint MAGIC_NUMBER;

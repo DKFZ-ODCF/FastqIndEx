@@ -91,20 +91,41 @@ tuple<bool, path> IOHelper::createTempFifo(const string &prefix) {
     return {success, fifoPath};
 }
 
+/**
+ * Careful, this method does not necessarily work! Tried it with a binary file path and it got me some path in my home
+ * directory. The binary was somewhere else!.
+ */
 path IOHelper::fullPath(const path &file) {
     char buf[32768]{0};
+    //    readlink(file.string().c_str(), buf, 32768); // Not working! Returns \0
     realpath(file.string().c_str(), buf);
     return path(string(buf));
 }
 
-shared_ptr<map<string, string>> IOHelper::loadIniFile(const path &file, const string& section) {
+/**
+ * Retrieve the absolute path of the current executable. This will only work with operating systems which use a /proc
+ * or /user folder to hold process information.
+ */
+path IOHelper::getApplicationPath() {
+    char buf[32768]{0};
+    if (exists("/proc"))
+        readlink("/proc/self/exe", buf, 32768);
+    else if (exists("/user"))
+        readlink("/user/self/exe", buf, 32768);
+    else
+        ErrorAccumulator::severe(string("BUG: Could not the folders '/proc' or '/user'. ") +
+                                 "Are you running FastqIndEx on a compatible system?");
+    return path(string(buf));
+}
+
+shared_ptr<map<string, string>> IOHelper::loadIniFile(const path &file, const string &section) {
     auto resultMap = make_shared<map<string, string>>();
     CSimpleIniA configuration;
     configuration.SetUnicode(true);
     configuration.LoadFile(file.string().c_str());
     CSimpleIniA::TNamesDepend keys;
     configuration.GetAllKeys(section.c_str(), keys);
-    for (const auto& key : keys) {
+    for (const auto &key : keys) {
         auto val = configuration.GetValue(section.c_str(), key.pItem);
         (*resultMap)[string(key.pItem)] = string(val);
     }

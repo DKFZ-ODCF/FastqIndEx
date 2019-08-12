@@ -8,6 +8,7 @@
 #define FASTQINDEX_S3Source_H
 
 #include "S3Config.h"
+#include "S3GetObjectProcessWrapper.h"
 #include "process/io/Source.h"
 #include "process/io/StreamSource.h"
 #include "FQIS3Client.h"
@@ -21,7 +22,22 @@
 #include <semaphore.h>
 
 /**
- * Source implementation for a path object.
+ * This class enables you to get data from an S3 bucket. The way, how we retrieve data, might seem odd. Unfortunately,
+ * we experienced quite a number of issues with the Amazon AWS SDK and eventually decided to do everything like this.
+ * - The SDK does not allow to work directly with the data stream. Therefore, we decided to download the data to
+ *   a named pipe in the tmp folder and access this with a StreamSource
+ * - Due to this, it is not possible to seek within an S3 file stream! Fortunately, the StreamSource has some built-in
+ *   buffer to deal with this.
+ * - It is not possible to abort a running request! What we did first was download with GetObjectAsync. However this
+ *   lead to errors, when we closed the pipe or tried to close the stream. Worst case: The application crashed, best
+ *   case: It didn't crash but always showed an error (SIGPIPE / SIGABRT). Personally, my trust in application is not
+ *   very high, if it shows me such types of errors.
+ *   Eventually we moved the download to a separate process. It works but has no real error handling by now. But: It
+ *   swallows any bad error codes and messages like a broken pipe (which is not nice but intentional in this case).
+ * Unfortunately, we are not able to really know, how much data we need for extraction and we need the possibility to
+ * abort a Get request at any time.
+ *
+ * With the current implementation, things work so far but we still need to think about error handling and reporting.
  */
 class S3Source : public Source {
 
@@ -39,11 +55,7 @@ private:
 
     path fifo;
 
-    /** The S3Source needs its own options as it works with asynchronous features. **/
-
-    shared_ptr<Aws::S3::S3Client> client;
-
-    Aws::SDKOptions options;
+    shared_ptr<S3GetObjectProcessWrapper> s3GetObjectWrapper;
 
     FStream *s3FStream{nullptr};
 
@@ -51,7 +63,7 @@ private:
 
     shared_ptr<StreamSource> streamSource;
 
-    sem_t asyncGetSemaphore = sem_t();
+    mutex signalDisablingMutex;
 
 public:
 

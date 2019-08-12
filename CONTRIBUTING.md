@@ -23,6 +23,11 @@ If you are adding a new file it should have a header like this:
  */
  ```
 
+## Notes before you start
+
+- FastqIndEx is currently limited to run under Linux. E.g. we access
+  the /proc folder which might not be available on your operating system.
+
 ## FASTQ Index (FQI) Format, Version 1
 
 FQI files are binary files with the following general structure:

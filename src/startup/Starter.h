@@ -34,13 +34,8 @@ static const char *const NOOFREADS_PARAMETER = "noofreads";
  * The starter is a singleton and will be created and destroyed in the main method.
  */
 class Starter {
-private:
-
-    static Starter *instance;
 
 public:
-
-    static Starter *getInstance();
 
     Starter() = default;
 

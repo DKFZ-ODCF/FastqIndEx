@@ -345,19 +345,19 @@ SUITE (INDEXER_SUITE_TESTS) {
                 CHECK_EQUAL(Indexer::INDEXER_VERSION, storedHeader->indexWriterVersion);
 
         // How many exactly? Should be 59 for interval 1 and 15 for interval 4
-                CHECK_EQUAL(15, storedEntries.size());
+                CHECK_EQUAL(15U, storedEntries.size());
                 CHECK_EQUAL(numberOfLinesInTestFASTQ, storedLines.size());
 
 
         // CHECK for these values, they are taken from the original program.
-                CHECK_EQUAL(0, storedEntries[0]->bits);
-                CHECK_EQUAL(10, storedEntries[0]->blockOffsetInRawFile);
-                CHECK_EQUAL(6, storedEntries[1]->bits);
-                CHECK_EQUAL(219567, storedEntries[1]->blockOffsetInRawFile);
-                CHECK_EQUAL(0, storedEntries[2]->bits);
-                CHECK_EQUAL(438941, storedEntries[2]->blockOffsetInRawFile);
-                CHECK_EQUAL(6, storedEntries[3]->bits);
-                CHECK_EQUAL(658928, storedEntries[3]->blockOffsetInRawFile);
+                CHECK_EQUAL(0U, storedEntries[0]->bits);
+                CHECK_EQUAL(10U, storedEntries[0]->blockOffsetInRawFile);
+                CHECK_EQUAL(6U, storedEntries[1]->bits);
+                CHECK_EQUAL(219567U, storedEntries[1]->blockOffsetInRawFile);
+                CHECK_EQUAL(0U, storedEntries[2]->bits);
+                CHECK_EQUAL(438941U, storedEntries[2]->blockOffsetInRawFile);
+                CHECK_EQUAL(6U, storedEntries[3]->bits);
+                CHECK_EQUAL(658928U, storedEntries[3]->blockOffsetInRawFile);
 
         // The following "table" contains index data originally created with zran.c to test our indexer algorithm
         // Note, that this test works with an block interval of 4, so only every 4th line is relevant. All other lines

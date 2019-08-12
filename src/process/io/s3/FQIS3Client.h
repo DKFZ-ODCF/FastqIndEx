@@ -64,13 +64,15 @@ protected:
 
     string object_name;
 
-public:
+    S3ServiceOptions serviceOptions;
 
+public:
 
     FQIS3Client(const string &s3Path,
                 const S3ServiceOptions &s3ServiceOptions) {
         this->s3Path = s3Path;
         this->s3Config = S3Service::getInstance()->getConfig();
+        this->serviceOptions = s3ServiceOptions;
         auto split = StringHelper::splitStr(s3Path, '/'); // s3://bucket/object
 
         if (split.size() != 4) {
@@ -100,6 +102,11 @@ public:
     string getObjectName() {
         return object_name;
     }
+
+    S3ServiceOptions getS3ServiceOptions() {
+        return serviceOptions;
+    }
+
 
     template<typename T>
     bool performS3Request(function<T(S3Client &client)> s3Request) {
@@ -165,7 +172,7 @@ public:
         if (!success)
             return {false, 0};
 
-        for (const auto& entry : list) {
+        for (const auto &entry : list) {
             if (entry.name == object_name) {
                 found = true;
                 size = entry.size;

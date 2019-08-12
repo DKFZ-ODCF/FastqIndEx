@@ -4,7 +4,9 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
+#include "common/CommonStructsAndConstants.h"
 #include "common/ErrorAccumulator.h"
+#include "main.h"
 #include <cstring>
 #include <iostream>
 #include <mutex>

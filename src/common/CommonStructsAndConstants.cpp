@@ -8,6 +8,9 @@
 
 using namespace std;
 
+char FQI_BINARY[16384]{0};
+char S3HELPER_BINARY[16384]{0};
+
 const u_char MAGIC_NUMBER_RAW[4] = {1, 2, 3, 4};
 
 /**

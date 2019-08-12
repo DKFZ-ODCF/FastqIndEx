@@ -8,7 +8,13 @@ cmake_minimum_required(VERSION 3.13)
 set(CMAKE_CXX_STANDARD 17)
 #add_definitions(-DUSE_IMPORT_EXPORT)
 #find_package(AWSSDK REQUIRED COMPONENTS s3)
+
+# Main application
 add_executable(fastqindex main.cpp main.h)
+
+# Helper application for S3
+# Refer to s3iomain for more info.
+add_executable(fastqindexs3iohelper s3iomain.cpp)
 
 include_directories(
         ${CMAKE_SOURCE_DIR}/src
@@ -42,6 +48,7 @@ add_library(
         process/io/s3/FQIS3Client.h
         process/io/s3/S3ServiceOptions.h
         process/io/s3/S3Config.cpp process/io/s3/S3Config.h
+        process/io/s3/S3GetObjectProcessWrapper.cpp process/io/s3/S3GetObjectProcessWrapper.h
         process/io/s3/S3Service.cpp process/io/s3/S3Service.h
         process/io/s3/S3Sink.h
         process/io/s3/S3Source.cpp process/io/s3/S3Source.h
@@ -83,4 +90,9 @@ target_link_libraries(
         fastqindexlib
 )
 
-set_target_properties(fastqindex PROPERTIES COMPILE_FLAGS "-Wreturn-type -pedantic -ansi -Winit-self -Wextra -Winit-self -Wold-style-cast -Woverloaded-virtual -Wuninitialized")
+target_link_libraries(
+        fastqindexs3iohelper
+        fastqindexlib
+)
+
+set_target_properties(fastqindex PROPERTIES COMPILE_FLAGS "-Wreturn-type -pedantic -ansi -Winit-self -Wextra -Wold-style-cast -Woverloaded-virtual -Wuninitialized")

@@ -6,11 +6,7 @@
 
 #include "common/StringHelper.h"
 #include "S3Source.h"
-
-#include <aws/core/Aws.h>
-#include <aws/core/auth/AWSCredentialsProvider.h>
-#include <aws/s3/S3Client.h>
-#include <aws/s3/model/GetObjectRequest.h>
+#include "S3GetObjectProcessWrapper.h"
 
 S3Source::S3Source(const string &s3Path, const S3ServiceOptions &s3ServiceOptions) :
         fqiS3Client(s3Path, s3ServiceOptions) {
@@ -22,10 +18,12 @@ S3Source::~S3Source() {
 
 void S3Source::setReadStart(int64_t startBytes) {
     if (isOpen()) {
-        always("Reset S3Source with new Range: [", to_string(startBytes), "-", to_string(size()), "]");
+        always("Reset download of '", fqiS3Client.getS3Path(), "' with range: [", to_string(startBytes), "-",
+               to_string(size()), "]");
         close();
         readStart = startBytes;
         openWithReadLock();
+
     } else
         readStart = startBytes;
 }
@@ -35,6 +33,7 @@ bool S3Source::open() {
     if (_isOpen)
         return true;
 
+
     // Create fifo
     auto[success, fifo] = IOHelper::createTempFifo("FASTQIndEx_S3SourceFIFO");
     if (!success) {
@@ -42,33 +41,13 @@ bool S3Source::open() {
         return false;
     }
 
+    always("Writing '", fqiS3Client.getS3Path(), "' to fifo named pipe '", fifo, "'.");
+    s3GetObjectWrapper = make_shared<S3GetObjectProcessWrapper>(
+            fqiS3Client.getS3ServiceOptions(), fifo, fqiS3Client.getS3Path(), readStart
+    );
+    s3GetObjectWrapper->start();
+
     this->fifo = fifo;
-    auto s3 = S3Service::getInstance();
-
-    // Create and start asynchronous request
-    Aws::S3::Model::GetObjectRequest object_request;
-    object_request.SetBucket(fqiS3Client.getBucketName().c_str());
-    object_request.SetKey(fqiS3Client.getObjectName().c_str());
-
-    if (readStart != 0) {
-        auto rangeString = "bytes=" + to_string(readStart) + "-" + to_string(size());
-        object_request.SetRange(rangeString.c_str());
-    }
-    string object = fqiS3Client.getObjectName();
-    object_request.SetResponseStreamFactory([&]() {
-        always("Writing ", fqiS3Client.getObjectName(), " with S3 to ", this->fifo);
-        auto stream = Aws::New<FStream>(fqiS3Client.getObjectName().c_str(), this->fifo.c_str(),
-                                        std::ios_base::out | std::ios_base::binary);
-        this->s3FStream = stream;
-        return stream;
-    });
-
-    auto context = Aws::MakeShared<Aws::Client::AsyncCallerContext>("GetObjectAllocationTag");
-    context->SetUUID(fqiS3Client.getObjectName().c_str());
-    auto client = s3->getClient();
-    s3->getClient()->GetObjectAsync(object_request, get_object_async_finished, context);
-    // Will wait until stream was produced.
-
     this->stream.open(this->fifo, ios_base::in | ios_base::binary);
     this->streamSource = StreamSource::from(&this->stream);
 
@@ -80,11 +59,6 @@ bool S3Source::close() {
     if (!_isOpen)
         return true;
 
-    if (this->s3FStream->is_open()) {
-        this->s3FStream->close();
-        delete this->s3FStream;
-        this->s3FStream = nullptr;
-    }
     this->stream.close();
 
     if (this->streamSource.get())
@@ -93,8 +67,12 @@ bool S3Source::close() {
 
     if (std::experimental::filesystem::exists(this->fifo)) {
         remove(fifo);
-        this->fifo = "";
+        this->fifo = path();
     }
+
+    lock_guard<mutex> lock(signalDisablingMutex);
+    s3GetObjectWrapper->waitForFinish();
+    s3GetObjectWrapper.reset();
 
     _isOpen = false;
     return true;

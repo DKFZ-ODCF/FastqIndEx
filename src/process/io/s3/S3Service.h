@@ -66,6 +66,7 @@ private:
         config.fillAWSClientConfiguration(cfg);
         client = std::make_shared<S3Client>(credentials, cfg);
     };
+
 public:
 
     /**
@@ -83,13 +84,6 @@ public:
             initialize();
         }
         return instance;
-    }
-
-    static void closeIfOpened() {
-        lock_guard<mutex> lock(S3Service::clientInstanceAccessorMutex);
-
-        // If the instance is open, close it by resetting the shared_ptr.
-        instance.reset();
     }
 
     virtual ~S3Service() {

@@ -68,6 +68,8 @@ public:
      */
     static bool checkFileReadability(const path &file, const string &fileType, ErrorAccumulator *errorAccumulator);
 
+    static bool checkFileWriteability(const path &file, const string &fileType, ErrorAccumulator *errorAccumulator);
+
     /**
      * Returns the full path of file.
      * E.g. with the path "file.txt" and the working directory "/tmp", this will e.g. return "/tmp/file.txt"

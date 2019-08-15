@@ -11,7 +11,7 @@
 #include "runners/ActualRunner.h"
 #include "process/index/Indexer.h"
 #include "process/io/Source.h"
-#include "process/io/PathSource.h"
+#include "process/io/FileSource.h"
 
 /**
  * The IndexRunner will, once started, create an index for the  FASTQ file by utilizing the Indexer class. As of now,
@@ -32,9 +32,9 @@ protected:
 public:
 
     IndexerRunner(
-            const shared_ptr<Source> &fastqfile,
+            const shared_ptr<Source> &sourceFile,
             const shared_ptr<Sink> &indexFile,
-            const shared_ptr<IndexEntryStorageStrategy>& storageStrategy,
+            const shared_ptr<IndexEntryStorageDecisionStrategy>& storageStrategy,
             bool enableDebugging = false,
             bool forceOverwrite = false,
             bool forbidWriteFQI = false,
@@ -54,12 +54,12 @@ public:
 
     vector<string> getErrorMessages() override;
 
-    void enableWriteOutOfDecompressedBlocksAndStatistics(const path &location) {
-        this->indexer->enableWriteOutOfDecompressedBlocksAndStatistics(location);
+    void enableWritingDecompressedBlocksAndStatistics(const path &location) {
+        this->indexer->enableWritingDecompressedBlocksAndStatistics(location);
     }
 
-    void enableWriteOutOfPartialDecompressedBlocks(const path &location) {
-        this->indexer->enableWriteOutOfPartialDecompressedBlocks(location);
+    void enableWritingPartialDecompressedBlocks(const path &location) {
+        this->indexer->enableWritingPartialDecompressedBlocks(location);
     }
 };
 

@@ -29,3 +29,14 @@ const int64_t TB = GB * 1024;
 
 const int DEFAULT_RECORD_SIZE = 4;
 
+uint stoui(std::string value) {
+    // Unfortunately, C++ does not offer the stoui method (or stou). Why? Nobody knows. I found
+    // the following code snippet here: https://stackoverflow.com/questions/8715213/why-is-there-no-stdstou
+
+    unsigned long intermediate = std::stoul(value);
+    if (intermediate > std::numeric_limits<unsigned>::max()) {
+        throw std::out_of_range("stou");
+    }
+    return static_cast<uint>(intermediate);
+}
+

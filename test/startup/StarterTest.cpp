@@ -5,8 +5,8 @@
  */
 
 #include "process/io/ConsoleSink.h"
-#include "process/io/PathSource.h"
-#include "process/io/PathSink.h"
+#include "process/io/FileSource.h"
+#include "process/io/FileSink.h"
 #include "runners/ExtractorRunner.h"
 #include "runners/IndexerRunner.h"
 #include "startup/Starter.h"
@@ -28,12 +28,12 @@ const char *const TEST_CREATE_EXTRACTORRUNNER_VALIDPARMS_WOINDEX = "Test create 
 
 SUITE (StarterTests) {
     TEST (testCreateNewRunners) {
-        auto fastqFile = shared_ptr<Source>(new PathSource("/tmp/abc"));
+        auto sourceFile = shared_ptr<Source>(new FileSource("/tmp/abc"));
         path indexFile("/tmp/abc.fqi");
-        IndexerRunner _runner(fastqFile, make_shared<PathSink>(indexFile),
-                              BlockDistanceStorageStrategy::from(1));
-                CHECK_EQUAL(dynamic_pointer_cast<PathSource>(_runner.getFastqFile())->getPath(),
-                            dynamic_pointer_cast<PathSource>(fastqFile)->getPath());
+        IndexerRunner _runner(sourceFile, make_shared<FileSink>(indexFile),
+                              BlockDistanceStorageDecisionStrategy::from(1));
+                CHECK_EQUAL(dynamic_pointer_cast<FileSource>(_runner.getSourceFile())->getPath(),
+                            dynamic_pointer_cast<FileSource>(sourceFile)->getPath());
                 CHECK_EQUAL(_runner.getIndexFile()->toString(), indexFile.string());
     }
 
@@ -48,10 +48,10 @@ SUITE (StarterTests) {
         // We need to validate:
         //   mode (index / extract)
         //   in case of index
-        //   - fastqFile
+        //   - sourceFile
         //   - indexFile (optional)
         //   in case of extract
-        //   - fastqFile
+        //   - sourceFile
         //   - indexFile (optional)
         //   - readstart / firstline
         //   - readend / lastline (or amount?)
@@ -76,8 +76,8 @@ SUITE (StarterTests) {
                 CHECK (_runner && _runner->isIndexer());
 
         auto runner = static_pointer_cast<IndexerRunner>(_runner);
-        auto fastq = dynamic_pointer_cast<PathSource>(runner->getFastqFile());
-        auto index = dynamic_pointer_cast<PathSink>(runner->getIndexFile());
+        auto fastq = dynamic_pointer_cast<FileSource>(runner->getSourceFile());
+        auto index = dynamic_pointer_cast<FileSink>(runner->getIndexFile());
                 CHECK(fastq.get());
                 CHECK(index.get());
                 CHECK_EQUAL(IOHelper::fullPath("afastq.gz"), fastq->toString());
@@ -93,8 +93,8 @@ SUITE (StarterTests) {
                 CHECK (_runner && _runner->isIndexer());
 
         auto runner = static_pointer_cast<IndexerRunner>(_runner);
-        auto fastq = dynamic_pointer_cast<PathSource>(runner->getFastqFile());
-        auto index = dynamic_pointer_cast<PathSink>(runner->getIndexFile());
+        auto fastq = dynamic_pointer_cast<FileSource>(runner->getSourceFile());
+        auto index = dynamic_pointer_cast<FileSink>(runner->getIndexFile());
                 CHECK(fastq.get());
                 CHECK(index.get());
                 CHECK_EQUAL(IOHelper::fullPath("afastq.gz"), fastq->toString());
@@ -119,8 +119,8 @@ SUITE (StarterTests) {
 
         // Use dynamic casts to make sure, that the proper classes are generated.
         auto runner = static_pointer_cast<ExtractorRunner>(_runner);
-        auto fastq = dynamic_pointer_cast<PathSource>(runner->getFastqFile());
-        auto index = dynamic_pointer_cast<PathSource>(runner->getIndexFile());
+        auto fastq = dynamic_pointer_cast<FileSource>(runner->getSourceFile());
+        auto index = dynamic_pointer_cast<FileSource>(runner->getIndexFile());
         auto result = dynamic_pointer_cast<ConsoleSink>(runner->getResultSink());
                 CHECK(fastq.get());
                 CHECK(index.get());
@@ -147,9 +147,9 @@ SUITE (StarterTests) {
 
         // Use dynamic casts to make sure, that the proper classes are generated.
         auto runner = static_pointer_cast<ExtractorRunner>(_runner);
-        auto fastq = dynamic_pointer_cast<PathSource>(runner->getFastqFile());
-        auto index = dynamic_pointer_cast<PathSource>(runner->getIndexFile());
-        auto result = dynamic_pointer_cast<PathSink>(runner->getResultSink());
+        auto fastq = dynamic_pointer_cast<FileSource>(runner->getSourceFile());
+        auto index = dynamic_pointer_cast<FileSource>(runner->getIndexFile());
+        auto result = dynamic_pointer_cast<FileSink>(runner->getResultSink());
                 CHECK(fastq.get());
                 CHECK(index.get());
                 CHECK(result.get());
@@ -164,7 +164,7 @@ SUITE (StarterTests) {
         Starter starter;
         auto _runner = starter.createRunner(3, argv);
         auto runner = dynamic_pointer_cast<IndexStatsRunner>(_runner);
-        auto index = dynamic_pointer_cast<PathSource>(runner->getIndexFile());
+        auto index = dynamic_pointer_cast<FileSource>(runner->getIndexFile());
                 CHECK(index.get());
                 CHECK(index->toString() == IOHelper::fullPath("test2.fastq.gz.fqi"));
     }

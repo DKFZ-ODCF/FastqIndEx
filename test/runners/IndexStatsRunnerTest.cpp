@@ -5,7 +5,7 @@
  */
 
 #include "runners/IndexStatsRunner.h"
-#include "process/io/PathSource.h"
+#include "process/io/FileSource.h"
 #include "TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
 
@@ -16,7 +16,7 @@ SUITE (SUITE_INDEXSTATSRUNNER_TESTS) {
     TEST (TEST_INDEXERRUNNER_CREATION) {
         TestResourcesAndFunctions res(SUITE_INDEXSTATSRUNNER_TESTS, TEST_INDEXSTATSRUNNER_CREATION);
         path p = TestResourcesAndFunctions::getResource(TEST_INDEX_SMALL);
-        IndexStatsRunner r(make_shared<PathSource>(p), 0, 1);
+        IndexStatsRunner r(make_shared<FileSource>(p), 0, 1);
                 CHECK(r.fulfillsPremises());
                 CHECK(!r.isCLIOptionsPrinter());
                 CHECK(!r.isExtractor());

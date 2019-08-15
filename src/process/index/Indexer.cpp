@@ -5,7 +5,7 @@
  */
 
 #include "Indexer.h"
-#include "IndexEntryStorageStrategy.h"
+#include "IndexEntryStorageDecisionStrategy.h"
 #include "common/IOHelper.h"
 #include "common/StringHelper.h"
 #include <cstdlib>
@@ -18,14 +18,14 @@ using std::experimental::filesystem::path;
 const unsigned int Indexer::INDEXER_VERSION = 1;
 
 Indexer::Indexer(
-        const shared_ptr<Source> &fastqfile,
+        const shared_ptr<Source> &sourceFile,
         const shared_ptr<Sink> &index,
-        const shared_ptr<IndexEntryStorageStrategy> &storageStrategy,
+        const shared_ptr<IndexEntryStorageDecisionStrategy> &storageStrategy,
         bool enableDebugging,
         bool forceOverwrite,
         bool forbidWriteFQI,
         bool compressDictionaries
-) : ZLibBasedFASTQProcessorBaseClass(fastqfile, index, enableDebugging) {
+) : ZLibBasedFASTQProcessorBaseClass(sourceFile, index, enableDebugging) {
     this->forbidWriteFQI = forbidWriteFQI;
     this->storageStrategy = storageStrategy;
     this->forceOverwrite = forceOverwrite;
@@ -59,7 +59,7 @@ bool Indexer::createIndex() {
     info("Start indexing.");
 
     if (wasStarted) {
-        addErrorMessage("It is not allowed to run Indexer.createIndex() more than once.");
+        addErrorMessage("BUG: It is not allowed to run Indexer.createIndex() more than once.");
         // finishedSuccessful will not be changed.
         return false;
     }
@@ -70,7 +70,7 @@ bool Indexer::createIndex() {
         return false;
     }
 
-    auto sizeOfFastq = fastqFile->size();
+    auto sizeOfFastq = sourceFile->size();
     // If not already set, recalculate the interval for index entries.
     storageStrategy->useFileSizeForCalculation(sizeOfFastq);
 
@@ -87,7 +87,7 @@ bool Indexer::createIndex() {
         cerr << "The indexer will not write an index file!\n";
     }
 
-    fastqFile->open();
+    sourceFile->open();
 
     bool keepProcessing = true;
 
@@ -103,7 +103,7 @@ bool Indexer::createIndex() {
     while (keepProcessing) {
 
         do {
-            if (!fastqFile->canRead()) {
+            if (!sourceFile->canRead()) {
                 keepProcessing = false; // Happens, when input streams are used.
                 break;
             }
@@ -135,7 +135,7 @@ bool Indexer::createIndex() {
 
             } while (zStream.avail_in != 0);
 
-            keepProcessing = zlibResult != Z_STREAM_END && fastqFile->canRead();
+            keepProcessing = zlibResult != Z_STREAM_END && sourceFile->canRead();
 
         } while (!errorWasRaised && keepProcessing);
 
@@ -154,7 +154,7 @@ bool Indexer::createIndex() {
         partialBlockinfoStream.close();
     }
 
-    fastqFile->close();
+    sourceFile->close();
     inflateEnd(&zStream);
 
     // Set line info for index file, which will be written, when the index writer is deleted.
@@ -162,9 +162,10 @@ bool Indexer::createIndex() {
 
     finishedSuccessful = !errorWasRaised;
     if (errorWasRaised) {
-        addErrorMessage("There were errors during index creation. Index file is corrupt.");
+        addErrorMessage("There were errors during index creation. Index file '", outputIndexFile->toString(),
+                        "' is corrupt.");
     } else {
-        cerr << "Finished indexing with the last entry for compressed block #" << lastStoredEntry->blockID
+        cerr << "Finished indexing with the last entry for compressed block #" << lastStoredEntry->blockIndex
              << " starting with line number " << lastStoredEntry->startingLineInEntry << "\n"
              << " The indexed file contains " << this->lineCountForNextIndexEntry << " lines\n";
         if (numberOfConcatenatedFiles > 1) {
@@ -179,8 +180,8 @@ bool Indexer::createIndex() {
 bool Indexer::checkAndPrepareForNextConcatenatedPart() {
     // The stream position needs to be set to the beginning of the new gzip stream. If reading from the data stream is
     // possible afterwards, there might be another gzip stream and we will continue decompression.
-    fastqFile->seek(totalBytesIn, true);
-    if (!fastqFile->canRead())
+    sourceFile->seek(totalBytesIn, true);
+    if (!sourceFile->canRead())
         return false;
 
     // Clean up and go on
@@ -284,14 +285,14 @@ void Indexer::finalizeProcessingForCurrentBlock(stringstream &currentDecompresse
 
     if (writeOutOfPartialDecompressedBlocks) {
 
-        partialBlockinfoStream << "\n---- Block: " << blockID
+        partialBlockinfoStream << "\n---- Block: " << entry->blockIndex
                                << "\n\tlNL: " << lastBlockEndedWithNewline
                                << "\n\tcNL: " << currentBlockEndedWithNewLine
                                << "\n\t#L:  " << numberOfLinesInBlock
                                << "\n\toff: " << entry->offsetToNextLineStart
                                << "\n\tsl:  " << entry->startingLineInEntry
-                               << "\n\tsts: "
-                               << (storageStrategy->wasPostponed() ? "Postponed" : written ? "Written" : "Skipped")
+                               << "\n\tsts: " << (blockIsEmpty ? "EMPTY" : "FILLED") << ", "
+                               << (written ? "WRITTEN" : "SKIPPED")
                                << "\n";
         if (blockIsEmpty) {
             partialBlockinfoStream << "EMPTY BLOCK!\n";
@@ -320,8 +321,10 @@ bool Indexer::writeIndexEntryIfPossible(shared_ptr<IndexEntryV1> &entry,
                                         const vector<string> &lines,
                                         bool blockIsEmpty) {
 
-    if (!storageStrategy->shallStore(entry, blockID, blockIsEmpty))
+    if (!storageStrategy->shallStore(entry, lastStoredIndexEntry, blockIsEmpty))
         return false;
+
+    this->lastStoredIndexEntry = entry;
 
     // Now, if we store the entry and dictionary compression is enable, do exactly that!
     if (compressDictionaries) {
@@ -337,7 +340,6 @@ bool Indexer::writeIndexEntryIfPossible(shared_ptr<IndexEntryV1> &entry,
         memcpy(entry->dictionary, compressedDictionary, compressedBytes);
     }
 
-    storageStrategy->resetPostponeWrite();
     if (!forbidWriteFQI)
         indexWriter->writeIndexEntry(entry);
     lastStoredEntry = entry;
@@ -425,7 +427,7 @@ vector<string> Indexer::getErrorMessages() {
     if (!forbidWriteFQI) {
         vector<string> l = ErrorAccumulator::getErrorMessages();
         vector<string> r = indexWriter->getErrorMessages();
-        return mergeToNewVector(l, r);
+        return concatenateVectors(l, r);
     }
     return ErrorAccumulator::getErrorMessages();
 }

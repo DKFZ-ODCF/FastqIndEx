@@ -4,13 +4,13 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#ifndef FASTQINDEX_PATHSINK_H
-#define FASTQINDEX_PATHSINK_H
+#ifndef FASTQINDEX_FILESINK_H
+#define FASTQINDEX_FILESINK_H
 
 #include "Sink.h"
 #include "common/IOHelper.h"
 #include "process/io/locks/LockHandler.h"
-#include "process/io/locks/PathLockHandler.h"
+#include "process/io/locks/FileLockHandler.h"
 #include <experimental/filesystem>
 #include <fstream>
 #include <unistd.h>
@@ -18,7 +18,7 @@
 using namespace std;
 using namespace std::experimental::filesystem;
 
-class PathSink : public Sink {
+class FileSink : public Sink {
 
 private:
 
@@ -26,15 +26,15 @@ private:
 
     std::fstream fStream;
 
-    PathLockHandler lockHandler;
+    FileLockHandler lockHandler;
 
 public:
 
-    static shared_ptr<PathSink> from(const path &file, bool forceOverwrite = false) {
-        return make_shared<PathSink>(file, forceOverwrite);
+    static shared_ptr<FileSink> from(const path &file, bool forceOverwrite = false) {
+        return make_shared<FileSink>(file, forceOverwrite);
     }
 
-    explicit PathSink(const path &file, bool forceOverwrite = false);
+    explicit FileSink(const path &file, bool forceOverwrite = false);
 
     bool fulfillsPremises() override;
 
@@ -101,4 +101,4 @@ public:
     int64_t rewind(int64_t nByte) override;
 };
 
-#endif //FASTQINDEX_PATHSINK_H
+#endif //FASTQINDEX_FILESINK_H

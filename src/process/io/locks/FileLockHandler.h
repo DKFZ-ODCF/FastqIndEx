@@ -4,8 +4,8 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#ifndef FASTQINDEX_PATHLOCKHANDLER_H
-#define FASTQINDEX_PATHLOCKHANDLER_H
+#ifndef FASTQINDEX_FILELOCKHANDLER_H
+#define FASTQINDEX_FILELOCKHANDLER_H
 
 #include "common/ErrorAccumulator.h"
 #include "process/io/locks/LockHandler.h"
@@ -20,14 +20,14 @@ using std::mutex;
 
 
 /**
- * Safe (network) path lock handler class for PathSource and PathSink.
+ * Safe (network) path lock handler class for FileSource and FileSink.
  * Handles interprocess locking for the input/output file.
  * Access to the index file is mutually exclusive!
  * Reading from or writing to index files never happens with a pipe as index files are really small.
  *
  * @see https://stackoverflow.com/questions/12439099/interprocess-reader-writer-lock-with-boost
  */
-class PathLockHandler : public LockHandler {
+class FileLockHandler : public LockHandler {
 
 private:
 
@@ -53,11 +53,11 @@ protected:
 
 public:
 
-    explicit PathLockHandler(path file);
+    explicit FileLockHandler(path file);
 
-    ~PathLockHandler() override;
+    ~FileLockHandler() override;
 
-    path getIndexFile();
+    path getLockedFile();
 
     /**
      * Use this to open the output file.
@@ -85,4 +85,4 @@ public:
     void unlock();
 };
 
-#endif //FASTQINDEX_PATHLOCKHANDLER_H
+#endif //FASTQINDEX_FILELOCKHANDLER_H

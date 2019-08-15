@@ -105,13 +105,8 @@ SUITE (IOHELPER_TESTS) {
         ErrorAccumulator accumulator;
 
                 CHECK(!IOHelper::checkFileReadability(file, "something", &accumulator));
-//        const vector<string> &messages = accumulator.getErrorMessages();
-//        stringstream expectedError;
-//        expectedError << "The 'something' file '" << file.string() << "' could not be found or is not accessible.";
-//                CHECK(messages.size() == 1);
-//                CHECK(messages[0] == expectedError.str());
-
-                CHECK(false);
+        const vector<string> &messages = accumulator.getErrorMessages();
+                CHECK(messages.size() == 1);
     }
 
     TEST (TEST_CHECK_FILE_READABILITY_SUCCEED) {

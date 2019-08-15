@@ -11,16 +11,16 @@
 using namespace std;
 
 IndexerRunner::IndexerRunner(
-        const shared_ptr<Source> &fastqFile,
+        const shared_ptr<Source> &sourceFile,
         const shared_ptr<Sink> &indexFile,
-        const shared_ptr<IndexEntryStorageStrategy>& storageStrategy,
+        const shared_ptr<IndexEntryStorageDecisionStrategy>& storageStrategy,
         bool enableDebugging,
         bool forceOverwrite,
         bool forbidWriteFQI,
         bool compressDictionaries) :
-        IndexWritingRunner(fastqFile, indexFile) {
+        IndexWritingRunner(sourceFile, indexFile) {
     this->indexer = make_shared<Indexer>(
-            this->fastqFile,
+            this->sourceFile,
             this->indexFile,
             storageStrategy,
             enableDebugging,
@@ -54,5 +54,5 @@ unsigned char IndexerRunner::_run() {
 vector<string> IndexerRunner::getErrorMessages() {
     vector<string> l = IndexWritingRunner::getErrorMessages();
     vector<string> r = indexer->getErrorMessages();
-    return mergeToNewVector(l, r);
+    return concatenateVectors(l, r);
 }

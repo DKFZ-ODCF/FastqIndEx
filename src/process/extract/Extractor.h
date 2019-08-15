@@ -11,7 +11,7 @@
 #include "common/ErrorAccumulator.h"
 #include "process/extract/IndexReader.h"
 #include "process/base/ZLibBasedFASTQProcessorBaseClass.h"
-#include "process/io/PathSource.h"
+#include "process/io/FileSource.h"
 #include <experimental/filesystem>
 #include <zlib.h>
 
@@ -120,7 +120,7 @@ private:
 public:
 
     /**
-     * @param fastqFile         The file from which we will extract data
+     * @param sourceFile         The file from which we will extract data
      * @param indexFile         The index file for this file
      * @param resultSink        The result file or
      * @param forceOverwrite    If the resultfile exists, we can overwrite it with this flag
@@ -129,7 +129,7 @@ public:
      * @param count             Extract a maximum of lineCount lines OR define the number of total segments
      * @param enableDebugging   Used for interactive debugging and unit tests
      */
-    explicit Extractor(const shared_ptr<Source> &fastqFile,
+    explicit Extractor(const shared_ptr<Source> &sourceFile,
                        const shared_ptr<Source> &indexFile,
                        const shared_ptr<Sink> &resultSink,
                        bool forceOverwrite,
@@ -187,13 +187,13 @@ public:
 
     /**
      * Open the FASTQ file and prepare initially prepare the zStream.
-     * If the method fails, fastqFile will not be closed automatically.
+     * If the method fails, sourceFile will not be closed automatically.
      * @return true, if the operation was successful.
      */
     bool openFastqAndPrepareZStream();
 
     /**
-     * If the method fails, fastqFile will not be closed automatically.
+     * If the method fails, sourceFile will not be closed automatically.
      * @return true, if the operation was successful.
      */
     bool setDictionaryForZStream();

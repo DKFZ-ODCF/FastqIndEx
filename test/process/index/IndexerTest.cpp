@@ -7,8 +7,8 @@
 #include "common/StringHelper.h"
 #include "process/extract/IndexReader.h"
 #include "process/index/Indexer.h"
-#include "process/io/PathSource.h"
-#include "process/io/PathSink.h"
+#include "process/io/FileSource.h"
+#include "process/io/FileSink.h"
 #include "process/io/StreamSource.h"
 #include "runners/IndexerRunner.h"
 #include "TestResourcesAndFunctions.h"
@@ -36,12 +36,12 @@ SUITE (INDEXER_SUITE_TESTS) {
         path index = res.filePath("test2.fastq.gz.fqi");
 
         auto *indexer = new Indexer(
-                make_shared<PathSource>(fastq),
-                make_shared<PathSink>(index),
-                BlockDistanceStorageStrategy::getDefault()
+                make_shared<FileSource>(fastq),
+                make_shared<FileSink>(index),
+                BlockDistanceStorageDecisionStrategy::getDefault()
         );
 
-                CHECK_EQUAL(fastq, dynamic_pointer_cast<PathSource>(indexer->getFastq())->getPath());
+                CHECK_EQUAL(fastq, dynamic_pointer_cast<FileSource>(indexer->getSource())->getPath());
                 CHECK_EQUAL(index.string(), indexer->getOutputIndexFile()->toString());
                 CHECK_EQUAL(false, indexer->isDebuggingEnabled());
                 CHECK_EQUAL(false, indexer->wasSuccessful());
@@ -49,9 +49,9 @@ SUITE (INDEXER_SUITE_TESTS) {
                 CHECK(!indexer->getStoredHeader());
 
         delete indexer;
-        indexer = new Indexer(make_shared<PathSource>(fastq),
-                              make_shared<PathSink>(index),
-                              BlockDistanceStorageStrategy::getDefault(),
+        indexer = new Indexer(make_shared<FileSource>(fastq),
+                              make_shared<FileSink>(index),
+                              BlockDistanceStorageDecisionStrategy::getDefault(),
                               true
         );
                 CHECK_EQUAL(true, indexer->isDebuggingEnabled());
@@ -64,9 +64,9 @@ SUITE (INDEXER_SUITE_TESTS) {
         path fastq = res.getResource(TEST_FASTQ_LARGE);
         path index = res.filePath("test2.fastq.gz.fqi");
 
-        Indexer indexer(make_shared<PathSource>(fastq),
-                        make_shared<PathSink>(index),
-                        BlockDistanceStorageStrategy::getDefault(),
+        Indexer indexer(make_shared<FileSource>(fastq),
+                        make_shared<FileSink>(index),
+                        BlockDistanceStorageDecisionStrategy::getDefault(),
                         true); // Tell the indexer to store entries. This is solely a debug feature but it
         shared_ptr<IndexHeader> header = indexer.createHeader();
                 CHECK(header.get());
@@ -97,9 +97,9 @@ SUITE (INDEXER_SUITE_TESTS) {
         // Files are not actually used.
         path fastq = res.getResource(TEST_FASTQ_LARGE);
         path index = res.filePath("test2.fastq.gz.fqi");
-        Indexer indexer(make_shared<PathSource>(fastq),
-                        make_shared<PathSink>(index),
-                        BlockDistanceStorageStrategy::getDefault(),
+        Indexer indexer(make_shared<FileSource>(fastq),
+                        make_shared<FileSink>(index),
+                        BlockDistanceStorageDecisionStrategy::getDefault(),
                         true
         );
 
@@ -131,8 +131,8 @@ SUITE (INDEXER_SUITE_TESTS) {
         path fastq = res.getResource("test_singlecompressedblocks.fastq.gz");
         path index = res.filePath("test.fastq.gz.fqi");
         path extractedFastq = res.filePath(TEST_FASTQ_SMALL);
-        auto *indexer = new Indexer(make_shared<PathSource>(fastq), make_shared<PathSink>(index),
-                                    BlockDistanceStorageStrategy::getDefault(),
+        auto *indexer = new Indexer(make_shared<FileSource>(fastq), make_shared<FileSink>(index),
+                                    BlockDistanceStorageDecisionStrategy::getDefault(),
                                     true,
                                     false,
                                     false,
@@ -184,9 +184,9 @@ SUITE (INDEXER_SUITE_TESTS) {
                 CHECK_EQUAL(true, result);
                 CHECK(4 * file_size(fastq) == file_size(concat));
 
-        auto *indexer = new Indexer(make_shared<PathSource>(concat),
-                                    make_shared<PathSink>(index),
-                                    BlockDistanceStorageStrategy::getDefault(),
+        auto *indexer = new Indexer(make_shared<FileSource>(concat),
+                                    make_shared<FileSink>(index),
+                                    BlockDistanceStorageDecisionStrategy::getDefault(),
                                     true,
                                     false,
                                     false,
@@ -232,8 +232,8 @@ SUITE (INDEXER_SUITE_TESTS) {
         path fastq = res.getResource(string(TEST_FASTQ_SMALL));
         path index = res.filePath("test.fastq.gz.fqi");
 
-        auto indexer = new Indexer(make_shared<PathSource>(fastq), make_shared<PathSink>(index),
-                                   BlockDistanceStorageStrategy::getDefault(), true, false, false,
+        auto indexer = new Indexer(make_shared<FileSource>(fastq), make_shared<FileSink>(index),
+                                   BlockDistanceStorageDecisionStrategy::getDefault(), true, false, false,
                                    true);
                 CHECK(indexer->fulfillsPremises());  // We need to make sure things are good. Also this opens the I-Writer.
 
@@ -278,8 +278,8 @@ SUITE (INDEXER_SUITE_TESTS) {
         ifstream fastqStream(concat.string());
         auto indexer = new Indexer(
                 make_shared<StreamSource>(&fastqStream),
-                make_shared<PathSink>(index),
-                BlockDistanceStorageStrategy::from(1),
+                make_shared<FileSink>(index),
+                BlockDistanceStorageDecisionStrategy::from(1),
                 true,
                 false,
                 false,
@@ -292,7 +292,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         auto storedLines = indexer->getStoredLines();
 
                 CHECK(indexer->wasSuccessful());
-                CHECK(8 == storedEntries.size());
+                CHECK_EQUAL(8U, storedEntries.size());
 
         delete indexer;
                 CHECK(exists(index));
@@ -305,8 +305,8 @@ SUITE (INDEXER_SUITE_TESTS) {
         ifstream fqStream(fastq);
         auto runner = new IndexerRunner(
                 StreamSource::from(&fqStream),
-                PathSink::from(index),
-                BlockDistanceStorageStrategy::getDefault(),
+                FileSink::from(index),
+                BlockDistanceStorageDecisionStrategy::getDefault(),
                 false, false, false, true);
                 CHECK(runner->run() == 0);
         delete runner;
@@ -322,9 +322,9 @@ SUITE (INDEXER_SUITE_TESTS) {
         uint blockSize = 4;
 
         auto *indexer = new Indexer(
-                make_shared<PathSource>(fastq),
-                make_shared<PathSink>(index),
-                BlockDistanceStorageStrategy::from(blockSize),
+                make_shared<FileSource>(fastq),
+                make_shared<FileSink>(index),
+                BlockDistanceStorageDecisionStrategy::from(blockSize),
                 true, false, false, true
         ); // Tell the indexer to store entries. This is solely a debug feature but it
                 CHECK(indexer->fulfillsPremises());  // We need to make sure things are good. Also this opens the I-Writer.
@@ -335,7 +335,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         auto storedEntries = indexer->getStoredEntries();
         auto storedLines = indexer->getStoredLines();
 
-        int numberOfLinesInTestFASTQ = 160000;
+        uint numberOfLinesInTestFASTQ = 160000;
 
                 CHECK(result);
                 CHECK(exists(index));
@@ -422,7 +422,7 @@ SUITE (INDEXER_SUITE_TESTS) {
                 CHECK_EQUAL(true, result);
 
         vector<string> decompressedSourceContent = TestResourcesAndFunctions::readLinesOfFile(extractedFastq);
-                CHECK_EQUAL(160000, decompressedSourceContent.size());
+                CHECK_EQUAL(160000U, decompressedSourceContent.size());
 
                 CHECK(TestResourcesAndFunctions::compareVectorContent(storedLines, decompressedSourceContent));
 
@@ -432,7 +432,7 @@ SUITE (INDEXER_SUITE_TESTS) {
         delete indexer;  // <-- Force flush and close file stream!
 
         // Read back and check contents.
-        auto *ir = new IndexReader(make_shared<PathSource>(index));
+        auto *ir = new IndexReader(make_shared<FileSource>(index));
                 CHECK(ir->tryOpenAndReadHeader());
 
         for (auto &storedEntry : storedEntries) {

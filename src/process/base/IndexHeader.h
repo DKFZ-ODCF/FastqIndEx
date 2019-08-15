@@ -7,7 +7,7 @@
 #ifndef FASTQINDEX_INDEXHEADER_H
 #define FASTQINDEX_INDEXHEADER_H
 
-#include "CommonStructsAndConstants.h"
+#include "common/CommonStructsAndConstants.h"
 #include "IndexEntry.h"
 #include "IndexEntryV1.h"
 

@@ -7,7 +7,7 @@
 #include "common/StringHelper.h"
 #include "process/extract/Extractor.h"
 #include "process/index/Indexer.h"
-#include "process/io/PathSink.h"
+#include "process/io/FileSink.h"
 #include "process/io/ConsoleSink.h"
 #include "TestResourcesAndFunctions.h"
 #include <iostream>
@@ -34,8 +34,8 @@ void runRangedExtractionTest(const path &fastq,
                              const int64_t lineCount,
                              const uint64_t expectedLineCount) {
     auto *extractor = new Extractor(
-            make_shared<PathSource>(fastq),
-            make_shared<PathSource>(index),
+            make_shared<FileSource>(fastq),
+            make_shared<FileSource>(index),
             ConsoleSink::create(),
             false,
             ExtractMode::lines, firstLine, lineCount, DEFAULT_RECORD_SIZE, true);
@@ -68,11 +68,11 @@ bool initializeComplexTest(const path &fastq,
      * debugging the indexer easier.
      */
     auto *indexer = new Indexer(
-            make_shared<PathSource>(fastq),
-            make_shared<PathSink>(index),
-            make_shared<BlockDistanceStorageStrategy>(blockInterval, true), true, false, false, true);
+            make_shared<FileSource>(fastq),
+            make_shared<FileSink>(index),
+            make_shared<BlockDistanceStorageDecisionStrategy>(blockInterval, true), true, false, false, true);
             CHECK(indexer->fulfillsPremises());
-    indexer->enableWriteOutOfDecompressedBlocksAndStatistics(index.parent_path());
+    indexer->enableWritingDecompressedBlocksAndStatistics(index.parent_path());
     indexer->createIndex();
     bool success = indexer->wasSuccessful();
             CHECK(success);
@@ -86,8 +86,8 @@ bool initializeComplexTest(const path &fastq,
      * instances everytime.
      */
     auto *extractor = new Extractor(
-            make_shared<PathSource>(fastq),
-            make_shared<PathSource>(index),
+            make_shared<FileSource>(fastq),
+            make_shared<FileSource>(index),
             ConsoleSink::create(),
             false, ExtractMode::lines, 0, 10,
             DEFAULT_RECORD_SIZE, true);
@@ -122,8 +122,8 @@ SUITE (INDEXER_SUITE_TESTS) {
         path fastq = res.getResource(TEST_FASTQ_SMALL);
         path index = res.getResource(TEST_INDEX_SMALL);
 
-        auto *extractor = new Extractor(make_shared<PathSource>(fastq),
-                                        make_shared<PathSource>(index),
+        auto *extractor = new Extractor(make_shared<FileSource>(fastq),
+                                        make_shared<FileSource>(index),
                                         ConsoleSink::create(),
                                         false,
                                         ExtractMode::lines, 0, 10, DEFAULT_RECORD_SIZE, true);
@@ -166,8 +166,8 @@ SUITE (INDEXER_SUITE_TESTS) {
         vector<shared_ptr<IndexEntryV1>> indexEntries;
 
         bool lastBlockEndedWithNewline = true;
-        Indexer indexer(make_shared<PathSource>(fastq), make_shared<PathSink>(index),
-                        make_shared<BlockDistanceStorageStrategy>(1, true), true);
+        Indexer indexer(make_shared<FileSource>(fastq), make_shared<FileSink>(index),
+                        make_shared<BlockDistanceStorageDecisionStrategy>(1, true), true);
         for (auto bd : _blockData) {
             auto split = StringHelper::splitStr(bd);
             bool currentBlockEndedWithNewline;
@@ -198,8 +198,8 @@ SUITE (INDEXER_SUITE_TESTS) {
             auto startingLine = startingLines[i];
             auto lineCount = 4;
             auto indexEntry = indexEntries[indexEntryID[i]];
-            Extractor extractor(make_shared<PathSource>(fastq),
-                                make_shared<PathSource>(index),
+            Extractor extractor(make_shared<FileSource>(fastq),
+                                make_shared<FileSource>(index),
                                 ConsoleSink::create(),
                                 false,
                                 ExtractMode::lines, startingLine, lineCount, 4, true);
@@ -329,12 +329,12 @@ SUITE (INDEXER_SUITE_TESTS) {
 //                6664, 6664, 6664, 6664, 6664, 6728,
 //        };
 //
-//        auto indexer = new Indexer(make_shared<PathSource>(fastq), index, 4, true, true, false, false, true);
+//        auto indexer = new Indexer(make_shared<FileSource>(fastq), index, 4, true, true, false, false, true);
 //                CHECK(indexer->createIndex() == true);
 //        delete indexer;
 //
 //        for (int segment = 0; segment < segments; segment++) {
-//            Extractor extractor(make_shared<PathSource>(fastq), index, extract, true,
+//            Extractor extractor(make_shared<FileSource>(fastq), index, extract, true,
 //                                ExtractMode::segment, segment, segments, 4, true);
 //
 //                    CHECK(extractor.fulfillsPremises() == true);

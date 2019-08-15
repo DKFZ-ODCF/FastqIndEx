@@ -7,13 +7,15 @@
 #ifndef FASTQINDEX_FQIS3CLIENT_H
 #define FASTQINDEX_FQIS3CLIENT_H
 
+#include "common/Result.h"
 #include "common/StringHelper.h"
 #include "process/io/s3/S3Service.h"
-#include "process/io/PathSink.h"
+#include "process/io/FileSink.h"
 #include "process/io/Sink.h"
 #include "process/io/s3/S3Config.h"
 #include <cstdio>
 #include <fcntl.h>
+#include <list>
 #include <memory>
 
 #include <aws/core/auth/AWSAuthSigner.h>
@@ -24,26 +26,19 @@
 #include <aws/s3/model/ListObjectsRequest.h>
 #include <aws/s3/model/PutObjectRequest.h>
 #include <aws/s3/S3Client.h>
-#include <list>
 
 using namespace Aws::Utils;
 using namespace Aws::S3;
 using namespace Aws::S3::Model;
 using namespace std;
 
-struct FQIS3ClientRequestBooleanResult {
-    bool requestWasSuccessful;
-    bool result;
+typedef Result<bool> FQIS3ClientRequestBooleanResult;
 
-    FQIS3ClientRequestBooleanResult(bool requestWasSuccessful, bool result) :
-            requestWasSuccessful(requestWasSuccessful), result(result) {}
-};
-
-struct ObjectListEntry {
+struct S3Object {
     string name;
     int64_t size;
 
-    ObjectListEntry(const string &name, int64_t size) {
+    S3Object(const string &name, int64_t size) {
         this->name = name;
         this->size = size;
     }
@@ -60,9 +55,9 @@ protected:
 
     S3Config s3Config;
 
-    string bucket_name;
+    string bucketName;
 
-    string object_name;
+    string objectName;
 
     S3ServiceOptions serviceOptions;
 
@@ -78,13 +73,13 @@ public:
         if (split.size() != 4) {
             addErrorMessage("The S3 string '", s3Path, "' must look like s3://<bucket>/<object>");
         } else {
-            bucket_name = split[2];
-            object_name = split[3];
+            bucketName = split[2];
+            objectName = split[3];
         }
     }
 
     bool isValid() {
-        return S3Service::getInstance().get() && !bucket_name.empty() && !object_name.empty() && s3Config.isValid();
+        return S3Service::getInstance().get() && !bucketName.empty() && !objectName.empty() && s3Config.isValid();
     }
 
     string getS3Path() {
@@ -96,11 +91,11 @@ public:
     }
 
     string getBucketName() {
-        return bucket_name;
+        return bucketName;
     }
 
     string getObjectName() {
-        return object_name;
+        return objectName;
     }
 
     S3ServiceOptions getS3ServiceOptions() {
@@ -109,7 +104,7 @@ public:
 
 
     template<typename T>
-    bool performS3Request(function<T(S3Client &client)> s3Request) {
+    bool request(function<T(S3Client &client)> s3Request) {
         bool result;
 
         auto outcome = s3Request(*S3Service::getInstance()->getClient().get());
@@ -124,24 +119,22 @@ public:
         return result;
     }
 
-    tuple<bool, std::list<ObjectListEntry>> getObjectList() {
+    tuple<bool, std::list<S3Object>> getObjectList() {
         bool objectExists = false;
-        tuple<bool, std::list<ObjectListEntry>> result;
+        tuple<bool, std::list<S3Object>> result;
 
-        bool requestResult = performS3Request<ListObjectsOutcome>([&](S3Client &client) -> ListObjectsOutcome {
-            ListObjectsRequest object_request;
-            object_request.SetBucket(bucket_name.c_str());
-            auto outcome = client.ListObjects(object_request);
-            std::list<ObjectListEntry> entries;
+        bool requestResult = request<ListObjectsOutcome>([&](S3Client &client) -> ListObjectsOutcome {
+            ListObjectsRequest objectRequest;
+            objectRequest.SetBucket(bucketName.c_str());
+            auto outcome = client.ListObjects(objectRequest);
+            std::list<S3Object> entries;
             if (outcome.IsSuccess()) {
-                auto object_list = outcome.GetResult().GetContents();
-//                cerr << "Checking S3 bucket for files:\n";
-                for (auto const &s3_object : object_list) {
-//                    std::cerr << "* " << s3_object.GetKey() << std::endl;
-                    entries.emplace_back(ObjectListEntry(string(s3_object.GetKey()), s3_object.GetSize()));
+                auto objectList = outcome.GetResult().GetContents();
+                for (auto const &object : objectList) {
+                    entries.emplace_back(S3Object(string(object.GetKey()), object.GetSize()));
                 }
             }
-            result = tuple<bool, std::list<ObjectListEntry>>(outcome.IsSuccess(), entries);
+            result = tuple<bool, std::list<S3Object>>(outcome.IsSuccess(), entries);
             return outcome;
         });
         return result;
@@ -152,7 +145,7 @@ public:
         bool found = false;
         if (std::get<0>(list)) {
             for (const auto &entry : std::get<1>(list)) {
-                if (entry.name == object_name) {
+                if (entry.name == objectName) {
                     found = true;
                     break;
                 }
@@ -173,7 +166,7 @@ public:
             return {false, 0};
 
         for (const auto &entry : list) {
-            if (entry.name == object_name) {
+            if (entry.name == objectName) {
                 found = true;
                 size = entry.size;
                 break;
@@ -185,16 +178,16 @@ public:
     FQIS3ClientRequestBooleanResult putFile(const string &file) {
         bool couldPut = false;
 
-        bool requestResult = performS3Request<PutObjectOutcome>([=](S3Client &client) -> PutObjectOutcome {
-            PutObjectRequest object_request;
-            object_request.SetBucket(bucket_name.c_str());
-            object_request.SetKey(object_name.c_str());
-            auto input_data =
+        bool requestResult = request<PutObjectOutcome>([=](S3Client &client) -> PutObjectOutcome {
+            PutObjectRequest objectRequest;
+            objectRequest.SetBucket(bucketName.c_str());
+            objectRequest.SetKey(objectName.c_str());
+            auto inputData =
                     Aws::MakeShared<FStream>("FASTQ index", file.c_str(), std::ios_base::in | std::ios_base::binary);
-            object_request.SetBody(input_data);
-            object_request.SetContentMD5(
-                    HashingUtils::Base64Encode(HashingUtils::CalculateMD5(*object_request.GetBody())));
-            return client.PutObject(object_request);
+            objectRequest.SetBody(inputData);
+            objectRequest.SetContentMD5(
+                    HashingUtils::Base64Encode(HashingUtils::CalculateMD5(*objectRequest.GetBody())));
+            return client.PutObject(objectRequest);
         });
 
         return FQIS3ClientRequestBooleanResult(requestResult, requestResult);
@@ -211,17 +204,17 @@ public:
      */
     tuple<bool, int64_t> readBlockOfData(int64_t position, int64_t length, Bytef *buffer) {
         int64_t readBytes{0};
-        bool success = performS3Request<GetObjectOutcome>([&](S3Client &client) -> GetObjectOutcome {
-            GetObjectRequest object_request;
-            object_request.SetBucket(bucket_name.c_str());
-            object_request.SetKey(object_name.c_str());
-            auto get_object_outcome = client.GetObject(object_request);
-            if (get_object_outcome.IsSuccess()) {
-                auto &retrieved_file = get_object_outcome.GetResult().GetBody();
-                retrieved_file.seekg(position, ios_base::beg);
-                retrieved_file.readsome(reinterpret_cast<char *>( buffer), length);
+        bool success = request<GetObjectOutcome>([&](S3Client &client) -> GetObjectOutcome {
+            GetObjectRequest objectRequest;
+            objectRequest.SetBucket(bucketName.c_str());
+            objectRequest.SetKey(objectName.c_str());
+            auto getObjectOutcome = client.GetObject(objectRequest);
+            if (getObjectOutcome.IsSuccess()) {
+                auto &retrievedFile = getObjectOutcome.GetResult().GetBody();
+                retrievedFile.seekg(position, ios_base::beg);
+                retrievedFile.readsome(reinterpret_cast<char *>( buffer), length);
             }
-            return get_object_outcome;
+            return getObjectOutcome;
         });
 
         return tuple<bool, int64_t>(success, readBytes);
@@ -230,7 +223,7 @@ public:
     vector<string> getErrorMessages() override {
         auto l = ErrorAccumulator::getErrorMessages();
         auto r = s3Config.getErrorMessages();
-        return mergeToNewVector(l, r);
+        return concatenateVectors(l, r);
     }
 };
 

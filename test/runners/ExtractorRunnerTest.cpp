@@ -5,7 +5,7 @@
  */
 
 #include "../../src/runners/ExtractorRunner.h"
-#include "../../src/process/io/PathSource.h"
+#include "process/io/FileSource.h"
 #include "process/io/ConsoleSink.h"
 #include "../TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
@@ -21,8 +21,8 @@ SUITE (SUITE_EXTRACTORRUNNER_TESTS) {
         path fastq = res.createEmptyFile("fastq.fastq");
         path index = res.createEmptyFile("fastq.fastq.fqi");
 
-        ExtractorRunner r(make_shared<PathSource>(fastq),
-                          make_shared<PathSource>(index),
+        ExtractorRunner r(make_shared<FileSource>(fastq),
+                          make_shared<FileSource>(index),
                           ConsoleSink::create(),
                           false, ExtractMode::lines, 0, 100, 0, false);
                 CHECK(!r.fulfillsPremises()); // Index is empty. Won't work!
@@ -38,8 +38,8 @@ SUITE (SUITE_EXTRACTORRUNNER_TESTS) {
         path fastq = TestResourcesAndFunctions::getResource(TEST_FASTQ_SMALL);
         path index = TestResourcesAndFunctions::getResource(TEST_INDEX_SMALL);
 
-        ExtractorRunner r(make_shared<PathSource>(fastq),
-                          make_shared<PathSource>(index),
+        ExtractorRunner r(make_shared<FileSource>(fastq),
+                          make_shared<FileSource>(index),
                           ConsoleSink::create(),
                           false, ExtractMode::lines, 0, 100, 0, false);
         bool premisesFulfilled = r.fulfillsPremises();

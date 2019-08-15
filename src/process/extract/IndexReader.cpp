@@ -28,12 +28,12 @@ bool IndexReader::tryOpenAndReadHeader() {
         return true;
 
     if (!indexFile->exists()) {
-        addErrorMessage("The index file does not exist.");
+        addErrorMessage("Index file '", indexFile->toString(), "' does not exist.");
         return false;
     }
     bool gotLock = indexFile->openWithReadLock();
     if (!gotLock) {
-        addErrorMessage("Could not get a lock for the index file.");
+        addErrorMessage("Could not get a lock for index file '", indexFile->toString(), "'.");
         return false;
     }
 
@@ -41,7 +41,8 @@ bool IndexReader::tryOpenAndReadHeader() {
 
     int64_t headerSize = static_cast<int64_t>(sizeof(IndexHeader));
     if (headerSize > fileSize) {
-        addErrorMessage("The index file is too small and cannot be read.");
+        addErrorMessage("Index file '", indexFile->toString(), "' is smaller than the minimum size (",
+                        to_string(fileSize), " < ", to_string(headerSize), " Bytes) and cannot be read.");
         indexFile->close();
         return false;
     }
@@ -50,7 +51,7 @@ bool IndexReader::tryOpenAndReadHeader() {
      * Open the stream and see if it is good.
      */
     if (this->indexFile->isBad()) {
-        addErrorMessage("There was an error while opening input stream for index file.");
+        addErrorMessage("Could not open an input stream for index file '", indexFile->toString(), "'.");
         indexFile->close();
         return false;
     }
@@ -64,19 +65,24 @@ bool IndexReader::tryOpenAndReadHeader() {
     if (this->readHeader.indexWriterVersion == 1) {
         sizeOfIndexEntry = sizeof(IndexEntryV1);
     } else {
-        addErrorMessage("Index version is not readable with this version of FastqIndEx.");
+        addErrorMessage("Index version '", to_string(this->readHeader.indexWriterVersion),
+                        "' is not readable with this version of FastqIndEx (The maximum is ", to_string(
+                        IndexWriter::INDEX_WRITER_VERSION), "). You need a newer version of FastqIndEx.");
         indexFile->close();
         return false;
     }
 
     if (this->readHeader.dictionariesAreCompressed) {
         if (fileSize <= headerSize) {
-            addErrorMessage("Cannot read index file, it is too small.");
+            addErrorMessage("Index file '", indexFile->toString(), "' is smaller than the minimum size (",
+                            to_string(fileSize), " < ", to_string(headerSize), " Bytes) and cannot be read.");
             indexFile->close();
             return false;
         }
     } else if (headerSize + sizeOfIndexEntry > fileSize) {
-        addErrorMessage("Cannot read index file, it is too small.");
+        addErrorMessage("Index file '", indexFile->toString(), "' is smaller than the minimum size (",
+                        to_string(fileSize), " < ", to_string(headerSize + sizeOfIndexEntry),
+                        " Bytes) and cannot be read.");
         indexFile->close();
         return false;
     }
@@ -84,7 +90,10 @@ bool IndexReader::tryOpenAndReadHeader() {
     if (this->readHeader.dictionariesAreCompressed) {
         // We could only check, if there is at least one entry.
     } else if (0 != (fileSize - headerSize) % sizeOfIndexEntry) {
-        addErrorMessage("Cannot read index file, there is a mismatch between stored index version and content size.");
+        addErrorMessage("Index file '", indexFile->toString(),
+                        "' shows a mismatch mismatch between the stored index '",
+                        to_string(this->readHeader.indexWriterVersion),
+                        "' version and content size.");
         indexFile->close();
         return false;
     }
@@ -96,7 +105,7 @@ bool IndexReader::tryOpenAndReadHeader() {
     }
 
     if (this->indicesLeft == 0) {
-        addErrorMessage("Could not properly determine the amount of indices in this file.");
+        addErrorMessage("Could not determine the amount of entries in index file '", indexFile->toString(), "'.");
         indexFile->close();
         return false;
     }
@@ -120,7 +129,8 @@ IndexHeader IndexReader::readIndexHeader() {
 vector<shared_ptr<IndexEntry>> IndexReader::readIndexFile() {
     vector<shared_ptr<IndexEntry>> convertedLines;
     if (!tryOpenAndReadHeader()) {
-        addErrorMessage("Could not read index file due to one or more errors during file open.");
+        addErrorMessage("Could not read index file '", indexFile->toString(),
+                        "' due to one or more errors during file open.");
         return convertedLines;
     }
 
@@ -149,7 +159,8 @@ vector<shared_ptr<IndexEntryV1>> IndexReader::readIndexFileV1() {
 
 shared_ptr<IndexEntry> IndexReader::readIndexEntry() {
     if (!tryOpenAndReadHeader()) {
-        addErrorMessage("Could not read index file due to one or more errors during file open.");
+        addErrorMessage("Could not read index file '", indexFile->toString(),
+                        "' due to one or more errors during file open.");
         return shared_ptr<IndexEntry>(nullptr);
     }
 
@@ -182,8 +193,8 @@ shared_ptr<IndexEntryV1> IndexReader::readIndexEntryV1() {
     if (entry->compressedDictionarySize == 0) { // No compression
         indexFile->read(reinterpret_cast<Bytef *>(entry.get()) + headerSize, sizeof(entry->dictionary));
     } else {
-        memset(reinterpret_cast<char *>(entry->dictionary), 0,
-               WINDOW_SIZE); // Set to 0 first, so we won't have any garbage issues.
+        // Set the dictionary to 0 first, so we won't have any issues with memory garbage.
+        memset(reinterpret_cast<char *>(entry->dictionary), 0, WINDOW_SIZE);
         indexFile->read(reinterpret_cast<Bytef *>(entry.get()) + headerSize, entry->compressedDictionarySize);
     }
     indicesLeft--;

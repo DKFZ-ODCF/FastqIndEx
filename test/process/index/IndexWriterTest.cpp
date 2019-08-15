@@ -6,8 +6,8 @@
 
 #include "process/index/IndexWriter.h"
 #include "process/extract/IndexReader.h"
-#include "process/io/PathSink.h"
-#include "process/io/PathSource.h"
+#include "process/io/FileSink.h"
+#include "process/io/FileSource.h"
 #include "TestResourcesAndFunctions.h"
 #include "TestConstants.h"
 #include <UnitTest++/UnitTest++.h>
@@ -34,14 +34,14 @@ SUITE (SUITE_INDEXWRITER_TESTS) {
     TEST (TEST_CREATION_WITH_MISSING_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXWRITER_TESTS, TEST_CREATION_WITH_EXISTING_FILE);
         path index = res.filePath(INDEX_FILENAME);
-        auto iw = make_shared<IndexWriter>(make_shared<PathSink>(index));
+        auto iw = make_shared<IndexWriter>(make_shared<FileSink>(index));
                 CHECK(iw);
     }
 
     TEST (TEST_CREATION_WITH_EXISTING_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXWRITER_TESTS, TEST_CREATION_WITH_EXISTING_FILE);
         path index = res.createEmptyFile(INDEX_FILENAME);
-        auto iw = make_shared<IndexWriter>(make_shared<PathSink>(index));
+        auto iw = make_shared<IndexWriter>(make_shared<FileSink>(index));
                 CHECK(!iw->tryOpen());
                 CHECK(!iw->hasLock());
     }
@@ -50,7 +50,7 @@ SUITE (SUITE_INDEXWRITER_TESTS) {
         TestResourcesAndFunctions res(SUITE_INDEXWRITER_TESTS, TEST_CREATION_WITHOUT_WRITE_ACCESS);
         path index = res.filePath(INDEX_FILENAME);
         permissions(res.getTestPath(), perms::owner_read | perms::owner_exec);
-        auto iw = make_shared<IndexWriter>(make_shared<PathSink>(index));
+        auto iw = make_shared<IndexWriter>(make_shared<FileSink>(index));
                 CHECK(!iw->tryOpen());
                 CHECK(!iw->hasLock());
         permissions(res.getTestPath(), perms::owner_all);
@@ -59,7 +59,7 @@ SUITE (SUITE_INDEXWRITER_TESTS) {
     TEST (TEST_WRITE_HEADER_TO_NEWLY_OPENED_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXWRITER_TESTS, TEST_CREATION_WITH_EXISTING_FILE);
         path index = res.filePath(INDEX_FILENAME);
-        auto iw = make_shared<IndexWriter>(make_shared<PathSink>(index));
+        auto iw = make_shared<IndexWriter>(make_shared<FileSink>(index));
                 CHECK(iw->tryOpen());
         auto header = make_shared<IndexHeader>(1, sizeof(IndexEntryV1), 1, true);
         bool writeOk = iw->writeIndexHeader(header);
@@ -72,7 +72,7 @@ SUITE (SUITE_INDEXWRITER_TESTS) {
     TEST (TEST_WRITE_HEADER_TWICE) {
         TestResourcesAndFunctions res(SUITE_INDEXWRITER_TESTS, TEST_WRITE_HEADER_TWICE);
         path index = res.filePath(INDEX_FILENAME);
-        auto iw = make_shared<IndexWriter>(make_shared<PathSink>(index));
+        auto iw = make_shared<IndexWriter>(make_shared<FileSink>(index));
                 CHECK(iw->tryOpen());
 
         auto header = make_shared<IndexHeader>(1, sizeof(IndexEntryV1), 1, true);
@@ -83,7 +83,7 @@ SUITE (SUITE_INDEXWRITER_TESTS) {
     TEST (TEST_WRITE_INDEX_TO_NEWLY_OPENED_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXWRITER_TESTS, TEST_WRITE_INDEX_TO_NEWLY_OPENED_FILE);
         path index = res.filePath(INDEX_FILENAME);
-        auto iw = make_shared<IndexWriter>(make_shared<PathSink>(index));
+        auto iw = make_shared<IndexWriter>(make_shared<FileSink>(index));
                 CHECK(iw->tryOpen());
         auto entry = make_shared<IndexEntryV1>(0, 0, 0, 0, 0);
                 CHECK(!iw->writeIndexEntry(entry));
@@ -92,7 +92,7 @@ SUITE (SUITE_INDEXWRITER_TESTS) {
     TEST (TEST_WRITE_INDEX_TO_END_OF_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXWRITER_TESTS, TEST_WRITE_INDEX_TO_NEWLY_OPENED_FILE);
         path index = res.filePath(INDEX_FILENAME);
-        auto iw = make_shared<IndexWriter>(make_shared<PathSink>(index));
+        auto iw = make_shared<IndexWriter>(make_shared<FileSink>(index));
                 CHECK(iw->tryOpen());
         auto header = make_shared<IndexHeader>(1, sizeof(IndexEntryV1), 1, true);
         bool writeOk = iw->writeIndexHeader(header);
@@ -111,7 +111,7 @@ SUITE (SUITE_INDEXWRITER_TESTS) {
         TestResourcesAndFunctions res(SUITE_INDEXWRITER_TESTS, TEST_WRITE_INDEX_TO_NEWLY_OPENED_FILE);
         path index = res.filePath(INDEX_FILENAME);
 
-        auto iw = new IndexWriter(make_shared<PathSink>(index));
+        auto iw = new IndexWriter(make_shared<FileSink>(index));
                 CHECK(iw->tryOpen());
         auto header = make_shared<IndexHeader>(1, sizeof(IndexEntryV1), 1, true);
                 CHECK(iw->writeIndexHeader(header));
@@ -121,7 +121,7 @@ SUITE (SUITE_INDEXWRITER_TESTS) {
 
         delete iw;
 
-        IndexReader ir(make_shared<PathSource>(index));
+        IndexReader ir(make_shared<FileSource>(index));
                 CHECK(ir.tryOpenAndReadHeader());
         auto readHeader = ir.getIndexHeader();
                 CHECK(readHeader.numberOfEntries == 2);

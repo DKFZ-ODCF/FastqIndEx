@@ -31,7 +31,7 @@ bool IndexWriter::tryOpen() {
     }
 
     if (!indexFile->openWithWriteLock()) {
-        addErrorMessage("Could not get a lock for index file: " + indexFile->toString());
+        addErrorMessage("Could not get a lock for index file: '" + indexFile->toString(), "'.");
         return false;
     }
 
@@ -51,14 +51,12 @@ bool IndexWriter::tryOpen() {
 bool IndexWriter::writeIndexHeader(const shared_ptr<IndexHeader> &header) {
     lock_guard<mutex> lock(iwMutex);
     if (!this->writerIsOpen) {
-        // Throw assertion errors? Would actually be better right?
-        addErrorMessage("Could not write header to index file '" + indexFile->toString() + "', writer is not open.");
+        addErrorMessage("BUG: Could not write header to index file '" + indexFile->toString() + "', writer is closed.");
         return false;
     }
 
     if (this->headerWasWritten) {
-        // Throw assertion errors? Would actually be better right?
-        addErrorMessage("It is not allowed to write the index header more than once.");
+        addErrorMessage("BUG: It is not allowed to write the index header more than once.");
         return false;
     }
 
@@ -72,15 +70,13 @@ bool IndexWriter::writeIndexHeader(const shared_ptr<IndexHeader> &header) {
 bool IndexWriter::writeIndexEntry(const shared_ptr<IndexEntryV1> &entry) {
     lock_guard<mutex> lock(iwMutex);
     if (!this->writerIsOpen) {
-        // Throw assertion errors? Would actually be better right?
         addErrorMessage(
-                "Could not write index entry to index file '" + indexFile->toString() + "', writer is not open.");
+                "BUG: Could not write index entry to index file '" + indexFile->toString() + "', writer is closed.");
         return false;
     }
 
     if (!this->headerWasWritten) {
-        // Throw assertion errors? Would actually be better right?
-        addErrorMessage("The index header must be written to the index file before an entry can be written.");
+        addErrorMessage("BUG: The index header must be written to the index file before an entry can be written.");
         return false;
     }
 
@@ -107,8 +103,7 @@ void IndexWriter::finalize() {
     if (this->indexFile->isOpen()) {
         this->writerIsOpen = false;
         // Without flush, the file size was 0, even after closing the stream.
-        // Important: I do not work with reentrant locks here! Don't call the flush() method above or you'll encounter
-        // a nice deadlock.
+        // Important: I do not work with reentrant locks! Don't call the this->flush() or you'll encounter a deadlock.
         indexFile->flush();
         indexFile->seek(16, true);
         indexFile->write(reinterpret_cast<const char *>( &numberOfWrittenEntries), 8);
@@ -122,5 +117,5 @@ void IndexWriter::finalize() {
 vector<string> IndexWriter::getErrorMessages() {
     auto l = ErrorAccumulator::getErrorMessages();
     auto r = indexFile->getErrorMessages();
-    return mergeToNewVector(l, r);
+    return concatenateVectors(l, r);
 }

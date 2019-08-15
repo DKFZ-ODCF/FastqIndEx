@@ -205,10 +205,10 @@ public:
         auto l = ErrorAccumulator::getErrorMessages();
         auto r = fqiS3Client.getErrorMessages();
         if (!streamSource.get()) {
-            return mergeToNewVector(l, r);
+            return concatenateVectors(l, r);
         } else {
             auto s = streamSource->getErrorMessages();
-            return mergeToNewVector(l, r, s);
+            return concatenateVectors(l, r, s);
         }
     }
 

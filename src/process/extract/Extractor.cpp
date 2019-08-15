@@ -9,7 +9,7 @@
 #include "common/StringHelper.h"
 #include "runners/IndexStatsRunner.h"
 #include "process/base/ZLibBasedFASTQProcessorBaseClass.h"
-#include "process/io/PathSource.h"
+#include "process/io/FileSource.h"
 #include <chrono>
 #include <experimental/filesystem>
 #include <iostream>
@@ -21,13 +21,13 @@ using namespace std::chrono;
 
 using experimental::filesystem::path;
 
-Extractor::Extractor(const shared_ptr<Source> &fastqfile,
+Extractor::Extractor(const shared_ptr<Source> &sourceFile,
                      const shared_ptr<Source> &indexFile,
                      const shared_ptr<Sink> &resultSink,
                      bool forceOverwrite,
                      ExtractMode mode, int64_t start, int64_t count, uint recordSize,
                      bool enableDebugging) :
-        ZLibBasedFASTQProcessorBaseClass(fastqfile, indexFile, enableDebugging),
+        ZLibBasedFASTQProcessorBaseClass(sourceFile, indexFile, enableDebugging),
         mode(mode), start(start), count(count) {
     this->indexReader = make_shared<IndexReader>(indexFile);
     this->resultSink = resultSink;
@@ -45,7 +45,7 @@ bool Extractor::fulfillsPremises() {
     }
 
     if (mode == ExtractMode::segment && start >= count) {
-        addErrorMessage("The specified segment number '", to_string(start + 1), "' exceeds the segment count of '",
+        addErrorMessage("Segment number '", to_string(start + 1), "' exceeds the segment count of '",
                         to_string(count), "'.");
         return false;
     }
@@ -107,32 +107,32 @@ void Extractor::findIndexEntryForExtraction() {
 }
 
 bool Extractor::openFastqAndPrepareZStream() {
-    fastqFile->open();
+    sourceFile->open();
     off_t initialOffset = usedIndexEntry->blockOffsetInRawFile;
     totalBytesIn += initialOffset;
     int startBits = usedIndexEntry->bits;
     if (startBits > 0)
         initialOffset--;
-    fastqFile->setReadStart(initialOffset); // This is for S3. Could be integrated into seek. Dont' know yet.
-    auto seekResult = fastqFile->seek(initialOffset, true);
+    sourceFile->setReadStart(initialOffset); // This is for S3. Could be integrated into seek. Dont' know yet.
+    auto seekResult = sourceFile->seek(initialOffset, true);
     if (seekResult == -1) {
         addErrorMessage("Could not jump to position '", to_string(initialOffset),
-                        "' in file '", fastqFile->toString(), "'");
+                        "' in file '", sourceFile->toString(), "'");
         return false;
     }
 
     if (startBits > 0) {
-        int ret = fastqFile->readChar();
+        int ret = sourceFile->readChar();
         totalBytesIn++;
         if (ret == -1) {
-            ret = fastqFile->lastError() ? Z_ERRNO : Z_DATA_ERROR;
-            addErrorMessage("Could not read from FASTQ file '", fastqFile->toString(),
-                    "'. The latest zlib error code was '", to_string(ret), "'.");
+            ret = sourceFile->lastError() ? Z_ERRNO : Z_DATA_ERROR;
+            addErrorMessage("Could not read from source file '", sourceFile->toString(),
+                            "'. The latest zlib error code was '", to_string(ret), "'.");
             return false;
         }
         // The following line will pop up a clang-tidy warning, but as Mark Adler does it, I don't want to change it.
         zlibResult = inflatePrime(&zStream, startBits, ret >> (8 - startBits));
-        if(zlibResult != 0) {
+        if (zlibResult != 0) {
             addErrorMessage("Could not prime the zStream for extraction. zlib reported: '", zStream.msg, "'.");
             return false;
         }
@@ -152,8 +152,9 @@ bool Extractor::setDictionaryForZStream() {
     } else {
         zlibResult = inflateSetDictionary(&zStream, usedIndexEntry->window, WINDOW_SIZE);
     }
-    if(zlibResult != 0) {
-        addErrorMessage("There was an error when trying to set to dictionary for decompression. zlib reported: '", zStream.msg, "'.");
+    if (zlibResult != 0) {
+        addErrorMessage("There was an error when trying to set to dictionary for decompression. zlib reported: '",
+                        zStream.msg, "'.");
         return false;
     }
     return true;
@@ -167,9 +168,9 @@ bool Extractor::extract() {
 
     findIndexEntryForExtraction();
 
-    if(!openFastqAndPrepareZStream() ||
-       !setDictionaryForZStream()) {
-        fastqFile->close();
+    if (!openFastqAndPrepareZStream() ||
+        !setDictionaryForZStream()) {
+        sourceFile->close();
         return false;
     }
 
@@ -215,7 +216,7 @@ bool Extractor::extract() {
     } while (keepExtracting);
 
     // Free the file pointer and close the file.
-    fastqFile->close();
+    sourceFile->close();
 
     resultSink->close();
 
@@ -232,9 +233,9 @@ bool Extractor::prepareForNextConcatenatedPartIfNecessary(bool finalAbort) {
 
     totalBytesIn += 8 + 10; // Plus 8 Byte (for what? they are missing...) and 10 Byte for the next header
     int64_t streamEndPosition = totalBytesIn;
-    fastqFile->seek(streamEndPosition, true);
+    sourceFile->seek(streamEndPosition, true);
 
-    if (!fastqFile->canRead()) return false;
+    if (!sourceFile->canRead()) return false;
 
     inflateEnd(&zStream);
     if (!initializeZStreamForRawInflate()) {
@@ -333,5 +334,5 @@ vector<string> Extractor::getErrorMessages() {
     vector<string> a = ErrorAccumulator::getErrorMessages();
     vector<string> b = indexReader->getErrorMessages();
     vector<string> c = resultSink->getErrorMessages();
-    return mergeToNewVector(a, b, c);
+    return concatenateVectors(a, b, c);
 }

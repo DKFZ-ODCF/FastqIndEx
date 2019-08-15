@@ -5,7 +5,7 @@
  */
 
 #include "process/io/Source.h"
-#include "process/io/PathSource.h"
+#include "process/io/FileSource.h"
 #include "runners/ExtractorRunner.h"
 #include "runners/IndexerRunner.h"
 #include "ExtractModeCLIParser.h"

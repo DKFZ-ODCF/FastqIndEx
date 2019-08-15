@@ -6,7 +6,7 @@
 
 #include "process/io/Source.h"
 #include "common/IOHelper.h"
-#include "process/io/PathSource.h"
+#include "process/io/FileSource.h"
 #include "process/base/ZLibBasedFASTQProcessorBaseClass.h"
 #include "../../TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
@@ -20,7 +20,7 @@ public:
     ZLibBasedFASTQProcessorBaseTestClass(
             const path &fastq,
             const path &index)
-            : ZLibBasedFASTQProcessorBaseClass(shared_ptr<Source>(new PathSource(fastq)), make_shared<PathSource>(index), true) {}
+            : ZLibBasedFASTQProcessorBaseClass(shared_ptr<Source>(new FileSource(fastq)), make_shared<FileSource>(index), true) {}
 
     z_stream *getZStream() {
         return &zStream;

@@ -18,6 +18,8 @@ class StringHelper {
 public:
 
     static vector<string> splitStr(const string &str, char delimiter = '\n');
+
+    static int64_t parseStringValue(const string &str);
 };
 
 

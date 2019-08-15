@@ -4,11 +4,11 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#ifndef FASTQINDEX_PATHSOURCE_H
-#define FASTQINDEX_PATHSOURCE_H
+#ifndef FASTQINDEX_FILESOURCE_H
+#define FASTQINDEX_FILESOURCE_H
 
 #include "common/IOHelper.h"
-#include "process/io/locks/PathLockHandler.h"
+#include "process/io/locks/FileLockHandler.h"
 #include "process/io/Source.h"
 #include <iostream>
 #include <fstream>
@@ -16,7 +16,7 @@
 /**
  * Source implementation for a path object.
  */
-class PathSource : public Source {
+class FileSource : public Source {
 private:
 
     path file;
@@ -25,12 +25,12 @@ private:
 
     std::ifstream fStream;
 
-    PathLockHandler lockHandler;
+    FileLockHandler lockHandler;
 
 public:
 
-    static shared_ptr<PathSource> from(const path &file) {
-        return make_shared<PathSource>(file);
+    static shared_ptr<FileSource> from(const path &file) {
+        return make_shared<FileSource>(file);
     }
 
     bool hasLock() override;
@@ -43,9 +43,9 @@ public:
      * Create an instance of this object with a path source. This will be read by fread and so on.
      * @param file
      */
-    explicit PathSource(const path &file);
+    explicit FileSource(const path &file);
 
-    ~PathSource() override;
+    ~FileSource() override;
 
     bool fulfillsPremises() override;
 
@@ -106,4 +106,4 @@ public:
 
 #include "Source.h"
 
-#endif //FASTQINDEX_PATHSOURCE_H
+#endif //FASTQINDEX_FILESOURCE_H

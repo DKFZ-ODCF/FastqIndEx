@@ -77,6 +77,6 @@ void IndexStatsRunner::printIndexEntryToConsole(const shared_ptr<IndexEntry> &en
 vector<string> IndexStatsRunner::getErrorMessages() {
     vector<string> l = IndexReadingRunner::getErrorMessages();
     vector<string> r = indexReader->getErrorMessages();
-    return mergeToNewVector(l, r);
+    return concatenateVectors(l, r);
 }
 

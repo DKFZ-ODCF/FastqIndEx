@@ -4,17 +4,17 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "PathSource.h"
+#include "FileSource.h"
 
-PathSource::PathSource(const path &file) : file(IOHelper::fullPath(file)), lockHandler(file) {
+FileSource::FileSource(const path &file) : file(IOHelper::fullPath(file)), lockHandler(file) {
 //    fStream = std::ifstream(file, std::ifstream::binary);
 }
 
-PathSource::~PathSource() {
+FileSource::~FileSource() {
     close();
 }
 
-bool PathSource::fulfillsPremises() {
+bool FileSource::fulfillsPremises() {
     path _path = file;
     bool isValid = exists();
     if (isValid) {
@@ -23,15 +23,15 @@ bool PathSource::fulfillsPremises() {
 
         if (!is_regular_file(_path)) {
             isValid = false;
-            addErrorMessage("The path '", toString(), "' does not point to a file.");
+            addErrorMessage("'", toString(), "' does not point to a file.");
         }
     } else {
-        addErrorMessage("The file ", toString(), " does not exist.");
+        addErrorMessage("File ", toString(), " does not exist.");
     }
     return isValid;
 }
 
-bool PathSource::open() {
+bool FileSource::open() {
     if (!fStream.is_open()) {
         fStream.open(file);
         std::ifstream(file, std::ifstream::binary);
@@ -39,14 +39,14 @@ bool PathSource::open() {
     return fStream.is_open();
 }
 
-bool PathSource::openWithReadLock() {
+bool FileSource::openWithReadLock() {
     if (!lockHandler.readLock()) {
         return false;
     }
     return open();
 }
 
-bool PathSource::close() {
+bool FileSource::close() {
     if (fStream.is_open())
         fStream.close();
     if (lockHandler.hasLock())
@@ -54,19 +54,19 @@ bool PathSource::close() {
     return true;
 }
 
-int64_t PathSource::read(Bytef *targetBuffer, int numberOfBytes) {
+int64_t FileSource::read(Bytef *targetBuffer, int numberOfBytes) {
     fStream.read(reinterpret_cast<char *>(targetBuffer), numberOfBytes);
     int64_t amountRead = fStream.gcount();
     return amountRead;
 }
 
-int PathSource::readChar() {
+int FileSource::readChar() {
     Byte result = 0;
     int res = static_cast<int>(this->read(&result, 1));
     return res < 0 ? res : (int) result;
 }
 
-int64_t PathSource::seek(int64_t nByte, bool absolute) {
+int64_t FileSource::seek(int64_t nByte, bool absolute) {
     if (lastError()) {
         // Seek / Read can run over file borders and it might be necessary to just reopen it. We do this here.
         close();
@@ -80,57 +80,58 @@ int64_t PathSource::seek(int64_t nByte, bool absolute) {
     return (!fStream.fail() && !fStream.bad()) ? 1 : 0;
 }
 
-int64_t PathSource::skip(int64_t nBytes) {
+int64_t FileSource::skip(int64_t nBytes) {
     return seek(nBytes, false);
 }
 
-int64_t PathSource::tell() {
+int64_t FileSource::tell() {
     if (fStream.is_open())
         return fStream.tellg();
     return 0;
 }
 
-bool PathSource::canRead() {
+bool FileSource::canRead() {
     return tell() < size();
 }
 
-int PathSource::lastError() {
+int FileSource::lastError() {
     return fStream.fail() || fStream.bad();
 }
 
-bool PathSource::isOpen() {
+bool FileSource::isOpen() {
     return fStream.is_open();
 }
 
-bool PathSource::eof() {
-    return fStream.eof();
+bool FileSource::eof() {
+    fStream.peek();
+    return fStream.eof() == 1 ? true : false;
 }
 
-bool PathSource::isGood() {
+bool FileSource::isGood() {
     return fStream.good();
 }
 
-bool PathSource::empty() {
+bool FileSource::empty() {
     return size() == 0;
 }
 
-bool PathSource::canWrite() {
+bool FileSource::canWrite() {
     return false;
 }
 
-string PathSource::toString() {
+string FileSource::toString() {
     return file.string();
 }
 
-bool PathSource::hasLock() {
+bool FileSource::hasLock() {
     return lockHandler.hasLock();
 }
 
-bool PathSource::unlock() {
+bool FileSource::unlock() {
     lockHandler.unlock();
     return !hasLock();
 }
 
-int64_t PathSource::rewind(int64_t nByte) {
+int64_t FileSource::rewind(int64_t nByte) {
     return seek(-nByte, false);
 }

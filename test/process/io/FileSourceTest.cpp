@@ -4,24 +4,24 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-const char *const PATH_SOURCE_TEST_SUITE = "Test suite for the PathSource class";
-const char *const PATH_SOURCE_CONSTRUCT = "Test construction and fulfillsPremises()";
-const char *const PATH_SOURCE_OPEN = "Test open and close";
-const char *const PATH_SOURCE_OPENLOCKED = "Test open and close with lock - unlock";
-const char *const PATH_SOURCE_AQUIRELOCK_LATER = "Test suite for the PathSource class";
-const char *const PATH_SOURCE_READ_TELL_SEEK = "Test suite for the PathSource class";
+const char *const FILE_SOURCE_TEST_SUITE = "Test suite for the FileSource class";
+const char *const FILE_SOURCE_CONSTRUCT = "Test construction and fulfillsPremises()";
+const char *const FILE_SOURCE_OPEN = "Test open and close";
+const char *const FILE_SOURCE_OPENLOCKED = "Test open and close with lock - unlock";
+const char *const FILE_SOURCE_AQUIRELOCK_LATER = "Test suite for the FileSource class";
+const char *const FILE_SOURCE_READ_TELL_SEEK = "Test suite for the FileSource class";
 
-#include "process/io/PathSource.h"
+#include "process/io/FileSource.h"
 #include "TestConstants.h"
 #include "TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
 
-SUITE (PATH_SOURCE_TEST_SUITE) {
-    TEST (PATH_SOURCE_CONSTRUCT) {
-        TestResourcesAndFunctions res(PATH_SOURCE_TEST_SUITE, PATH_SOURCE_CONSTRUCT);
+SUITE (FILE_SOURCE_TEST_SUITE) {
+    TEST (FILE_SOURCE_CONSTRUCT) {
+        TestResourcesAndFunctions res(FILE_SOURCE_TEST_SUITE, FILE_SOURCE_CONSTRUCT);
 
         auto ps = TestResourcesAndFunctions::getResource(TEST_FASTQ_SMALL);
-        PathSource p(ps);
+        FileSource p(ps);
                 CHECK(p.fulfillsPremises());
                 CHECK(p.getPath() == ps);
                 CHECK(p.exists());
@@ -29,7 +29,7 @@ SUITE (PATH_SOURCE_TEST_SUITE) {
                 CHECK(!p.isOpen());
                 CHECK(p.isGood());
                 CHECK(!p.isBad());
-                CHECK(!p.eof());
+                CHECK(p.eof());
                 CHECK(p.isFile());
                 CHECK(!p.isStream());
                 CHECK(p.toString() == ps.string());
@@ -41,11 +41,11 @@ SUITE (PATH_SOURCE_TEST_SUITE) {
     }
 
 
-    TEST (PATH_SOURCE_OPEN) {
-        TestResourcesAndFunctions res(PATH_SOURCE_TEST_SUITE, PATH_SOURCE_OPEN);
+    TEST (FILE_SOURCE_OPEN) {
+        TestResourcesAndFunctions res(FILE_SOURCE_TEST_SUITE, FILE_SOURCE_OPEN);
 
         auto ps = TestResourcesAndFunctions::getResource(TEST_FASTQ_SMALL);
-        PathSource p(ps);
+        FileSource p(ps);
 
         p.open();
                 CHECK(p.isOpen());
@@ -53,10 +53,10 @@ SUITE (PATH_SOURCE_TEST_SUITE) {
                 CHECK(!p.isOpen());
     }
 
-    TEST (PATH_SOURCE_OPENLOCKED) {
-        TestResourcesAndFunctions res(PATH_SOURCE_TEST_SUITE, PATH_SOURCE_OPENLOCKED);
+    TEST (FILE_SOURCE_OPENLOCKED) {
+        TestResourcesAndFunctions res(FILE_SOURCE_TEST_SUITE, FILE_SOURCE_OPENLOCKED);
         auto ps = TestResourcesAndFunctions::getResource(TEST_FASTQ_SMALL);
-        PathSource p(ps);
+        FileSource p(ps);
                 CHECK(!p.isOpen());
 
         p.openWithReadLock();
@@ -69,11 +69,11 @@ SUITE (PATH_SOURCE_TEST_SUITE) {
                 CHECK(!p.hasLock());
     }
 
-    TEST (PATH_SOURCE_AQUIRELOCK_LATER) {
-        TestResourcesAndFunctions res(PATH_SOURCE_TEST_SUITE, PATH_SOURCE_AQUIRELOCK_LATER);
+    TEST (FILE_SOURCE_AQUIRELOCK_LATER) {
+        TestResourcesAndFunctions res(FILE_SOURCE_TEST_SUITE, FILE_SOURCE_AQUIRELOCK_LATER);
 
         auto ps = TestResourcesAndFunctions::getResource(TEST_FASTQ_SMALL);
-        PathSource p(ps);
+        FileSource p(ps);
                 CHECK(!p.isOpen());
 
         p.open();
@@ -85,11 +85,11 @@ SUITE (PATH_SOURCE_TEST_SUITE) {
                 CHECK(p.isOpen());
     }
 
-    TEST (PATH_SOURCE_READ_TELL_SEEK) {
-        TestResourcesAndFunctions res(PATH_SOURCE_TEST_SUITE, PATH_SOURCE_READ_TELL_SEEK);
+    TEST (FILE_SOURCE_READ_TELL_SEEK) {
+        TestResourcesAndFunctions res(FILE_SOURCE_TEST_SUITE, FILE_SOURCE_READ_TELL_SEEK);
 
         auto ps = TestResourcesAndFunctions::getResource(TEST_FASTQ_SMALL);
-        PathSource p(ps);
+        FileSource p(ps);
         p.open();
 
         Bytef a[256]{0};

@@ -7,7 +7,7 @@
 #include "../../src/common/ErrorMessages.h"
 #include "../../src/runners/ExtractorRunner.h"
 #include "../../src/runners/IndexerRunner.h"
-#include "../../src/process/io/PathSink.h"
+#include "process/io/FileSink.h"
 #include "../../src/process/io/StreamSource.h"
 #include "../TestConstants.h"
 #include "../TestResourcesAndFunctions.h"
@@ -29,49 +29,49 @@ const char *TEST_CHECK_PREMISES_WITH_UNREADABLE_FASTQ_BEHIND_SYMLINK_CHAIN = "te
 
 const char *SUITE_ID = "RunnerTests";
 
-path fastqFile(TestResourcesAndFunctions *res) {
+path sourceFile(TestResourcesAndFunctions *res) {
     return res->filePath(FASTQ_FILENAME);
 }
 
-shared_ptr<PathSource> _fastqFile(TestResourcesAndFunctions *res) {
-    return PathSource::from(fastqFile(res));
+shared_ptr<FileSource> _sourceFile(TestResourcesAndFunctions *res) {
+    return FileSource::from(sourceFile(res));
 }
 
 path indexFile(TestResourcesAndFunctions *res) {
     return res->filePath(INDEX_FILENAME);
 }
 
-shared_ptr<PathSink> _indexFile(TestResourcesAndFunctions *res) {
-    return std::make_shared<PathSink>(indexFile(res));
+shared_ptr<FileSink> _indexFile(TestResourcesAndFunctions *res) {
+    return std::make_shared<FileSink>(indexFile(res));
 }
 
 SUITE (SUITE_ID) {
 
     TEST (TEST_FILEPATH_HELPER_METHOD) {
         TestResourcesAndFunctions res(SUITE_ID, TEST_FILEPATH_HELPER_METHOD);
-                CHECK(fastqFile(&res).string() == res.getTestPath().string() + "/" + FASTQ_FILENAME);
+                CHECK(sourceFile(&res).string() == res.getTestPath().string() + "/" + FASTQ_FILENAME);
                 CHECK(indexFile(&res).string() == res.getTestPath().string() + "/" + INDEX_FILENAME);
     }
 
     TEST (TEST_CHECK_PREMISES_WITH_ALLOWED_PIPE) {
         TestResourcesAndFunctions res(SUITE_ID, TEST_CHECK_PREMISES_WITH_FASTQ);
-        IndexerRunner runner(make_shared<StreamSource>(&cin), make_shared<PathSink>(indexFile(&res)), BlockDistanceStorageStrategy::getDefault());
+        IndexerRunner runner(make_shared<StreamSource>(&cin), make_shared<FileSink>(indexFile(&res)), BlockDistanceStorageDecisionStrategy::getDefault());
         bool result = runner.fulfillsPremises();
                 CHECK(result);
     }
 
     TEST (TEST_CHECK_PREMISES_WITH_FASTQ) {
         TestResourcesAndFunctions res(SUITE_ID, TEST_CHECK_PREMISES_WITH_FASTQ);
-        path fastq = fastqFile(&res);
+        path fastq = sourceFile(&res);
         res.createEmptyFile(FASTQ_FILENAME);
-        IndexerRunner runner(_fastqFile(&res), _indexFile(&res),make_shared<BlockDistanceStorageStrategy>(-1, true));
+        IndexerRunner runner(_sourceFile(&res), _indexFile(&res),make_shared<BlockDistanceStorageDecisionStrategy>(-1, true));
         bool result = runner.fulfillsPremises();
                 CHECK(result);
     }
 
     TEST (TEST_CHECK_PREMISES_WITH_MISSING_FASTQ) {
         TestResourcesAndFunctions res(SUITE_ID, TEST_CHECK_PREMISES_WITH_MISSING_FASTQ);
-        auto runner = new IndexerRunner(_fastqFile(&res), _indexFile(&res), BlockDistanceStorageStrategy::getDefault());
+        auto runner = new IndexerRunner(_sourceFile(&res), _indexFile(&res), BlockDistanceStorageDecisionStrategy::getDefault());
         bool result = runner->fulfillsPremises();
                 CHECK(!result);
 //                CHECK(runner->getErrorMessages().size() == 1);
@@ -81,7 +81,7 @@ SUITE (SUITE_ID) {
 
     TEST (TEST_CHECK_PREMISES_WITH_FASTQ_BEHIND_SYMLINK_CHAIN) {
         TestResourcesAndFunctions res(SUITE_ID, TEST_CHECK_PREMISES_WITH_FASTQ_BEHIND_SYMLINK_CHAIN);
-        path fastq = fastqFile(&res);
+        path fastq = sourceFile(&res);
         res.createEmptyFile(FASTQ_FILENAME);
         path symlink1 = path(fastq.string() + ".link1");
         path symlink2 = path(symlink1.string() + ".link2");
@@ -89,17 +89,17 @@ SUITE (SUITE_ID) {
         create_symlink(fastq, symlink1);
         create_symlink(symlink1, symlink2);
         create_symlink(symlink2, symlink3);
-        IndexerRunner runner(shared_ptr<Source>(new PathSource(symlink3)), _indexFile(&res), BlockDistanceStorageStrategy::getDefault());
+        IndexerRunner runner(shared_ptr<Source>(new FileSource(symlink3)), _indexFile(&res), BlockDistanceStorageDecisionStrategy::getDefault());
         bool result = runner.fulfillsPremises();
                 CHECK_EQUAL(true, result);
     }
 
     TEST (TEST_CHECK_PREMISES_WITH_UNREADABLE_FASTQ_BEHIND_SYMLINK_CHAIN) {
         TestResourcesAndFunctions res(SUITE_ID, TEST_CHECK_PREMISES_WITH_UNREADABLE_FASTQ_BEHIND_SYMLINK_CHAIN);
-        path fastq = fastqFile(&res);
+        path fastq = sourceFile(&res);
         path symlink1 = path(fastq.string() + ".link1");
         create_symlink(fastq, symlink1);
-        IndexerRunner runner(shared_ptr<Source>(new PathSource(symlink1)), _indexFile(&res), BlockDistanceStorageStrategy::getDefault());
+        IndexerRunner runner(shared_ptr<Source>(new FileSource(symlink1)), _indexFile(&res), BlockDistanceStorageDecisionStrategy::getDefault());
         bool result = runner.fulfillsPremises();
                 CHECK_EQUAL(false, result);
     }
@@ -108,7 +108,7 @@ SUITE (SUITE_ID) {
         TestResourcesAndFunctions res(SUITE_ID, TEST_CHECK_PREMISES_WITH_EXISTING_INDEX);
         res.createEmptyFile(FASTQ_FILENAME);
         res.createEmptyFile(INDEX_FILENAME);
-        IndexerRunner runner(_fastqFile(&res), _indexFile(&res), BlockDistanceStorageStrategy::getDefault());
+        IndexerRunner runner(_sourceFile(&res), _indexFile(&res), BlockDistanceStorageDecisionStrategy::getDefault());
         bool result = runner.fulfillsPremises();
         // It is not allowed to override an existing file! Test has to "fail"
                 CHECK(!result);

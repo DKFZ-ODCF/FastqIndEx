@@ -4,7 +4,8 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "../../src/common/StringHelper.h"
+#include "common/CommonStructsAndConstants.h"
+#include "common/StringHelper.h"
 #include <UnitTest++/UnitTest++.h>
 
 const char *const STRINGHELPER_TESTS = "Test suite for IOHelper class";
@@ -21,5 +22,26 @@ SUITE (STRINGHELPER_TESTS) {
         vector<string> res = StringHelper::splitStr(text);
                 CHECK_EQUAL(expectedVector.size(), res.size());
                 CHECK_ARRAY_EQUAL(expectedVector, res, res.size());
+    }
+
+    TEST (TEST_BYTESTRATEGY_PARSESTRINGVALUE) {
+        // Invalid values first => Will result in -1
+                CHECK_EQUAL(-1, StringHelper::parseStringValue(""));
+                CHECK_EQUAL(-1, StringHelper::parseStringValue("ab"));
+                CHECK_EQUAL(-1, StringHelper::parseStringValue("3a"));
+                CHECK_EQUAL(-1, StringHelper::parseStringValue("3.0k"));
+
+        // Valid values
+                CHECK_EQUAL(3 * MB, StringHelper::parseStringValue("3"));
+
+                CHECK_EQUAL(3 * kB, StringHelper::parseStringValue("3k"));
+                CHECK_EQUAL(3 * kB, StringHelper::parseStringValue("3K"));
+                CHECK_EQUAL(3 * MB, StringHelper::parseStringValue("3m"));
+                CHECK_EQUAL(3 * MB, StringHelper::parseStringValue("3M"));
+
+                CHECK_EQUAL(3 * GB, StringHelper::parseStringValue("3g"));
+                CHECK_EQUAL(3 * GB, StringHelper::parseStringValue("3G"));
+                CHECK_EQUAL(3 * TB, StringHelper::parseStringValue("3t"));
+                CHECK_EQUAL(3 * TB, StringHelper::parseStringValue("3T"));
     }
 }

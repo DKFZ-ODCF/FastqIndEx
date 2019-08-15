@@ -1,17 +1,21 @@
 # Contributing to FastqIndEx
 
-If you would like to contribute code you can do so through GitHub by forking the repository and sending us a pull request.
+If you would like to contribute code you can do so through GitHub by
+ forking the repository and sending us a pull request.
 
-When submitting code, please make every effort to follow existing conventions and style in order to keep the code as readable as possible.
+When submitting code, please make every an effort to follow already used
+conventions and style of the current code in order to keep the code as 
+readable as possible.
 
 Please also try to write unit tests wherever it is possible.
 
 ## License
 
-By contributing your code, you agree to license your contribution under the terms of the MIT License:
+By contributing your code, you agree to license your contribution under 
+the terms of the MIT License:
 
-https://opensource.org/licenses/mit-license.html
-https://github.com/DKFZ-ODCF/FastqIndEx/blob/master/LICENSE.txt
+* [MIT License](https://opensource.org/licenses/mit-license.html)
+* [FastqIndEx License](https://github.com/DKFZ-ODCF/FastqIndEx/blob/master/LICENSE.txt)
 
 If you are adding a new file it should have a header like this:
 
@@ -40,27 +44,31 @@ The version 1 header is exactly 512 Byte wide and can be described like:
 
 ``` bash
 |                                                                              (IndexHeader)                                                                             | 
-|    (u_int32_t)     |    (u_int32_t)   | (u_int32_t) |  (u_int32_t)  |   (int64_t)   |     (int64_t)    |           (bool)          |   (u_char)  | (int64_t)[59] |
+|    (u_int32_t)     |    (u_int32_t)   | (u_int32_t) |  (u_int32_t)  |    (int64_t)    |      (int64_t)     |           (bool)          |   (u_char)  |  (int64_t)[59]  |
 | indexWriterVersion | sizeOfIndexEntry | magicNumber | blockInterval | numberOfEntries | linesInIndexedFile | dictionariesAreCompressed | placeholder |     reserved    |
 ```
 
-The version 1 index entry has an extracted width of 32800 Byte index entry can be described like:
+The version 1 index entry has an extracted width of 32800 Byte index 
+entry can be described like:
 
 ```bash
 |                                                                          IndexEntry                                                                         |
-|   (int64_t)   |      (int64_t)     |     (int64_t)     |      (u_int32_t)       | (u_int32_t) | (u_char) |        (u_int16_t)       | (u_char)[32768] |
+|    (int64_t)    |       (int64_t)      |      (int64_t)      |      (u_int32_t)       | (u_int32_t) | (u_char) |        (u_int16_t)       | (u_char)[32768] |
 |     blockID     | blockOffsetInRawFile | startingLineInEntry | offsetOfFirstValidLine |     bits    | reserved | compressedDictionarySize |    dictionary   |
 ```
 
-If compression is enabled, this looks a bit different (note the last field differs then and depends on compressedDictionarySize!), when it is stored in the FQI file:
+If compression is enabled, this looks a bit different (note the last 
+field differs then and depends on compressedDictionarySize!), when it is
+ stored in the FQI file:
 
 ```bash
 |                                                                                   IndexEntry                                                                                   |
-|   (int64_t)   |      (int64_t)     |     (int64_t)     |      (u_int32_t)       | (u_int32_t) | (u_char) |        (u_int16_t)       | (u_char)[compressedDictionarySize] |
+|    (int64_t)    |       (int64_t)      |      (int64_t)      |      (u_int32_t)       | (u_int32_t) | (u_char) |        (u_int16_t)       | (u_char)[compressedDictionarySize] |
 |     blockID     | blockOffsetInRawFile | startingLineInEntry | offsetOfFirstValidLine |     bits    | reserved | compressedDictionarySize |             dictionary             |
 ```
 
-If compression is enabled, you need to read out the IndexEntry without the dictionary first. 
+If compression is enabled, you need to read out the IndexEntry without 
+the dictionary first. 
 
 ## Development setup
 
@@ -79,6 +87,20 @@ as safe as possible.
    
 **<span style="color:orange;">=>  We will not get the application a 100%
   safe, but we try to minimize the risk of data corruption.</span>**
+
+### Error handling
+
+In our code base, you will not find assert and throws but collect errors
+as soon as possible. The class used for this is the ErrorAccumulator. 
+Most classes inherit this class. Now, before anything is done, we try to
+collect errors as soon as possible and abort before index / extract or 
+stats is running. 
+
+In short:
+* Do not use throws or assert, when not necessary. Document it, when you 
+  plan to diverge from this.
+* Try to keep your error messages precise and helpful.
+* Mark programming errors with the prefix "BUG: "
 
 ### Code validation with clang-tidy
 

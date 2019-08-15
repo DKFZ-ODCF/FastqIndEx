@@ -19,7 +19,7 @@
 using namespace std;
 using namespace TCLAP;
 
-static const char *const FASTQFILE_PARAMETER = "fastqFile";
+static const char *const FASTQFILE_PARAMETER = "sourceFile";
 
 static const char *const INDEXFILE_PARAMETER = "indexFile";
 

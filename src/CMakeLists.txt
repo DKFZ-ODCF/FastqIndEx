@@ -33,16 +33,18 @@ add_library(
         fastqindexlib
         common/CommonStructsAndConstants.cpp common/CommonStructsAndConstants.h
         common/ErrorAccumulator.cpp common/ErrorAccumulator.h
-        common/IndexHeader.cpp common/IndexHeader.h
         common/ErrorMessages.cpp common/ErrorMessages.h
-        common/IndexEntry.cpp common/IndexEntry.h
-        common/IndexEntryV1.h
         common/IOHelper.cpp common/IOHelper.h
+        common/Result.h
         common/StringHelper.cpp common/StringHelper.h
+        process/base/BaseIndexEntry.h
+        process/base/IndexHeader.cpp process/base/IndexHeader.h
+        process/base/IndexEntry.cpp process/base/IndexEntry.h
+        process/base/IndexEntryV1.h
         process/base/ZLibBasedFASTQProcessorBaseClass.cpp process/base/ZLibBasedFASTQProcessorBaseClass.h
         process/extract/Extractor.cpp process/extract/Extractor.h
         process/extract/IndexReader.cpp process/extract/IndexReader.h
-        process/index/IndexEntryStorageStrategy.h
+        process/index/IndexEntryStorageDecisionStrategy.h
         process/index/Indexer.cpp process/index/Indexer.h
         process/index/IndexWriter.cpp process/index/IndexWriter.h
         process/io/s3/FQIS3Client.h
@@ -53,11 +55,11 @@ add_library(
         process/io/s3/S3Sink.h
         process/io/s3/S3Source.cpp process/io/s3/S3Source.h
         process/io/locks/LockHandler.h
-        process/io/locks/PathLockHandler.cpp process/io/locks/PathLockHandler.h
+        process/io/locks/FileLockHandler.cpp process/io/locks/FileLockHandler.h
         process/io/locks/S3LockHandler.h
         process/io/IOBase.h
-        process/io/PathSink.cpp process/io/PathSink.h
-        process/io/PathSource.cpp process/io/PathSource.h
+        process/io/FileSink.cpp process/io/FileSink.h
+        process/io/FileSource.cpp process/io/FileSource.h
         process/io/Sink.h
         process/io/Source.h
         process/io/ConsoleSink.h

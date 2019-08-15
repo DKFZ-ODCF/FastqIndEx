@@ -11,8 +11,8 @@
 
 using experimental::filesystem::path;
 
-ActualRunner::ActualRunner(const shared_ptr<Source> &fastqfile) {
-    this->fastqFile = fastqfile;
+ActualRunner::ActualRunner(const shared_ptr<Source> &sourceFile) {
+    this->sourceFile = sourceFile;
 }
 
 bool ActualRunner::fulfillsPremises() {
@@ -20,9 +20,9 @@ bool ActualRunner::fulfillsPremises() {
     // Fastq needs to be a (pipe AND piping allowed) or an ((existing file OR symlink with a file) AND readable)
     bool fastqIsValid = false;
 
-    if (fastqFile->isFile()) {
-        if (!fastqFile->exists()) {
-            addErrorMessage("The selected FASTQ file '" + fastqFile->toString() + "' does not exist.");
+    if (sourceFile->isFile()) {
+        if (!sourceFile->exists()) {
+            addErrorMessage("Source file '" + sourceFile->toString() + "' does not exist.");
         } else {
             fastqIsValid = true;
         }
@@ -45,15 +45,15 @@ bool IndexReadingRunner::fulfillsPremises() {
 }
 
 vector<string> IndexReadingRunner::getErrorMessages() {
-    if (fastqFile.get()) {
+    if (sourceFile.get()) {
         auto a = ErrorAccumulator::getErrorMessages();
-        auto b = fastqFile->getErrorMessages();
+        auto b = sourceFile->getErrorMessages();
         auto c = indexFile->getErrorMessages();
-        return mergeToNewVector(a, b, c);
+        return concatenateVectors(a, b, c);
     } else {
         auto a = ErrorAccumulator::getErrorMessages();
         auto c = indexFile->getErrorMessages();
-        return mergeToNewVector(a, c);
+        return concatenateVectors(a, c);
     }
 }
 
@@ -79,8 +79,8 @@ bool IndexWritingRunner::fulfillsPremises() {
 
 vector<string> IndexWritingRunner::getErrorMessages() {
     auto a = ErrorAccumulator::getErrorMessages();
-    auto b = fastqFile->getErrorMessages();
+    auto b = sourceFile->getErrorMessages();
     auto c = indexFile->getErrorMessages();
-    return mergeToNewVector(a, b, c);
+    return concatenateVectors(a, b, c);
 }
 

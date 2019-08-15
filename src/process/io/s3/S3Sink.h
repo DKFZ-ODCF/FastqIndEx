@@ -8,7 +8,7 @@
 #define FASTQINDEX_S3SINK_H
 
 #include "common/StringHelper.h"
-#include "process/io/PathSink.h"
+#include "process/io/FileSink.h"
 #include "process/io/Sink.h"
 #include "S3Config.h"
 #include "FQIS3Client.h"
@@ -35,7 +35,7 @@ private:
 
     bool objectAlreadyExists{false};
 
-    PathSink *tempFile{nullptr};
+    FileSink *tempFile{nullptr};
 
     FQIS3Client fqiS3Client;
 
@@ -75,25 +75,24 @@ public:
         bool ok = true;
 
         auto result = fqiS3Client.checkObjectExistence();
-        if (!result.requestWasSuccessful)
+        if (!result.success)
             return false;
 
         objectAlreadyExists = result.result;
 
         if (objectAlreadyExists && !this->forceOverwrite) {
-            addErrorMessage("The file '", this->fqiS3Client.getS3Path(),
-                            "' already exists. ",
+            addErrorMessage("File '", this->fqiS3Client.getS3Path(), "' already exists. ",
                             "Use -w to force the application to overwrite the file.");
             return false;
         }
 
         auto[success, tempFilePath] = IOHelper::createTempFile("FastqIndEx_S3TemporaryIndex");
         if (!success) {
-            addErrorMessage("Could not create an intermediate temporary file for the S3 output file.");
+            addErrorMessage("Could not create an intermediate temporary file for '", fqiS3Client.getS3Path(), "'.");
             return false;
         }
 
-        this->tempFile = new PathSink(tempFilePath, true);
+        this->tempFile = new FileSink(tempFilePath, true);
         if (!tempFile->openWithWriteLock()) {
             delete tempFile;
             tempFile = nullptr;
@@ -109,7 +108,7 @@ public:
             return true;
 
         auto result = fqiS3Client.putFile(tempFile->toString());
-        bool ok = result.requestWasSuccessful && result.result;
+        bool ok = result.success && result.result;
         if (result.result)
             ErrorAccumulator::always("Uploaded FQI file to bucket s3://", fqiS3Client.getBucketName());
 
@@ -211,10 +210,10 @@ public:
         auto l = ErrorAccumulator::getErrorMessages();
         auto r = fqiS3Client.getErrorMessages();
         if (!tempFile) {
-            return mergeToNewVector(l, r);
+            return concatenateVectors(l, r);
         } else {
             auto s = tempFile->getErrorMessages();
-            return mergeToNewVector(l, r, s);
+            return concatenateVectors(l, r, s);
         }
     }
 

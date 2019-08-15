@@ -76,12 +76,12 @@ public:
      * @param r The right vector
      * @return A new vector<string> with both vectors merged. The messages of l will be placed before the messages of r.
      */
-    static vector<string> mergeToNewVector(const vector<string> &l, const vector<string> &r);
+    static vector<string> concatenateVectors(const vector<string> &l, const vector<string> &r);
 
     /**
      * Similar to its version with two input parameters.
      */
-    static vector<string> mergeToNewVector(const vector<string> &a, const vector<string> &b, const vector<string> &c);
+    static vector<string> concatenateVectors(const vector<string> &a, const vector<string> &b, const vector<string> &c);
 
 };
 

@@ -4,7 +4,7 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "process/io/PathSource.h"
+#include "process/io/FileSource.h"
 #include "ZLibBasedFASTQProcessorBaseClass.h"
 #include <experimental/filesystem>
 #include <iostream>
@@ -17,7 +17,7 @@ ZLibBasedFASTQProcessorBaseClass::ZLibBasedFASTQProcessorBaseClass(
         enableDebugging(enableDebugging) {
 
     // clang-tidy will complain, that zStream is not initialized by this constructor. This is done in another step.
-    fastqFile = move(fastq);
+    sourceFile = move(fastq);
     inputIndexFile = move(index);
 }
 
@@ -28,7 +28,7 @@ ZLibBasedFASTQProcessorBaseClass::ZLibBasedFASTQProcessorBaseClass(
         enableDebugging(enableDebugging) {
 
     // clang-tidy will complain, that zStream is not initialized by this constructor. This is done in another step.
-    fastqFile = move(fastq);
+    sourceFile = move(fastq);
     outputIndexFile = move(index);
 }
 
@@ -51,10 +51,10 @@ bool ZLibBasedFASTQProcessorBaseClass::initializeZStream(int mode) {
 
 bool ZLibBasedFASTQProcessorBaseClass::readCompressedDataFromSource() {
     /* get some compressed data from input file */
-    int64_t result = this->fastqFile->read(input, CHUNK_SIZE);
+    int64_t result = this->sourceFile->read(input, CHUNK_SIZE);
 
     if (result == -1) {
-        this->addErrorMessage("There was an error while trying to read the FASTQ file '", fastqFile->toString(), "'.");
+        this->addErrorMessage("Could not read source file '", sourceFile->toString(), "'.");
         return false;
     } else
         zStream.avail_in = static_cast<uInt>(result);

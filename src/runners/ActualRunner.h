@@ -26,17 +26,17 @@ protected:
 
     /**
      * The fastq file to work with. The reason, why this is of type Source and indexFile is not is, that the
-     * fastqFile can be piped in. All other sources (and results) are not pipeable or the piping (cout) is so trivial,
+     * sourceFile can be piped in. All other sources (and results) are not pipeable or the piping (cout) is so trivial,
      * that no other class or complex mechanism is necessary.
      */
-    shared_ptr<Source> fastqFile = shared_ptr<Source>(nullptr);
+    shared_ptr<Source> sourceFile = shared_ptr<Source>(nullptr);
 
     /**
      * For index mode (writing)
-     * @param fastqfile
+     * @param sourceFile
      * @param indexFile
      */
-    explicit ActualRunner(const shared_ptr<Source> &fastqfile);
+    explicit ActualRunner(const shared_ptr<Source> &sourceFile);
 
 public:
 
@@ -55,7 +55,7 @@ public:
      */
     virtual bool allowsReadFromStreamedSource() { return false; };
 
-    shared_ptr<Source> getFastqFile() { return fastqFile; }
+    shared_ptr<Source> getSourceFile() { return sourceFile; }
 
 
 };
@@ -79,9 +79,9 @@ protected:
 
 public:
 
-    IndexReadingRunner(const shared_ptr<Source> &fastqfile,
+    IndexReadingRunner(const shared_ptr<Source> &sourceFile,
                        const shared_ptr<Source> &indexFile)
-            : ActualRunner(fastqfile) {
+            : ActualRunner(sourceFile) {
         this->indexFile = indexFile;
     }
 
@@ -107,9 +107,9 @@ protected:
 
 public:
 
-    IndexWritingRunner(const shared_ptr<Source> &fastqfile,
+    IndexWritingRunner(const shared_ptr<Source> &sourceFile,
                        const shared_ptr<Sink> &indexFile) :
-            ActualRunner(fastqfile) {
+            ActualRunner(sourceFile) {
         this->indexFile = indexFile;
     }
 

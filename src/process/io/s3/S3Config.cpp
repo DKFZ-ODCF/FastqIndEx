@@ -15,28 +15,28 @@ using namespace std;
 using namespace std::experimental::filesystem;
 
 S3Config::S3Config(const S3ServiceOptions &options) :
-        requestedCredentialsFile(options.credentialsFile),
-        requestedConfigFile(options.configFile) {
-    this->selectedConfigSection = options.configSection;
-    if (selectedConfigSection.empty())
-        this->selectedConfigSection = "default"; // Default section for s3 cli and s3cmd
+        credentialsFile(options.credentialsFile),
+        configFile(options.configFile) {
+    this->configSection = options.configSection;
+    if (configSection.empty())
+        this->configSection = "default"; // Default section for s3 cli and s3cmd
 
     readAndValidate();
 }
 
 bool S3Config::readAndValidate() {
-    bool _isValid = figureOutConfigurationFiles();
+    bool _valid = figureOutConfigurationFiles();
 
-    if (!_isValid) return false;
+    if (!_valid) return false;
 
-    _isValid = readFiles();
+    _valid = readFiles();
 
-    this->_isValid = _isValid;
-    return _isValid;
+    this->valid = _valid;
+    return _valid;
 }
 
 bool S3Config::figureOutConfigurationFiles() {
-    bool _isValid = true;
+    bool _valid = true;
 
     this->usedCredentialsFile = path();
     this->usedConfigFile = path();
@@ -45,28 +45,28 @@ bool S3Config::figureOutConfigurationFiles() {
     path finalConfigurationFile;
 
     // try and resolve the configuration file
-    finalConfigurationFile = requestedConfigFile;
+    finalConfigurationFile = configFile;
     if (finalConfigurationFile.string().empty())
         finalConfigurationFile = getDefaultAWSConfigFile();
 
     // Try and resolve the credentials file
-    finalCredentialsFile = requestedCredentialsFile;
+    finalCredentialsFile = credentialsFile;
     if (finalCredentialsFile.string().empty()) {
         finalCredentialsFile = exists(getDefaultAWSCredentialsFile()) ? getDefaultAWSCredentialsFile()
                                                                       : finalConfigurationFile;
     }
 
-    _isValid &= IOHelper::checkFileReadability(finalCredentialsFile, "credentials", this);
-    _isValid &= IOHelper::checkFileReadability(finalConfigurationFile, "configuration", this);
+    _valid &= IOHelper::checkFileReadability(finalCredentialsFile, "credentials", this);
+    _valid &= IOHelper::checkFileReadability(finalConfigurationFile, "configuration", this);
 
-    S3Config::_isValid = _isValid;
-    if (_isValid) {
+    S3Config::valid = _valid;
+    if (_valid) {
         usedCredentialsFile = finalCredentialsFile;
         usedConfigFile = finalConfigurationFile;
     } else {
         addErrorMessage("Could not validate configuration for S3.");
     }
-    return _isValid;
+    return _valid;
 }
 
 
@@ -75,9 +75,9 @@ bool S3Config::readFiles() {
     this->allValues.clear();
 
     // Config first, then credentials. Specific credentials will overwrite config entries.
-    auto configValues = IOHelper::loadIniFile(usedConfigFile, selectedConfigSection);
+    auto configValues = IOHelper::loadIniFile(usedConfigFile, configSection);
     if (usedConfigFile != usedCredentialsFile) {
-        auto credentialValues = IOHelper::loadIniFile(usedCredentialsFile, selectedConfigSection);
+        auto credentialValues = IOHelper::loadIniFile(usedCredentialsFile, configSection);
         for (auto const&[key, val] : *credentialValues) {
             (*configValues)[key] = val;
         }

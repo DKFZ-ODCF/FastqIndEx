@@ -7,10 +7,15 @@
 #ifndef FASTQINDEX_INDEXENTRYV1_H
 #define FASTQINDEX_INDEXENTRYV1_H
 
-#include "CommonStructsAndConstants.h"
+#include "common/CommonStructsAndConstants.h"
+#include "process/base/BaseIndexEntry.h"
 #include "IndexEntry.h"
 
 using namespace std;
+
+struct IndexEntryV1;
+
+typedef shared_ptr<IndexEntryV1> IndexEntryV1_S;
 
 /**
  * Represents an entry in a gz index file
@@ -19,12 +24,12 @@ using namespace std;
  *   https://stackoverflow.com/questions/119123/why-isnt-sizeof-for-a-struct-equal-to-the-sum-of-sizeof-of-each-member
  * The size of this struct is 32800 Bytes.
  */
-struct IndexEntryV1 : public VirtualIndexEntry {
+struct IndexEntryV1 : public BaseIndexEntry {
 
     /**
      * The identifier of the raw compressed block for which this entry is.
      */
-    u_int64_t blockID{0};
+    u_int64_t blockIndex{0};
 
     /**
      * Offset / Byte position of the referenced compressed block offset in the raw gz file.
@@ -69,11 +74,11 @@ struct IndexEntryV1 : public VirtualIndexEntry {
      */
     Bytef dictionary[WINDOW_SIZE]{0};
 
-    static shared_ptr<IndexEntryV1> from(unsigned char bits,
-                                         u_int64_t blockID,
-                                         u_int32_t offsetOfFirstValidLine,
-                                         u_int64_t offsetInRawFile,
-                                         u_int64_t startingLineInEntry) {
+    static IndexEntryV1_S from(unsigned char bits,
+                               u_int64_t blockID,
+                               u_int32_t offsetOfFirstValidLine,
+                               u_int64_t offsetInRawFile,
+                               u_int64_t startingLineInEntry) {
         return make_shared<IndexEntryV1>(bits, blockID, offsetOfFirstValidLine, offsetInRawFile, startingLineInEntry);
     }
 
@@ -83,7 +88,7 @@ struct IndexEntryV1 : public VirtualIndexEntry {
                  u_int64_t offsetInRawFile,
                  u_int64_t startingLineInEntry) :
             bits(bits),
-            blockID(blockID),
+            blockIndex(blockID),
             offsetToNextLineStart(offsetOfFirstValidLine),
             blockOffsetInRawFile(offsetInRawFile),
             startingLineInEntry(startingLineInEntry) {}
@@ -92,7 +97,7 @@ struct IndexEntryV1 : public VirtualIndexEntry {
 
     bool operator==(const IndexEntryV1 &rhs) const {
         return bits == rhs.bits &&
-               blockID == rhs.blockID &&
+               blockIndex == rhs.blockIndex &&
                offsetToNextLineStart == rhs.offsetToNextLineStart &&
                blockOffsetInRawFile == rhs.blockOffsetInRawFile &&
                startingLineInEntry == rhs.startingLineInEntry;
@@ -104,7 +109,7 @@ struct IndexEntryV1 : public VirtualIndexEntry {
 
     shared_ptr<IndexEntry> toIndexEntry() {
         auto indexLine = std::make_shared<IndexEntry>(
-                this->blockID,
+                this->blockIndex,
                 this->bits,
                 this->offsetToNextLineStart,
                 this->blockOffsetInRawFile,
@@ -115,5 +120,6 @@ struct IndexEntryV1 : public VirtualIndexEntry {
         return indexLine;
     }
 };
+
 
 #endif //FASTQINDEX_INDEXENTRYV1_H

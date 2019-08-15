@@ -7,6 +7,7 @@
 #ifndef FASTQINDEX_S3CONFIG_H
 #define FASTQINDEX_S3CONFIG_H
 
+#include "common/CommonStructsAndConstants.h"
 #include "common/ErrorAccumulator.h"
 #include "common/IOHelper.h"
 #include "process/io/s3/S3ServiceOptions.h"
@@ -30,9 +31,9 @@ private:
 
     Aws::Client::ClientConfiguration defaultConfiguration;
 
-    path requestedCredentialsFile;
+    path credentialsFile;
 
-    path requestedConfigFile;
+    path configFile;
 
     path usedCredentialsFile;
 
@@ -49,7 +50,7 @@ private:
      * [section 31]
      * key = value
      */
-    string selectedConfigSection;
+    string configSection;
 
     /**
      * Map of all loaded values
@@ -60,7 +61,7 @@ private:
      * If an error occurred during construction, this is stored here. Error messages are retrievable via
      * getErrorMessages()
      */
-    bool _isValid{false};
+    bool valid{false};
 
     /**
      * Called to resolve the credential and configuration file.
@@ -118,12 +119,12 @@ public:
     /**
      * Tells you, if this object is usable or not.
      */
-    bool isValid() { return _isValid; };
+    bool isValid() { return valid; };
 
     /**
      * The selected configuration section in the configuration file ("default" by default)
      */
-    string getSelectedConfigSection() { return selectedConfigSection; };
+    string getSelectedConfigSection() { return configSection; };
 
     /**
      * Get the (resolved) credentials file, this might be the config file, if no credentials file was and there is
@@ -161,9 +162,9 @@ public:
         try {
             result = stoi(allValues[key]);
         } catch (const invalid_argument &e) {
-            addErrorMessage("'", value, "' cannot be converted to an integer.");
+            addErrorMessage("'", key, "':'", value, "' cannot be converted to an integer.");
         } catch (const out_of_range &e) {
-            addErrorMessage("'", value, "' is too large for an integer conversion.");
+            addErrorMessage("'", key, "':'", value, "' is too large for an integer typel.");
         }
         return result;
     }
@@ -172,20 +173,11 @@ public:
         string value = getStringSafe(key, to_string(_default));
         uint result = _default;
         try {
-            // Unfortunately, C++ does not offer the stoui method (or stou). Why? Nobody knows. I found
-            // the following code snippet here: https://stackoverflow.com/questions/8715213/why-is-there-no-stdstou
-
-            unsigned long intermediate = std::stoul(allValues[key]);
-            if (result > std::numeric_limits<unsigned>::max()) {
-                throw std::out_of_range("stou");
-            } else {
-                result = static_cast<uint>(intermediate);
-            }
-            return result;
+            result = stoui(allValues[key]);
         } catch (const invalid_argument &e) {
-            addErrorMessage("'", value, "' cannot be converted to an unsigned integer.");
+            addErrorMessage("'", key, "':'", value, "' cannot be converted to an unsigned integer.");
         } catch (const out_of_range &e) {
-            addErrorMessage("'", value, "' is too large for an unsigned integer conversion.");
+            addErrorMessage("'", key, "':'", value, "' is too large for an unsigned integer type.");
         }
         return result;
     }
@@ -196,9 +188,9 @@ public:
         try {
             result = stol(allValues[key]);
         } catch (const invalid_argument &e) {
-            addErrorMessage("'", value, "' cannot be converted to a long.");
+            addErrorMessage("'", key, "':'", value, "' cannot be converted to a long.");
         } catch (const out_of_range &e) {
-            addErrorMessage("'", value, "' is too large for a long conversion.");
+            addErrorMessage("'", key, "':'", value, "' is too large for a long type.");
         }
         return result;
     }
@@ -217,7 +209,8 @@ public:
                 throw invalid_argument("");
 
         } catch (const invalid_argument &e) {
-            addErrorMessage("'", value, "' cannot be converted to bool. Must be either [T/t]rue or [F/f]alse.");
+            addErrorMessage("'", key, "':'", value,
+                            "' cannot be converted to bool. Must be either [T/t]rue or [F/f]alse.");
         }
         return result;
     }
@@ -235,7 +228,7 @@ public:
             else
                 throw invalid_argument("");
         } catch (const invalid_argument &e) {
-            addErrorMessage("'", value, "' is not a valid scheme, must be either Http or Https.");
+            addErrorMessage("'", key, "':'", value, "' is not a valid scheme, must be either Http or Https.");
         }
         return result;
     }

@@ -37,16 +37,18 @@ add_executable(
         TestResourcesAndFunctionsTest.cpp
 
         # Leave these two right at the beginning, these tests are crucial
-        process/io/PathSinkTest.cpp
-        process/io/PathSourceTest.cpp
+        process/io/FileSinkTest.cpp
+        process/io/FileSourceTest.cpp
 
         process/index/IndexWriterTest.cpp
         process/index/IndexerTest.cpp
         process/index/IndexEntryStorageStrategyTest.cpp
 
         process/io/SourceTest.cpp
-        common/CommonStructsTest.cpp
+        process/base/IndexHeaderAndEntriesTests.cpp
+        common/CommonStuffTest.cpp
         common/IOHelperTest.cpp
+        common/ResultTest.cpp
         common/StringHelperTest.cpp
         process/base/ZLibBasedFASTQProcessorBaseClassTest.cpp
         process/extract/ExtractorTest.cpp

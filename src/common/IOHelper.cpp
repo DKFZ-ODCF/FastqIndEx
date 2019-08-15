@@ -57,6 +57,26 @@ bool IOHelper::checkFileReadability(const path &file, const string &fileType, Er
     return _isValid;
 }
 
+bool IOHelper::checkFileWriteability(const path &file, const string &fileType, ErrorAccumulator *errorAccumulator) {
+
+    std::stringstream sstream;
+    bool error = false;
+    if (exists(file) && access(file.string().c_str(), W_OK) != 0) {
+        sstream << "The '" << fileType << "' file '" << file.string() << "' exists but is not writeable.";
+        error = true;
+    } else if (exists(file.parent_path()) && access(file.parent_path().string().c_str(), W_OK) != 0) {
+        sstream << "The parent folder for '" << fileType << "' file '" << file.string() << "' exists but is not writeable.";
+        error = true;
+    } else if(!exists(file.parent_path())) {
+        sstream << "The parent folder for '" << fileType << "' file '" << file.string() << "' does not exist.";
+        error = true;
+    }
+
+    if (error)
+        report(sstream, errorAccumulator);
+    return !error;
+}
+
 tuple<bool, path> IOHelper::createTempDir(const string &prefix) {
     lock_guard<recursive_mutex> lockGuard(IOHelper::iohelper_mtx);
     auto tempDir = temp_directory_path();

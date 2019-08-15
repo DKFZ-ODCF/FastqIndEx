@@ -9,9 +9,9 @@
 
 #include "common/CommonStructsAndConstants.h"
 #include "common/ErrorAccumulator.h"
-#include "common/IndexHeader.h"
-#include "common/IndexEntry.h"
-#include "process/io/locks/PathLockHandler.h"
+#include "process/base/IndexHeader.h"
+#include "process/base/IndexEntry.h"
+#include "process/io/locks/FileLockHandler.h"
 #include "process/io/Source.h"
 #include <experimental/filesystem>
 #include <fstream>

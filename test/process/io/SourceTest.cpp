@@ -5,7 +5,7 @@
  */
 
 #include "process/io/Source.h"
-#include "process/io/PathSource.h"
+#include "process/io/FileSource.h"
 #include "process/io/StreamSource.h"
 #include "../../TestResourcesAndFunctions.h"
 #include <cstring>
@@ -15,7 +15,7 @@
 const char *SUITE_BIS_TESTS = "InputStreamTestSuite";
 const char *TEST_STREAM_ISOURCE_OPERATIONS = "Test StreamSource operations";
 const char *TEST_STREAM_ISOURCE_SKIP = "Test StreamSource skip on large dataset";
-const char *TEST_STREAM_PSOURCE_OPERATIONS = "Test PathSource operations";
+const char *TEST_STREAM_PSOURCE_OPERATIONS = "Test FileSource operations";
 
 path getAndCheckTextFile() {
     path textFile = TestResourcesAndFunctions::getResource("TestTextFile.txt");
@@ -57,7 +57,7 @@ SUITE (SUITE_BIS_TESTS) {
         TestResourcesAndFunctions res(SUITE_BIS_TESTS, TEST_STREAM_PSOURCE_OPERATIONS);
         path textFile = getAndCheckTextFile();
 
-        PathSource Source(textFile);
+        FileSource Source(textFile);
                 CHECK(Source.isFile());
 
 

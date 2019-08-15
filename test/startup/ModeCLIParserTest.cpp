@@ -6,32 +6,32 @@
 
 #include "process/io/Source.h"
 #include "process/io/StreamSource.h"
-#include "process/io/PathSource.h"
+#include "process/io/FileSource.h"
 #include "process/io/s3/S3Source.h"
 #include "process/io/Sink.h"
-#include "process/io/PathSink.h"
+#include "process/io/FileSink.h"
 #include "process/io/s3/S3Sink.h"
 #include "startup/ModeCLIParser.h"
 #include <UnitTest++/UnitTest++.h>
 
 const char *const SUITE_MODECLIPARSER_TESTS = "Tests for the ModeCLIParser class";
 const char *const TEST_RESOLVE_INDEX_FILENAME = "Test ::resolveIndexFileName()";
-const char *const TEST_PROCESS_FASTQ_FILE_NONE = "Test ::processFastqFile() with invalid PathSource result";
-const char *const TEST_PROCESS_FASTQ_FILE_S3 = "Test ::processFastqFile() with S3Source result";
-const char *const TEST_PROCESS_FASTQ_FILE_STREAM = "Test ::processFastqFile() with StreamSource result";
-const char *const TEST_PROCESS_FASTQ_FILE_PATH = "Test ::processFastqFile() with PathSource result";
-const char *const TEST_PROCESS_INDEX_FILE_SOURCE_PATH = "Test ::processIndexFileSource() with PathSource";
+const char *const TEST_PROCESS_FASTQ_FILE_NONE = "Test ::processSourceFileSource() with invalid FileSource result";
+const char *const TEST_PROCESS_FASTQ_FILE_S3 = "Test ::processSourceFileSource() with S3Source result";
+const char *const TEST_PROCESS_FASTQ_FILE_STREAM = "Test ::processSourceFileSource() with StreamSource result";
+const char *const TEST_PROCESS_FASTQ_FILE_PATH = "Test ::processSourceFileSource() with FileSource result";
+const char *const TEST_PROCESS_INDEX_FILE_SOURCE_PATH = "Test ::processIndexFileSource() with FileSource";
 const char *const TEST_PROCESS_INDEX_FILE_SOURCE_S3 = "Test ::processIndexFileSource() with S3Source";
-const char *const TEST_PROCESS_INDEX_FILE_SINK_PATH = "Test ::processIndexFileSink() with PathSink result";
-const char *const TEST_PROCESS_INDEX_FILE_SINK_PATH_NONAME = "Test ::processIndexFileSink() without a filename and with PathSink result";
+const char *const TEST_PROCESS_INDEX_FILE_SINK_PATH = "Test ::processIndexFileSink() with FileSink result";
+const char *const TEST_PROCESS_INDEX_FILE_SINK_PATH_NONAME = "Test ::processIndexFileSink() without a filename and with FileSink result";
 const char *const TEST_PROCESS_INDEX_FILE_SINK_S3 = "Test ::processIndexFileSink() with S3Sink result";
 const char *const TEST_PROCESS_INDEX_FILE_SINK_S3_NONAME = "Test ::processIndexFileSink() without a filename and with S3Sink result";
 const char *const TEST_PROCESS_FILE_SINK = "Test ::processFileSink()";
 
 SUITE (SUITE_MODECLIPARSER_TESTS) {
     TEST (TEST_RESOLVE_INDEX_FILENAME) {
-        auto fq = PathSource::from("abc.fastq");
-        // Needs full path because the name is inherited from the FASTQ PathSource (which is fully resolved)
+        auto fq = FileSource::from("abc.fastq");
+        // Needs full path because the name is inherited from the FASTQ FileSource (which is fully resolved)
                 CHECK_EQUAL(IOHelper::fullPath("abc.fastq.fqi"), ModeCLIParser::resolveIndexFileName("", fq));
         // Short check here
                 CHECK_EQUAL("a.fqi", ModeCLIParser::resolveIndexFileName("a.fqi", fq));
@@ -40,33 +40,33 @@ SUITE (SUITE_MODECLIPARSER_TESTS) {
     }
 
     TEST (TEST_PROCESS_FASTQ_FILE_NONE) {
-        // This one is an invalid, unusable PathSource
-        auto src = ModeCLIParser::processFastqFile("", S3ServiceOptions("", "", ""));
-                CHECK(dynamic_pointer_cast<PathSource>(src)->toString() == "");
+        // This one is an invalid, unusable FileSource
+        auto src = ModeCLIParser::processSourceFileSource("", S3ServiceOptions("", "", ""));
+                CHECK(dynamic_pointer_cast<FileSource>(src)->toString() == "");
     }
 
     TEST (TEST_PROCESS_FASTQ_FILE_PATH) {
-        // This one is an invalid, unusable PathSource
-        auto src = ModeCLIParser::processFastqFile("abc.fastq", S3ServiceOptions("", "", ""));
-                CHECK(dynamic_pointer_cast<PathSource>(src)->toString() == IOHelper::fullPath("abc.fastq"));
+        // This one is an invalid, unusable FileSource
+        auto src = ModeCLIParser::processSourceFileSource("abc.fastq", S3ServiceOptions("", "", ""));
+                CHECK(dynamic_pointer_cast<FileSource>(src)->toString() == IOHelper::fullPath("abc.fastq"));
     }
 
     TEST (TEST_PROCESS_FASTQ_FILE_S3) {
-        // This one is an invalid, unusable PathSource
-        auto src = ModeCLIParser::processFastqFile("s3://abc/test.fastq", S3ServiceOptions("", "", ""));
+        // This one is an invalid, unusable FileSource
+        auto src = ModeCLIParser::processSourceFileSource("s3://abc/test.fastq", S3ServiceOptions("", "", ""));
                 CHECK(dynamic_pointer_cast<S3Source>(src)->toString() == "s3://abc/test.fastq");
     }
 
     TEST (TEST_PROCESS_FASTQ_FILE_STREAM) {
-        // This one is an invalid, unusable PathSource
-        auto src = ModeCLIParser::processFastqFile("-", S3ServiceOptions("", "", ""));
+        // This one is an invalid, unusable FileSource
+        auto src = ModeCLIParser::processSourceFileSource("-", S3ServiceOptions("", "", ""));
                 CHECK(dynamic_pointer_cast<StreamSource>(src)->getStream() == &std::cin);
     }
 
     TEST (TEST_PROCESS_INDEX_FILE_SOURCE_PATH) {
         // Index filename resolve is done in a previous step.
         auto src = ModeCLIParser::processIndexFileSource("test.fqi",S3ServiceOptions( "", "", ""));
-                CHECK(dynamic_pointer_cast<PathSource>(src)->toString() == IOHelper::fullPath("test.fqi"));
+                CHECK(dynamic_pointer_cast<FileSource>(src)->toString() == IOHelper::fullPath("test.fqi"));
     }
 
     TEST (TEST_PROCESS_INDEX_FILE_SOURCE_S3) {
@@ -76,13 +76,13 @@ SUITE (SUITE_MODECLIPARSER_TESTS) {
     }
 
     TEST (TEST_PROCESS_INDEX_FILE_SINK_PATH) {
-        auto src = ModeCLIParser::processIndexFileSink("test.fqi", true, PathSource::from("test.fastq"), S3ServiceOptions("", "", ""));
-                CHECK(dynamic_pointer_cast<PathSink>(src)->toString() == IOHelper::fullPath("test.fqi"));
+        auto src = ModeCLIParser::processIndexFileSink("test.fqi", true, FileSource::from("test.fastq"), S3ServiceOptions("", "", ""));
+                CHECK(dynamic_pointer_cast<FileSink>(src)->toString() == IOHelper::fullPath("test.fqi"));
     }
 
     TEST (TEST_PROCESS_INDEX_FILE_SINK_PATH_NONAME) {
-        auto src = ModeCLIParser::processIndexFileSink("", true, PathSource::from("test.fastq"), S3ServiceOptions("", "", ""));
-                CHECK(dynamic_pointer_cast<PathSink>(src)->toString() == IOHelper::fullPath("test.fastq.fqi"));
+        auto src = ModeCLIParser::processIndexFileSink("", true, FileSource::from("test.fastq"), S3ServiceOptions("", "", ""));
+                CHECK(dynamic_pointer_cast<FileSink>(src)->toString() == IOHelper::fullPath("test.fastq.fqi"));
     }
 
     TEST (TEST_PROCESS_INDEX_FILE_SINK_S3) {

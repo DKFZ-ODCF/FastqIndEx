@@ -4,8 +4,8 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "process/io/PathSink.h"
-#include "process/io/PathSource.h"
+#include "process/io/FileSink.h"
+#include "process/io/FileSource.h"
 #include "process/io/s3/S3Sink.h"
 #include "process/io/s3/S3Source.h"
 #include "process/io/Source.h"
@@ -48,7 +48,7 @@ _StringValueArg ModeCLIParser::createIndexFileArg(CmdLine *cmdLineParser) const 
 
 _StringValueArg ModeCLIParser::createFastqFileArg(CmdLine *cmdLineParser) const {
     return _makeStringValueArg(
-            "f", "fastqFile",
+            "f", "sourceFile",
             string("The FASTQ file which shall be indexed or - for stdin.") +
             "The FASTQ file can also reside in an S3 bucket. Enter the filename here like s3:<filename> and set the"
             " bucket with --bucket.",
@@ -105,14 +105,14 @@ ModeCLIParser::createAllowedModeArg(const string &mode, CmdLine *cmdLineParser) 
     return {arg, allowedModesConstraint};
 }
 
-shared_ptr<Source> ModeCLIParser::processFastqFile(const string &fastqFileVal,
-                                                   const S3ServiceOptions &s3ServiceOptions) {
-    if (fastqFileVal == "-") {      // Streamed mode
+shared_ptr<Source> ModeCLIParser::processSourceFileSource(const string &sourceFileArg,
+                                                          const S3ServiceOptions &s3ServiceOptions) {
+    if (sourceFileArg == "-") {      // Streamed mode
         return StreamSource::from(&cin);
-    } else if (isS3Path(fastqFileVal)) {     // S3 mode!
-        return S3Source::from(fastqFileVal, s3ServiceOptions);
+    } else if (isS3Path(sourceFileArg)) {     // S3 mode!
+        return S3Source::from(sourceFileArg, s3ServiceOptions);
     }
-    return PathSource::from(fastqFileVal);
+    return FileSource::from(sourceFileArg);
 }
 
 shared_ptr<Source> ModeCLIParser::processIndexFileSource(const string &indexFile,
@@ -128,7 +128,7 @@ shared_ptr<Source> ModeCLIParser::processIndexFileSource(const string &indexFile
     if (isS3Path(indexFile)) {
         return S3Source::from(indexFile, s3ServiceOptions);
     } else {
-        return PathSource::from(indexFile);
+        return FileSource::from(indexFile);
     } // Index might still be empty but this will be checked later!
 }
 
@@ -141,7 +141,7 @@ shared_ptr<Sink> ModeCLIParser::processIndexFileSink(const string &_indexFile,
     if (isS3Path(indexFile)) {
         return S3Sink::from(indexFile, forceOverwrite, s3ServiceOptions);
     } else {
-        return PathSink::from(indexFile, forceOverwrite);
+        return FileSink::from(indexFile, forceOverwrite);
     }
 }
 
@@ -153,6 +153,6 @@ shared_ptr<Sink> ModeCLIParser::processFileSink(const string &file,
     } else if (isS3Path(file)) {
         return S3Sink::from(file, forceOverwrite, s3ServiceOptions);
     } else {
-        return PathSink::from(file, forceOverwrite);
+        return FileSink::from(file, forceOverwrite);
     }
 }

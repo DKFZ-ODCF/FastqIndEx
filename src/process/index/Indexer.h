@@ -9,7 +9,7 @@
 
 #include "common/CommonStructsAndConstants.h"
 #include "common/ErrorAccumulator.h"
-#include "process/index/IndexEntryStorageStrategy.h"
+#include "process/index/IndexEntryStorageDecisionStrategy.h"
 #include "process/index/IndexWriter.h"
 #include "process/io/Sink.h"
 #include "process/base/ZLibBasedFASTQProcessorBaseClass.h"
@@ -29,10 +29,9 @@ class Indexer : public ZLibBasedFASTQProcessorBaseClass {
 public:
 
     /**
-     * This is the version of the current Indexer implementation. In contrary to the Extractor, there is always only one
-     * Indexer version available.
-     * If the Indexer ever changes, keep in mind to increment this version! This will be used to select the appropriate
-     * Extractor class when an index is read!
+     * This is the version of the current Indexer implementation. In contrast to the Extractor, there is always only one
+     * Indexer version available. If the Indexer ever changes, keep in mind to increment this version! This will be used
+     * to select the appropriate Extractor class when an index is read!
      */
     static const unsigned int INDEXER_VERSION;
 
@@ -46,7 +45,7 @@ private:
 
     bool forceOverwrite{false};
 
-    shared_ptr<IndexEntryStorageStrategy> storageStrategy;
+    shared_ptr<IndexEntryStorageDecisionStrategy> storageStrategy;
 
     bool compressDictionaries{true};
 
@@ -55,6 +54,11 @@ private:
      * keeps the index header
      */
     shared_ptr<IndexHeader> storedHeader = shared_ptr<IndexHeader>(nullptr);
+
+    /**
+     * Reference entry for calls to the storage strategy
+     */
+    shared_ptr<IndexEntryV1> lastStoredIndexEntry;
 
     /**
      * For debug and test purposes, used when debuggingEnabled is true
@@ -118,9 +122,9 @@ public:
      * @param index The index for the FASTQ.
      * @param enableDebugging Store debug information or not.
      */
-    Indexer(const shared_ptr<Source> &fastqfile,
+    Indexer(const shared_ptr<Source> &sourceFile,
             const shared_ptr<Sink> &index,
-            const shared_ptr<IndexEntryStorageStrategy> &storageStrategy,
+            const shared_ptr<IndexEntryStorageDecisionStrategy> &storageStrategy,
             bool enableDebugging = false,
             bool forceOverwrite = false,
             bool forbidWriteFQI = false,
@@ -153,7 +157,7 @@ public:
     void storeLinesOfCurrentBlockForDebugMode(std::stringstream &currentDecompressedBlock);
 
     /**
-     * Overriden to also pass through (copywise, safe but slow but also only with a few entries and in error cases)
+     * Overridden to also pass through (copywise, safe but slow but also only with a few entries and in error cases)
      * error messages from the used IndexWriter and ZLibHelper instance.
      * @return Merged vector of the objects error messages + the index writers error messages.
      */
@@ -186,13 +190,13 @@ public:
 
     bool writeIndexEntryIfPossible(shared_ptr<IndexEntryV1> &entry, const vector<string> &lines, bool blockIsEmpty);
 
-    void enableWriteOutOfDecompressedBlocksAndStatistics(const path &location) {
+    void enableWritingDecompressedBlocksAndStatistics(const path &location) {
         this->writeOutOfDecompressedBlocksAndStatistics = true;
         this->storageForDecompressedBlocks = location;
     }
 
 
-    void enableWriteOutOfPartialDecompressedBlocks(const path &location) {
+    void enableWritingPartialDecompressedBlocks(const path &location) {
         this->writeOutOfPartialDecompressedBlocks = true;
         this->storageForPartialDecompressedBlocks = location.u8string() + string("/blockinfo.txt");
     }

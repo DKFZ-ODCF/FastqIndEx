@@ -9,22 +9,20 @@ files.
 
 ## Features at a glance
 
-* Support for accessing:
-  - Local files (either by piped or streamed access)
-  - Files safely over NFS (using flock(), also with either piped or
-    streamed access)
+* Support for:
+  - Local file access (either by piped or streamed access)
+  - Safe concurrent file access over NFS (using flock(), also with 
+    either piped or streamed access)
   - Files in an S3 bucket (experimental, without locking yet!)
 * Many checks to make sure, that the application does what you expect
   and runs safely.
 * A number of options to tell the indexer how you like to get things 
   done.
-* Different configurable indexing strategies:
-  - Block distance based
-  - Byte distance based (default)
+* A flexible and configurable index size.
 * Different extraction strategies:
   - Extract a range of records 
-  - Extract one of n-segements, where you define the number of segments 
-    on the fly.
+  - (Virtually) divide the FASTQ on the fly into n segments and extract 
+    one segement of your choice.
 
 ## License and Contributing 
 
@@ -129,12 +127,12 @@ FastqIndEx has the following dependencies, which should be met before building i
 
 ##### Use Conda to manage your dependencies
 
-* Install Miniconda / Anaconda
-* The conda recipe is contained in env/environment.yml, use conda-env 
-  to import it:
-  conda env create -n FastqIndEx -f env/environment.yml
-* Download and install UnitTest++ like described in the next section, 
-  it is not available in Conda.
+1. Install Miniconda / Anaconda
+2. The conda recipe is contained in env/environment.yml, use conda-env 
+   to import it:
+   conda env create -n FastqIndEx -f env/environment.yml
+3. Download and install UnitTest++ like described in the next section, 
+   it is not available in Conda.
 
 ##### Compilation with manual installation of dependencies
 
@@ -181,83 +179,79 @@ activate the Conda environment of FastqIndEx.
 
 #### FastqIndEx
 
-First, you need to clone the FastqIndEx Git repository. You can do this
-by executing:
+1. First, you need to clone the FastqIndEx Git repository. You can do this
+   by executing:
 
-``` bash
-cd ~/Projects           # Or any other desired location, we'll stick to this
-git clone https://github.com/DKFZ-ODCF/FastqIndEx.git
-git checkout master     # Or any other version you like
-```
+    ``` bash
+    cd ~/Projects           # Or any other desired location, we'll stick to this
+    git clone https://github.com/DKFZ-ODCF/FastqIndEx.git
+    git checkout master     # Or any other version you like
+    ```
 
-To compile it, create a CMake build directory and run CMake afterwards:
+2. To compile it, create a CMake build directory and run CMake afterwards:
 
-``` Bash
-export CONDA_DIR="~/miniconda2/envs/FastqIndEx"     # Miniconda is normally installed in <home>/miniconda2
-export CONDA_LIB=${CONDA_DIR}/lib
-export CONDA_LIB64=${CONDA_DIR}/lib64
-export CONDA_INCLUDE=${CONDA_DIR}/include
-cmake -D CMAKE_BUILD_TYPE=Debug -D BUILD_ONLY="s3;config;transfer" -D BUILD_SHARED_LIBS=ON  -D OPENSSL_ROOT_DIR=${CONDA_DIR}  -D OPENSSL_INCLUDE_DIR=${CONDA_INCLUDE} OPENSSL_LIBRARIES=${CONDA_LIB}  -D ZLIB_INCLUDE_DIR=${CONDA_INCLUDE} -DZLIB_LIBRARY=${CONDA_LIB}/libz.a -D CURL_INCLUDE_DIR=${CONDA_INCLUDE} -DCURL_LIBRARY=${CONDA_LIB}/libcurl.so  -D CMAKE_INSTALL_PREFIX=$PWD/../install_shared -D ENABLE_TESTING=OFF ..
-cmake -D CMAKE_BUILD_TYPE=Debug -D BUILD_ONLY="s3;config;transfer" -D BUILD_SHARED_LIBS=OFF  -D OPENSSL_ROOT_DIR=${CONDA_DIR}  -D OPENSSL_INCLUDE_DIR=${CONDA_INCLUDE} OPENSSL_LIBRARIES=${CONDA_LIB}  -D ZLIB_INCLUDE_DIR=${CONDA_INCLUDE} -DZLIB_LIBRARY=${CONDA_LIB}/libz.a -D CURL_INCLUDE_DIR=${CONDA_INCLUDE} -DCURL_LIBRARY=${CONDA_LIB}/libcurl.so  -D CMAKE_INSTALL_PREFIX=$PWD/../install_shared -D ENABLE_TESTING=OFF ..
+    ``` Bash
+    export CONDA_DIR="~/miniconda2/envs/FastqIndEx"     # Miniconda is normally installed in <home>/miniconda2
+    export CONDA_LIB=${CONDA_DIR}/lib
+    export CONDA_LIB64=${CONDA_DIR}/lib64
+    export CONDA_INCLUDE=${CONDA_DIR}/include
+    cmake -D CMAKE_BUILD_TYPE=Debug -D BUILD_ONLY="s3;config;transfer" -D BUILD_SHARED_LIBS=ON  -D OPENSSL_ROOT_DIR=${CONDA_DIR}  -D OPENSSL_INCLUDE_DIR=${CONDA_INCLUDE} OPENSSL_LIBRARIES=${CONDA_LIB}  -D ZLIB_INCLUDE_DIR=${CONDA_INCLUDE} -DZLIB_LIBRARY=${CONDA_LIB}/libz.a -D CURL_INCLUDE_DIR=${CONDA_INCLUDE} -DCURL_LIBRARY=${CONDA_LIB}/libcurl.so  -D CMAKE_INSTALL_PREFIX=$PWD/../install_shared -D ENABLE_TESTING=OFF ..
+    cmake -D CMAKE_BUILD_TYPE=Debug -D BUILD_ONLY="s3;config;transfer" -D BUILD_SHARED_LIBS=OFF  -D OPENSSL_ROOT_DIR=${CONDA_DIR}  -D OPENSSL_INCLUDE_DIR=${CONDA_INCLUDE} OPENSSL_LIBRARIES=${CONDA_LIB}  -D ZLIB_INCLUDE_DIR=${CONDA_INCLUDE} -DZLIB_LIBRARY=${CONDA_LIB}/libz.a -D CURL_INCLUDE_DIR=${CONDA_INCLUDE} -DCURL_LIBRARY=${CONDA_LIB}/libcurl.so  -D CMAKE_INSTALL_PREFIX=$PWD/../install_shared -D ENABLE_TESTING=OFF ..
+    
+    
+    export AWS_DIR="/path/to/aws-sdk-cpp/install_shared"
+    export UNITTESTPP_DIR="/path/to/unittest-cpp"
+    export ZLIB_DIR="/path/to/zlib-1.2.11"                                    # If necessary
 
+    # The following instructions are for a release build of FastqIndEx. 
+    # If you want to create a debug build, change "release" to "debug"
+    export MODE=release
+    cd FastqIndEx
+    mkdir ${MODE}                                                             
+    cd ${MODE}
+    cmake -G "Unix Makefiles" \
+        -D "UnitTest++_DIR":PATH="${UNITTESTPP_DIR}/install/lib/cmake/UnitTest++" \ # If necessary
+        -D ZLIB_LIBRARY="${ZLIB_DIR}/libz.a" \                                      # If necessary
+        -D ZLIB_INCLUDE_DIR="${ZLIB_DIR}"" \                                        # If necessary
+        -D "AWSSDK_DIR":PATH="${AWS_DIR}/lib64/cmake/AWSSDK" \                      # For S3 support, you need to do this.
+        -D "aws-cpp-sdk-core_DIR":PATH="${AWS_DIR}/lib64/cmake/aws-cpp-sdk-core" \
+        -D "aws-c-event-stream_DIR":PATH="${AWS_DIR}/lib64/aws-c-event-stream/cmake" \
+        -D "aws-c-common_DIR":PATH="${AWS_DIR}/lib64/aws-c-common/cmake" \
+        -D "aws-checksums_DIR":PATH="${AWS_DIR}/lib64/aws-checksums/cmake" \
+        -D "aws-cpp-sdk-s3_DIR":PATH="${AWS_DIR}/lib64/cmake/aws-cpp-sdk-s3" \                
+        -DCMAKE_BUILD_TYPE=Release                                             
+        ..
+    cd ..
+    cmake --build ${MODE} --target all -- -j 2                                
+    ```
 
-AWS_DIR="/path/to/aws-sdk-cpp/install_shared"
-cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug \
-    -D "UnitTest++_DIR":PATH="/path/to/unittest-cpp/install/lib/cmake/UnitTest++" \
-    -D "AWSSDK_DIR":PATH="${AWS_DIR}/lib64/cmake/AWSSDK" \
-    -D "aws-cpp-sdk-core_DIR":PATH="${AWS_DIR}/lib64/cmake/aws-cpp-sdk-core" \
-    -D "aws-c-event-stream_DIR":PATH="${AWS_DIR}/lib64/aws-c-event-stream/cmake" \
-    -D "aws-c-common_DIR":PATH="${AWS_DIR}/lib64/aws-c-common/cmake" \
-    -D "aws-checksums_DIR":PATH="${AWS_DIR}/lib64/aws-checksums/cmake" \
-    -D "aws-cpp-sdk-s3_DIR":PATH="${AWS_DIR}/lib64/cmake/aws-cpp-sdk-s3" ..
+    **<span style="color:ffffa0;">
+    Note, that the -D flags for the includes are only necessary, if you
+    installed the libraries manually. If they are already installed on your 
+    system or (e.g. for UnitTest++) you installed them to the system folders
+    or if you use the Conda environment, you can omit these flags.
+    </span>**
 
+3. To clean the build directory use:
 
-cd FastqIndEx
-mkdir release                                                             # Or also debug, in case you want to develop
-cd release
-cmake -G "Unix Makefiles" \
-    -D "UnitTest++_DIR":PATH=/path/to/unittest-cpp/lib/cmake/UnitTest++ \ # If necessary
-    -D ZLIB_LIBRARY=/path/to/zlib-1.2.11/libz.a \                         # If necessary
-    -D ZLIB_INCLUDE_DIR=/path/to/zlib-1.2.11 \                            # If necessary
-    -D AWSSDK_DIR:PATH=<aws installation>/lib64/cmake/AWSSDK                          \  # For S3 support, you need to do this.                          
-    -D aws-cpp-sdk-core_DIR:PATH=<aws installation>/lib64/cmake/aws-cpp-sdk-core      \                    
-    -D aws-c-event-stream_DIR:PATH=<aws installation>/lib64/aws-c-event-stream/cmake  \                        
-    -D aws-c-common_DIR:PATH=<aws installation>/lib64/aws-c-common/cmake              \            
-    -D aws-checksums_DIR:PATH=<aws installation>/lib64/aws-checksums/cmake            \            
-    -D aws-cpp-sdk-s3_DIR:PATH=<aws installation>/lib64/cmake/aws-cpp-sdk-s3          \                
-    -DCMAKE_BUILD_TYPE=Release                                            # Or =Debug, if you plan to develop 
-    ..
-cd ..
-cmake --build release --target all -- -j 2                                # Or --build debug
-```
+    ``` Bash
+    cmake --build build --target clean -- -j 2
+    ```
 
-**<span style="color:ffffa0;">
-Note, that the -D flags for the includes are only necessary, if you
-installed the libraries manually. If they are already installed on your 
-system or (e.g. for UnitTest++) you installed them to the system folders
-or if you use the Conda environment, you can omit these flags.
-</span>**
+4. To run the tests, run the test binary like:
 
-To clean the build directory use:
+    ``` Bash
+    (cd build/test && ./testapp)
+    ```
 
-``` Bash
-cmake --build build --target clean -- -j 2
-```
+5. If you want, you can add the release or debug directory to your PATH
+    variable. E.g. in your local .bashrc file add the following:
 
-To run the tests, run the test binary like:
-
-``` Bash
-(cd build/test && ./testapp)
-```
-
-If you want, you can add the release or debug directory to your PATH
-variable. E.g. in your local .bashrc file add the following:
-
-``` bash
-# This assumes, that you cloned the repo to ~/Projects/FastqIndEx and 
-# created the release sub directory like described above.
-export PATH=~/Projects/FastqIndEx/release/src:$PATH
-```
+    ``` bash
+    # This assumes, that you cloned the repo to ~/Projects/FastqIndEx and 
+    # created the release sub directory like described above.
+    export PATH=~/Projects/FastqIndEx/release/src:$PATH
+    ```
 
 ## Links
 

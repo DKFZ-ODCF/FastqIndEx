@@ -52,10 +52,14 @@ extern const int DEFAULT_RECORD_SIZE;
  */
 #define CLEAN_WINDOW_SIZE (WINDOW_SIZE + 1)
 
-struct VirtualIndexEntry {
-    bool operator==(const VirtualIndexEntry &rhs) const { return true; };
-};
-
+/**
+ * stoui is not available as a core method (unlike stoi or stol ...). Mimic it here.
+ *
+ * Throws an out_of_range excpetion, if the value is too large
+ * @param value A string
+ * @return The hopefully converted value.
+ */
+uint stoui(std::string value);
 
 
 #endif //FASTQINDEX_COMMONSTRUCTS_H

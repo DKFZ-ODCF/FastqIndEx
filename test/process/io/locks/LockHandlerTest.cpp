@@ -4,11 +4,11 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "process/io/locks/PathLockHandler.h"
+#include "process/io/locks/FileLockHandler.h"
 #include "TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
 
-const char *const SUITE_PATH_LOCKHANDLER_TESTS = "PathLockHandler TestSuite";
+const char *const SUITE_PATH_LOCKHANDLER_TESTS = "FileLockHandler TestSuite";
 const char *const TEST_GET_CREATION = "Test creation";
 const char *const TEST_IP_OPEN_CLOSE_OPEN = "Test write after read and close, effectively test the unlock op.";
 const char *const TEST_IP_OPEN_READ_TWICE = "Test read two times";
@@ -22,14 +22,14 @@ SUITE (SUITE_PATH_LOCKHANDLER_TESTS) {
         TestResourcesAndFunctions res(SUITE_PATH_LOCKHANDLER_TESTS, TEST_GET_CREATION);
         auto idx = res.createEmptyFile(TEST_FQI_FILE);
         auto lock = res.createEmptyFile("someTest.fqi~");
-        PathLockHandler indexProcessor(idx);
-                CHECK_EQUAL(indexProcessor.getIndexFile(), idx);
+        FileLockHandler indexProcessor(idx);
+                CHECK_EQUAL(indexProcessor.getLockedFile(), idx);
     }
 
     TEST (TEST_IP_OPEN_CLOSE_OPEN) {
         TestResourcesAndFunctions res(SUITE_PATH_LOCKHANDLER_TESTS, TEST_IP_OPEN_CLOSE_OPEN);
         auto idx = res.createEmptyFile(TEST_FQI_FILE);
-        PathLockHandler ip1(idx);
+        FileLockHandler ip1(idx);
                 CHECK(ip1.readLock());
                 CHECK(ip1.hasLock());
         ip1.unlock();
@@ -42,7 +42,7 @@ SUITE (SUITE_PATH_LOCKHANDLER_TESTS) {
     TEST (TEST_IP_OPEN_READ_TWICE) {
         TestResourcesAndFunctions res(SUITE_PATH_LOCKHANDLER_TESTS, TEST_IP_OPEN_READ_TWICE);
         auto idx = res.createEmptyFile(TEST_FQI_FILE);
-        PathLockHandler ip1(idx);
+        FileLockHandler ip1(idx);
                 CHECK(ip1.readLock());
                 CHECK(ip1.readLock());
     }
@@ -50,7 +50,7 @@ SUITE (SUITE_PATH_LOCKHANDLER_TESTS) {
     TEST (TEST_IP_OPEN_READ_WRITE) {
         TestResourcesAndFunctions res(SUITE_PATH_LOCKHANDLER_TESTS, TEST_IP_OPEN_READ_WRITE);
         auto idx = res.createEmptyFile(TEST_FQI_FILE);
-        PathLockHandler ip1(idx);
+        FileLockHandler ip1(idx);
                 CHECK(ip1.readLock());
                 CHECK(ip1.hasLock());
                 CHECK(!ip1.writeLock());
@@ -59,7 +59,7 @@ SUITE (SUITE_PATH_LOCKHANDLER_TESTS) {
     TEST (TEST_IP_OPEN_WRITE_READ) {
         TestResourcesAndFunctions res(SUITE_PATH_LOCKHANDLER_TESTS, TEST_IP_OPEN_READ_WRITE);
         auto idx = res.createEmptyFile(TEST_FQI_FILE);
-        PathLockHandler ip1(idx);
+        FileLockHandler ip1(idx);
                 CHECK(ip1.writeLock());
                 CHECK(!ip1.readLock());
     }
@@ -67,7 +67,7 @@ SUITE (SUITE_PATH_LOCKHANDLER_TESTS) {
     TEST (TEST_IP_OPEN_WRITE_WRITE) {
         TestResourcesAndFunctions res(SUITE_PATH_LOCKHANDLER_TESTS, TEST_IP_OPEN_READ_WRITE);
         auto idx = res.createEmptyFile(TEST_FQI_FILE);
-        PathLockHandler ip1(idx);
+        FileLockHandler ip1(idx);
                 CHECK(ip1.writeLock());
                 CHECK(!ip1.writeLock());
         ip1.unlock();

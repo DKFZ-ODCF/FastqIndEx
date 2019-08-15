@@ -34,7 +34,7 @@ ExtractorRunner *ExtractModeCLIParser::parse(int argc, const char **argv) {
 
     auto outputFileArg = createOutputFileArg(cmdLineParser.get());
     auto indexFileArg = createIndexFileArg(cmdLineParser.get());
-    auto fastqFileArg = createFastqFileArg(cmdLineParser.get());
+    auto sourceFileArg = createFastqFileArg(cmdLineParser.get());
 
     // Keep the mode constraints on the stack, so allowedModeArg won't access invalid memory!
     auto[allowedModeArg, modeConstraints] = createAllowedModeArg("extract", cmdLineParser.get());
@@ -46,9 +46,9 @@ ExtractorRunner *ExtractModeCLIParser::parse(int argc, const char **argv) {
                                       s3ConfigFileSectionArg->getValue());
     S3Service::setS3ServiceOptions(s3ServiceOptions);
 
-    auto fastq = processFastqFile(fastqFileArg->getValue(), s3ServiceOptions);
+    auto sourceFile = processSourceFileSource(sourceFileArg->getValue(), s3ServiceOptions);
 
-    auto index = processIndexFileSource(indexFileArg->getValue(), fastq, s3ServiceOptions);
+    auto indexFile = processIndexFileSource(indexFileArg->getValue(), sourceFile, s3ServiceOptions);
 
     bool forceOverwrite = forceOverwriteArg->getValue();
 
@@ -76,8 +76,8 @@ ExtractorRunner *ExtractModeCLIParser::parse(int argc, const char **argv) {
     }
 
     auto runner = new ExtractorRunner(
-            fastq,
-            index,
+            sourceFile,
+            indexFile,
             outputFile,
             forceOverwrite,
             extractMode,

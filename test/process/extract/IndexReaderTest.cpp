@@ -6,8 +6,8 @@
 
 #include "process/extract/IndexReader.h"
 #include "process/index/IndexWriter.h"
-#include "process/io/PathSink.h"
-#include "process/io/PathSource.h"
+#include "process/io/FileSink.h"
+#include "process/io/FileSource.h"
 #include "TestResourcesAndFunctions.h"
 #include "TestConstants.h"
 #include <fstream>
@@ -56,7 +56,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
     TEST (TEST_READER_CREATION_WITH_EXISTING_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READER_CREATION_WITH_EXISTING_FILE);
         path idx = TestResourcesAndFunctions::getResource(TEST_INDEX_SMALL);
-        auto ir = make_shared<IndexReader>(make_shared<PathSource>(idx));
+        auto ir = make_shared<IndexReader>(make_shared<FileSource>(idx));
                 CHECK(ir->tryOpenAndReadHeader());
                 CHECK(ir->getErrorMessages().empty());
                 CHECK_EQUAL(ir->getIndicesLeft(), 1);
@@ -67,28 +67,28 @@ SUITE (SUITE_INDEXREADER_TESTS) {
         path idx = res.createEmptyFile(INDEX_FILENAME);
 
 //        permissions(idx, perms::owner_write | perms::owner_exec);
-        auto ir = make_shared<IndexReader>(make_shared<PathSource>(idx));
+        auto ir = make_shared<IndexReader>(make_shared<FileSource>(idx));
                 CHECK(!ir->tryOpenAndReadHeader());
     }
 
     TEST (TEST_READER_CREATION_WITH_MISSING_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READER_CREATION_WITH_MISSING_FILE);
         path idx = res.filePath(INDEX_FILENAME);
-        auto ir = make_shared<IndexReader>(make_shared<PathSource>(idx));
+        auto ir = make_shared<IndexReader>(make_shared<FileSource>(idx));
                 CHECK(!ir->tryOpenAndReadHeader());
     }
 
     TEST (TEST_READER_CREATION_WITH_SIZE_MISMATCH) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READER_CREATION_WITH_SIZE_MISMATCH);
         path idx = writeTestFile(&res, BASE_FILE_SIZE + 3);
-        auto ir = make_shared<IndexReader>(make_shared<PathSource>(idx));
+        auto ir = make_shared<IndexReader>(make_shared<FileSource>(idx));
                 CHECK(!ir->tryOpenAndReadHeader());
     }
 
     TEST (TEST_READER_CREATION_WITH_TOO_FEW_ENTRIES) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READER_CREATION_WITH_TOO_FEW_ENTRIES);
         path idx = writeTestFile(&res, sizeof(IndexHeader));
-        auto ir = make_shared<IndexReader>(make_shared<PathSource>(idx));
+        auto ir = make_shared<IndexReader>(make_shared<FileSource>(idx));
                 CHECK(!ir->tryOpenAndReadHeader());
     }
 
@@ -97,7 +97,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
     TEST (TEST_READ_HEADER_FROM_NEWLY_OPENED_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_HEADER_FROM_NEWLY_OPENED_FILE);
         path idx = TestResourcesAndFunctions::getResource(TEST_INDEX_SMALL);
-        auto ir = make_shared<IndexReader>(make_shared<PathSource>(idx));
+        auto ir = make_shared<IndexReader>(make_shared<FileSource>(idx));
                 CHECK(ir->tryOpenAndReadHeader());
 
         auto header = ir->getIndexHeader(); // Will effectively return the already read header.
@@ -114,7 +114,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_NEWLY_OPENED_FILE);
         path idx = TestResourcesAndFunctions::getResource(TEST_INDEX_SMALL);
 
-        auto ir = make_shared<IndexReader>(make_shared<PathSource>(idx));
+        auto ir = make_shared<IndexReader>(make_shared<FileSource>(idx));
                 CHECK(ir->tryOpenAndReadHeader());
 
         auto entry = ir->readIndexEntryV1();
@@ -125,7 +125,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_FILE);
         path idx = TestResourcesAndFunctions::getResource(TEST_INDEX_LARGE);
 
-        auto ir = make_shared<IndexReader>(make_shared<PathSource>(idx));
+        auto ir = make_shared<IndexReader>(make_shared<FileSource>(idx));
                 CHECK(ir->tryOpenAndReadHeader());
 
         auto header = ir->getIndexHeader();
@@ -154,7 +154,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
     TEST (TEST_READ_SEVERAL_ENTRIES_FROM_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_SEVERAL_ENTRIES_FROM_FILE);
         path idx = TestResourcesAndFunctions::getResource(TEST_INDEX_LARGE);
-        auto ir = make_shared<IndexReader>(make_shared<PathSource>(idx));
+        auto ir = make_shared<IndexReader>(make_shared<FileSource>(idx));
                 CHECK(ir->tryOpenAndReadHeader());
 
         auto header = ir->getIndexHeader();
@@ -177,7 +177,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
     TEST (TEST_READ_INDEX_FROM_END_OF_FILE) {
         TestResourcesAndFunctions res(SUITE_INDEXREADER_TESTS, TEST_READ_INDEX_FROM_END_OF_FILE);
         path idx = TestResourcesAndFunctions::getResource(TEST_INDEX_SMALL);
-        auto ir = make_shared<IndexReader>(make_shared<PathSource>(idx));
+        auto ir = make_shared<IndexReader>(make_shared<FileSource>(idx));
                 CHECK(ir->tryOpenAndReadHeader());
 
         auto header = ir->getIndexHeader();
@@ -201,7 +201,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
         auto entry2 = make_shared<IndexEntryV1>(10, 5, 0, 0, 1);
         auto entry3 = make_shared<IndexEntryV1>(10, 7, 0, 0, 0);
 
-        auto writer = new IndexWriter(make_shared<PathSink>(idx));
+        auto writer = new IndexWriter(make_shared<FileSink>(idx));
         bool open = writer->tryOpen();
                 CHECK(open);
         writer->writeIndexHeader(header);
@@ -212,7 +212,7 @@ SUITE (SUITE_INDEXREADER_TESTS) {
 
         delete writer;
 
-        auto ir = make_shared<IndexReader>(make_shared<PathSource>(idx));
+        auto ir = make_shared<IndexReader>(make_shared<FileSource>(idx));
                 CHECK(ir->tryOpenAndReadHeader());
                 CHECK_EQUAL(4, ir->getIndicesLeft());
 

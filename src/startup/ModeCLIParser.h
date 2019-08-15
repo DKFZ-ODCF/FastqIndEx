@@ -104,9 +104,9 @@ public:
     }
 
     /**
-     * Processes several FASTQ related parameters and create a FASTQ PathSource from the input.
+     * Processes several FASTQ related parameters and create a FASTQ FileSource from the input.
      */
-    static shared_ptr<Source> processFastqFile(const string &fastqFileArg, const S3ServiceOptions &s3ServiceOptions);
+    static shared_ptr<Source> processSourceFileSource(const string &sourceFileArg, const S3ServiceOptions &s3ServiceOptions);
 
     static shared_ptr<Source> processIndexFileSource(const string &indexFile,
                                                      const shared_ptr<Source> &fastqSource,

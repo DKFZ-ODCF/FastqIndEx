@@ -57,7 +57,7 @@ string ErrorAccumulator::join(_cstr s0, _cstr s1, _cstr s2, _cstr s3, _cstr s4, 
 }
 
 
-vector<string> ErrorAccumulator::mergeToNewVector(const vector<string> &l, const vector<string> &r) {
+vector<string> ErrorAccumulator::concatenateVectors(const vector<string> &l, const vector<string> &r) {
     std::vector<string> merged;
     merged.reserve(l.size() + r.size());
     merged.insert(merged.end(), l.begin(), l.end());
@@ -66,7 +66,7 @@ vector<string> ErrorAccumulator::mergeToNewVector(const vector<string> &l, const
 }
 
 vector<string>
-ErrorAccumulator::mergeToNewVector(const vector<string> &a, const vector<string> &b, const vector<string> &c) {
+ErrorAccumulator::concatenateVectors(const vector<string> &a, const vector<string> &b, const vector<string> &c) {
     std::vector<string> merged;
     merged.reserve(a.size() + b.size() + c.size());
     merged.insert(merged.end(), a.begin(), a.end());

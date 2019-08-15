@@ -7,7 +7,14 @@
 #ifndef FASTQINDEX_INDEXENTRY_H
 #define FASTQINDEX_INDEXENTRY_H
 
-#include "CommonStructsAndConstants.h"
+#include "common/CommonStructsAndConstants.h"
+
+struct IndexEntry;
+
+/**
+ * Shortcut for the shared pointer version of IndexEntry
+ */
+typedef std::shared_ptr<IndexEntry> IndexEntry_S;
 
 /**
  * A (decompressed / processed) representation of an IndexEntryV[n].

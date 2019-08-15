@@ -12,7 +12,7 @@
 #include "process/extract/IndexReader.h"
 #include "process/io/Source.h"
 #include "process/io/Sink.h"
-#include "process/io/PathSource.h"
+#include "process/io/FileSource.h"
 #include <cstdio>
 #include <experimental/filesystem>
 #include <zlib.h>
@@ -27,7 +27,7 @@ class ZLibBasedFASTQProcessorBaseClass : public ErrorAccumulator {
 
 protected:
 
-    shared_ptr<Source> fastqFile;
+    shared_ptr<Source> sourceFile;
 
     shared_ptr<Source> inputIndexFile;
 
@@ -107,7 +107,7 @@ protected:
 
 public:
 
-    shared_ptr<Source> getFastq() { return fastqFile; }
+    shared_ptr<Source> getSource() { return sourceFile; }
 
     auto getInputIndexFile() { return inputIndexFile; }
 

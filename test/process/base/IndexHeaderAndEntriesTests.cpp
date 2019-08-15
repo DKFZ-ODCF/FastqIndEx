@@ -5,7 +5,7 @@
  */
 
 #include "common/CommonStructsAndConstants.h"
-#include "common/IndexHeader.h"
+#include "process/base/IndexHeader.h"
 #include <UnitTest++/UnitTest++.h>
 
 const char *SUITE_COMMONSTRUCTS_TESTS = "CommonStructsTests";
@@ -47,7 +47,7 @@ SUITE (SUITE_COMMONSTRUCTS_TESTS) {
         // by accident. Be aware, that the struct V1 will have a padding of 2Byte applied.
         // Its size is 2Byte higher than the accumulated size of the single elements.
                 CHECK_EQUAL(32800U, sizeof(IndexEntryV1));
-                CHECK_EQUAL(8U, sizeof(indexEntry.blockID));
+                CHECK_EQUAL(8U, sizeof(indexEntry.blockIndex));
                 CHECK_EQUAL(8U, sizeof(indexEntry.blockOffsetInRawFile));
                 CHECK_EQUAL(8U, sizeof(indexEntry.startingLineInEntry));
                 CHECK_EQUAL(1U, sizeof(indexEntry.bits));
@@ -57,7 +57,7 @@ SUITE (SUITE_COMMONSTRUCTS_TESTS) {
         Bytef dictionaryCheck[WINDOW_SIZE]{0};
 
         // Now initial values
-                CHECK_EQUAL(0U, indexEntry.blockID);
+                CHECK_EQUAL(0U, indexEntry.blockIndex);
                 CHECK_EQUAL(0U, indexEntry.bits);
                 CHECK_EQUAL(0U, indexEntry.offsetToNextLineStart);
                 CHECK_EQUAL(0U, indexEntry.blockOffsetInRawFile);
@@ -69,7 +69,7 @@ SUITE (SUITE_COMMONSTRUCTS_TESTS) {
     TEST (TEST_INDEX_EMPTY_CONSTRUCT1) {
         IndexEntryV1 indexEntry(1, 10, 5, 20, 1000);
                 CHECK_EQUAL(1U, indexEntry.bits);
-                CHECK_EQUAL(10U, indexEntry.blockID);
+                CHECK_EQUAL(10U, indexEntry.blockIndex);
                 CHECK_EQUAL(5U, indexEntry.offsetToNextLineStart);
                 CHECK_EQUAL(20U, indexEntry.blockOffsetInRawFile);
                 CHECK_EQUAL(1000U, indexEntry.startingLineInEntry);

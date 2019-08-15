@@ -43,7 +43,7 @@ IndexerRunner *IndexModeCLIParser::parse(int argc, const char **argv) {
     auto s3ConfigFileArg = createS3ConfigFileArg(cmdLineParser.get());
 
     auto indexFileArg = createIndexFileArg(cmdLineParser.get());
-    auto fastqFileArg = createFastqFileArg(cmdLineParser.get());
+    auto sourceFileArg = createFastqFileArg(cmdLineParser.get());
 
     // Keep the mode constraints on the stack, so allowedModeArg won't access invalid memory!
     auto[allowedModeArg, modeConstraints] = createAllowedModeArg("index", cmdLineParser.get());
@@ -57,17 +57,17 @@ IndexerRunner *IndexModeCLIParser::parse(int argc, const char **argv) {
                                       s3ConfigFileSectionArg->getValue());
     S3Service::setS3ServiceOptions(s3ServiceOptions);
 
-    auto fastq = processFastqFile(fastqFileArg->getValue(), s3ServiceOptions);
+    auto fastq = processSourceFileSource(sourceFileArg->getValue(), s3ServiceOptions);
     auto index = processIndexFileSink(indexFileArg->getValue(), forceOverwrite, fastq, s3ServiceOptions);
 
-    shared_ptr<IndexEntryStorageStrategy> storageStrategy;
+    shared_ptr<IndexEntryStorageDecisionStrategy> storageStrategy;
     if (selectIndexMetricArg->getValue() == "BlockDistance") {
         int blockInterval = blockIntervalArg->getValue();
         if (blockInterval < -1) blockInterval = -1;
         storageStrategy.reset(
-                new BlockDistanceStorageStrategy(blockInterval, !disableFailsafeDistanceSwitch->getValue()));
+                new BlockDistanceStorageDecisionStrategy(blockInterval, !disableFailsafeDistanceSwitch->getValue()));
     } else if (selectIndexMetricArg->getValue() == "ByteDistance") {
-        storageStrategy.reset(new ByteDistanceStorageStrategy(byteDistanceArg->getValue()));
+        storageStrategy.reset(new ByteDistanceStorageDecisionStrategy(byteDistanceArg->getValue()));
     }
 
     ErrorAccumulator::setVerbosity(verbosityArg->getValue());
@@ -94,7 +94,7 @@ IndexerRunner *IndexModeCLIParser::parse(int argc, const char **argv) {
                                     dictCompressionSwitch->getValue());
 
     if (storeForDecompressedBlocksArg->isSet()) {
-        runner->enableWriteOutOfDecompressedBlocksAndStatistics(storeForDecompressedBlocksArg->getValue());
+        runner->enableWritingDecompressedBlocksAndStatistics(storeForDecompressedBlocksArg->getValue());
         ErrorAccumulator::always("Storage location for decompressed blocks: '",
                                  storeForDecompressedBlocksArg->getValue(), "'");
     }
@@ -102,7 +102,7 @@ IndexerRunner *IndexModeCLIParser::parse(int argc, const char **argv) {
     if (storeForPartialDecompressedBlocksArg->isSet()) {
         ErrorAccumulator::always("Storage location for partial decompressed block data file to: '",
                                  storeForPartialDecompressedBlocksArg->getValue(), "'");
-        runner->enableWriteOutOfPartialDecompressedBlocks(storeForPartialDecompressedBlocksArg->getValue());
+        runner->enableWritingPartialDecompressedBlocks(storeForPartialDecompressedBlocksArg->getValue());
     }
     return runner;
 }

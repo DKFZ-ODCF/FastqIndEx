@@ -9,7 +9,7 @@
 
 #include "runners/ActualRunner.h"
 #include "process/extract/Extractor.h"
-#include "process/io/PathSource.h"
+#include "process/io/FileSource.h"
 
 /**
  * The ExtractorRunner will, once started, read in the IndexHeader of an FASTQ index file and, based on the encoded
@@ -34,9 +34,9 @@ protected:
 public:
     /**
      *
-     * @param fastqfile         The file to extract from.
+     * @param sourceFile         The file to extract from.
      * @param indexFile         The index which is used for extraction.
-     * @param resultfile        The file which shall be written or - for stdout.
+     * @param resultFile        The file which shall be written or - for stdout.
      * @param forceOverwrite    Overwrite an existing resultfile, if the result is written to a file.
      * @param mode              Mode of operation (either line or segment based)
      * @param start             Sets the either the starting line to extract from OR the segment to extract.
@@ -44,9 +44,9 @@ public:
      * @param enableDebugging   Used for debugging with e.g. an IDE and for unit tests.
      */
     ExtractorRunner(
-            const shared_ptr<Source> &fastqfile,
+            const shared_ptr<Source> &sourceFile,
             const shared_ptr<Source> &indexFile,
-            const shared_ptr<Sink> &resultfile,
+            const shared_ptr<Sink> &resultFile,
             bool forceOverwrite,
             ExtractMode mode,
             int64_t start,

@@ -14,7 +14,7 @@ const char *const S3_SINK_WRITE_OVERWRITEBYTES = "Test write rewind_seek overwri
 const char *const S3_PATH("s3://bucket/some.fastq.gz");
 
 #include "process/io/s3/S3Sink.h"
-#include "process/io/PathSource.h"
+#include "process/io/FileSource.h"
 #include "TestConstants.h"
 #include "TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
@@ -139,7 +139,7 @@ SUITE (S3_SINK_TEST_SUITE) {
 //        sink->write("1");
 //        delete sink;
 //
-//        auto source = new PathSource(file);
+//        auto source = new FileSource(file);
 //        source->open();
 //                CHECK(source->readChar() == '1');
 //                CHECK(source->tell() == 1);

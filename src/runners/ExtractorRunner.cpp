@@ -7,19 +7,19 @@
 #include <iostream>
 #include "ExtractorRunner.h"
 #include "process/extract/Extractor.h"
-#include "process/io/PathSource.h"
+#include "process/io/FileSource.h"
 
 ExtractorRunner::ExtractorRunner(
-        const shared_ptr<Source> &fastqfile,
+        const shared_ptr<Source> &sourceFile,
         const shared_ptr<Source> &indexFile,
-        const shared_ptr<Sink> &resultfile,
+        const shared_ptr<Sink> &resultFile,
         bool forceOverwrite,
         ExtractMode mode,
         int64_t start,
         int64_t count,
         uint recordSize,
         bool enableDebugging
-) : IndexReadingRunner(fastqfile, indexFile) {
+) : IndexReadingRunner(sourceFile, indexFile) {
 
     this->start = start;
     this->count = count;
@@ -27,8 +27,10 @@ ExtractorRunner::ExtractorRunner(
     this->enableDebugging = enableDebugging;
     this->mode = mode;
     this->extractor.reset(
-            new Extractor(fastqfile, indexFile, resultfile, forceOverwrite, mode, start, count,
-                          recordSize, enableDebugging)
+            new Extractor(sourceFile, indexFile, resultFile,
+                          forceOverwrite, mode, start, count,
+                          recordSize, enableDebugging
+            )
     );
 }
 
@@ -50,5 +52,5 @@ unsigned char ExtractorRunner::_run() {
 vector<string> ExtractorRunner::getErrorMessages() {
     vector<string> l = IndexReadingRunner::getErrorMessages();
     vector<string> r = extractor->getErrorMessages();
-    return mergeToNewVector(l, r);
+    return concatenateVectors(l, r);
 }

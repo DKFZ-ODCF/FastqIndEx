@@ -22,7 +22,7 @@ enum ConsoleSinkType {
 };
 
 /**
- * This Sink implementation is specific for the console stream cerr and cout
+ * This Sink implementation is specific for the console streams cerr and cout
  */
 class ConsoleSink : public Sink {
 private:

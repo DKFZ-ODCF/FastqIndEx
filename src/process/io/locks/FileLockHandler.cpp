@@ -3,22 +3,22 @@
  *
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
-#include "PathLockHandler.h"
+#include "FileLockHandler.h"
 #include <mutex>
 #include <sys/file.h>
 #include <utility>
 using std::lock_guard;
 using std::mutex;
 
-PathLockHandler::PathLockHandler(path file)  {
+FileLockHandler::FileLockHandler(path file)  {
     this->lockedFile = std::move(file);
 }
 
-path PathLockHandler::getIndexFile() {
+path FileLockHandler::getLockedFile() {
     return lockedFile;
 }
 
-PathLockHandler::~PathLockHandler() {
+FileLockHandler::~FileLockHandler() {
     unlock();
 }
 
@@ -28,7 +28,7 @@ PathLockHandler::~PathLockHandler() {
  * the write lock could not be established. Using the slightly more complicated syntax below, it works in
  * the tests.
  */
-bool PathLockHandler::readLock() {
+bool FileLockHandler::readLock() {
     lock_guard<mutex> lock(methodMutex);
     if (this->readLockActive)
         return true;
@@ -47,7 +47,7 @@ bool PathLockHandler::readLock() {
 /**
  * Note the comment for openRead!
  */
-bool PathLockHandler::writeLock() {
+bool FileLockHandler::writeLock() {
     lock_guard<mutex> lock(methodMutex);
     if (this->readLockActive || this->writeLockActive) return false;
 
@@ -65,14 +65,14 @@ bool PathLockHandler::writeLock() {
     return result;
 }
 
-bool PathLockHandler::hasLock() {
+bool FileLockHandler::hasLock() {
     return readLockActive || writeLockActive;
 }
 
 /**
  * Note the comment for openRead!
  */
-void PathLockHandler::unlock() {
+void FileLockHandler::unlock() {
     lock_guard<mutex> lock(methodMutex);
     readLockActive = false;
     writeLockActive = false;

@@ -4,8 +4,8 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "process/io/PathSink.h"
-#include "process/io/PathSource.h"
+#include "process/io/FileSink.h"
+#include "process/io/FileSource.h"
 #include "runners/IndexerRunner.h"
 #include "TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
@@ -20,7 +20,7 @@ SUITE (INDEXERRUNNER_SUITE_TESTS) {
         path fastq = res.createEmptyFile("fastq.fastq");
         path index = res.filePath("fastq.fastq.fqi");
 
-        auto r = make_shared<IndexerRunner>(make_shared<PathSource>(fastq), make_shared<PathSink>(index), BlockDistanceStorageStrategy::getDefault());
+        auto r = make_shared<IndexerRunner>(make_shared<FileSource>(fastq), make_shared<FileSink>(index), BlockDistanceStorageDecisionStrategy::getDefault());
                 CHECK(r->fulfillsPremises()); // Index file missing.
                 CHECK(!r->isCLIOptionsPrinter());
                 CHECK(!r->isExtractor());
@@ -33,7 +33,7 @@ SUITE (INDEXERRUNNER_SUITE_TESTS) {
         path fastq = res.createEmptyFile("fastq.fastq");
         path index = res.createEmptyFile("fastq.fastq.fqi");
 
-        auto r = make_shared<IndexerRunner>(make_shared<PathSource>(fastq), make_shared<PathSink>(index), BlockDistanceStorageStrategy::getDefault());
+        auto r = make_shared<IndexerRunner>(make_shared<FileSource>(fastq), make_shared<FileSink>(index), BlockDistanceStorageDecisionStrategy::getDefault());
                 CHECK(!r->fulfillsPremises()); // Index exists. Not indexable!
                 CHECK(!r->isCLIOptionsPrinter());
                 CHECK(!r->isExtractor());

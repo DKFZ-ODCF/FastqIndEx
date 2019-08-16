@@ -5,11 +5,12 @@
  */
 
 #include "common/StringHelper.h"
-#include "S3Source.h"
-#include "S3GetObjectProcessWrapper.h"
+#include "process/io/s3/FQIS3Client.h"
+#include "process/io/s3/S3Source.h"
+#include "process/io/s3/S3GetObjectProcessWrapper.h"
 
-S3Source::S3Source(const string &s3Path, const S3ServiceOptions &s3ServiceOptions) :
-        fqiS3Client(s3Path, s3ServiceOptions) {
+S3Source::S3Source(FQIS3Client_S client) {
+    this->fqiS3Client = client;
 }
 
 S3Source::~S3Source() {
@@ -18,8 +19,8 @@ S3Source::~S3Source() {
 
 void S3Source::setReadStart(int64_t startBytes) {
     if (isOpen()) {
-        always("Reset download of '", fqiS3Client.getS3Path(), "' with range: [", to_string(startBytes), "-",
-               to_string(size()), "]");
+        always("Reset download of '", fqiS3Client->getS3Path(),
+               "' with range: [", to_string(startBytes), "-", to_string(size()), "]");
         close();
         readStart = startBytes;
         openWithReadLock();
@@ -33,19 +34,17 @@ bool S3Source::open() {
     if (_isOpen)
         return true;
 
-
     // Create fifo
     auto[success, fifo] = IOHelper::createTempFifo("FASTQIndEx_S3SourceFIFO");
     if (!success) {
-        ErrorAccumulator::addErrorMessage("Could not create a named pipe for the S3 source '", fqiS3Client.getS3Path(),
-                                          "' in the temp folder. Please check, if there are leftover pipes with the prefix FASTQIndEx_S3SourceFIFO.");
+        ErrorAccumulator::addErrorMessage("Could not create a named pipe for the S3 source '", fqiS3Client->getS3Path(),
+                                          "' in the temp folder. Please check, if there are leftover ",
+                                          "pipes with the prefix FASTQIndEx_S3SourceFIFO.");
         return false;
     }
 
-    always("Writing '", fqiS3Client.getS3Path(), "' to named pipe '", fifo, "'.");
-    s3GetObjectWrapper = make_shared<S3GetObjectProcessWrapper>(
-            fqiS3Client.getS3ServiceOptions(), fifo, fqiS3Client.getS3Path(), readStart
-    );
+    always("Writing '", fqiS3Client->getS3Path(), "' to named pipe '", fifo, "'.");
+    s3GetObjectWrapper = fqiS3Client->createS3GetObjectProcessWrapper(fifo, readStart);
     s3GetObjectWrapper->start();
 
     this->fifo = fifo;
@@ -99,11 +98,15 @@ int64_t S3Source::skip(int64_t nBytes) {
 }
 
 int64_t S3Source::tell() {
-    return readStart + streamSource->tell();
+    if (streamSource)
+        return readStart + streamSource->tell();
+    return -1;
 }
 
 bool S3Source::canRead() {
-    return streamSource->canRead();//tell() < size();
+    if (streamSource)
+        return streamSource->canRead();//tell() < size();
+    return false;
 }
 
 int S3Source::lastError() {
@@ -112,18 +115,18 @@ int S3Source::lastError() {
 
 bool S3Source::fulfillsPremises() {
 
-    if (!fqiS3Client.isValid()) {
+    if (!fqiS3Client->isValid()) {
         return false;
     }
 
-    auto result = fqiS3Client.checkObjectExistence();
+    auto result = fqiS3Client->checkObjectExistence();
     if (!result.success) {
-        ErrorAccumulator::addErrorMessage("Lookup for '", fqiS3Client.getS3Path(), "' failed.");
+        ErrorAccumulator::addErrorMessage("Lookup for '", fqiS3Client->getS3Path(), "' failed.");
         return false;
     }
 
     if (!result.result) {
-        ErrorAccumulator::addErrorMessage("File '", this->fqiS3Client.getS3Path(), "' does not exist. ");
+        ErrorAccumulator::addErrorMessage("File '", this->fqiS3Client->getS3Path(), "' does not exist. ");
         return false;
     }
     return true;
@@ -150,7 +153,7 @@ bool S3Source::canWrite() {
 }
 
 string S3Source::toString() {
-    return fqiS3Client.getS3Path();
+    return fqiS3Client->getS3Path();
 }
 
 bool S3Source::openWithReadLock() {

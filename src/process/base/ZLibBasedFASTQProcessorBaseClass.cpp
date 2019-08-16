@@ -126,7 +126,7 @@ bool ZLibBasedFASTQProcessorBaseClass::decompressNextChunkOfData(bool checkForSt
     // as we work with a string append method, we need to copy the read data to a fresh buffer first.
     Bytef cleansedWindowForCout[CLEAN_WINDOW_SIZE]{
             0}; // +1 more Byte than WINDOW_SIZE for a definitely 0-terminated c-string!
-    std::memcpy(cleansedWindowForCout, window + windowPositionBeforeInflate, writtenBytes);// TODO
+    std::memcpy(cleansedWindowForCout, window + windowPositionBeforeInflate, writtenBytes); // TODO clang-tidy signed/unsigned warning
 
     if (zlibResult == Z_NEED_DICT) {
         zlibResult = Z_DATA_ERROR;

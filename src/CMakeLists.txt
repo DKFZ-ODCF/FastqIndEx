@@ -48,10 +48,10 @@ add_library(
         process/index/Indexer.cpp process/index/Indexer.h
         process/index/IndexWriter.cpp process/index/IndexWriter.h
         process/io/s3/FQIS3Client.h
-        process/io/s3/S3ServiceOptions.h
         process/io/s3/S3Config.cpp process/io/s3/S3Config.h
         process/io/s3/S3GetObjectProcessWrapper.cpp process/io/s3/S3GetObjectProcessWrapper.h
         process/io/s3/S3Service.cpp process/io/s3/S3Service.h
+        process/io/s3/S3ServiceOptions.h
         process/io/s3/S3Sink.h
         process/io/s3/S3Source.cpp process/io/s3/S3Source.h
         process/io/locks/LockHandler.h
@@ -64,12 +64,14 @@ add_library(
         process/io/Source.h
         process/io/ConsoleSink.h
         process/io/StreamSource.cpp process/io/StreamSource.h
-        runners/ActualRunner.cpp runners/ActualRunner.h
+        runners/ActualRunner.h
         runners/ExtractorRunner.cpp runners/ExtractorRunner.h
         runners/IndexerRunner.cpp runners/IndexerRunner.h
+        runners/IndexReadingRunner.h
         runners/IndexStatsRunner.cpp runners/IndexStatsRunner.h
+        runners/IndexWritingRunner.h
         runners/Runner.cpp runners/Runner.h
-        runners/DoNothingRunner.cpp runners/DoNothingRunner.h
+        runners/PrintCLIOptions.cpp runners/PrintCLIOptions.h
         startup/ExtractModeCLIParser.cpp startup/ExtractModeCLIParser.h
         startup/IndexModeCLIParser.cpp startup/IndexModeCLIParser.h
         startup/IndexStatsModeCLIParser.h

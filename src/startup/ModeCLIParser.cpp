@@ -100,33 +100,34 @@ tuple<shared_ptr<UnlabeledValueArg<string>>, shared_ptr<ValuesConstraint<string>
 ModeCLIParser::createAllowedModeArg(const string &mode, CmdLine *cmdLineParser) const {
     vector<string> allowedMode{mode};
     auto allowedModesConstraint = make_shared<ValuesConstraint<string>>(allowedMode);
-    auto arg = std::make_shared<UnlabeledValueArg<string>>(mode, "mode is " + mode, true, "", allowedModesConstraint.get());
+    auto arg = std::make_shared<UnlabeledValueArg<string>>(mode, "mode is " + mode, true, "",
+                                                           allowedModesConstraint.get());
     cmdLineParser->add(arg.get());
     return {arg, allowedModesConstraint};
 }
 
 shared_ptr<Source> ModeCLIParser::processSourceFileSource(const string &sourceFileArg,
-                                                          const S3ServiceOptions &s3ServiceOptions) {
-    if (sourceFileArg == "-") {      // Streamed mode
+                                                          S3Service_S s3Service) {
+    if (sourceFileArg == "-") {
         return StreamSource::from(&cin);
-    } else if (isS3Path(sourceFileArg)) {     // S3 mode!
-        return S3Source::from(sourceFileArg, s3ServiceOptions);
+    } else if (isS3Path(sourceFileArg)) {
+        return S3Source::from(FQIS3Client::from(sourceFileArg, s3Service));
     }
     return FileSource::from(sourceFileArg);
 }
 
 shared_ptr<Source> ModeCLIParser::processIndexFileSource(const string &indexFile,
                                                          const shared_ptr<Source> &fastqSource,
-                                                         const S3ServiceOptions &s3ServiceOptions) {
+                                                         S3Service_S s3Service) {
     string _indexFile = resolveIndexFileName(indexFile, fastqSource);
 
-    return processIndexFileSource(_indexFile, s3ServiceOptions);
+    return processIndexFileSource(_indexFile, s3Service);
 }
 
 shared_ptr<Source> ModeCLIParser::processIndexFileSource(const string &indexFile,
-                                                         const S3ServiceOptions &s3ServiceOptions) {
+                                                         S3Service_S s3Service) {
     if (isS3Path(indexFile)) {
-        return S3Source::from(indexFile, s3ServiceOptions);
+        return S3Source::from(FQIS3Client::from(indexFile, s3Service));
     } else {
         return FileSource::from(indexFile);
     } // Index might still be empty but this will be checked later!
@@ -135,11 +136,11 @@ shared_ptr<Source> ModeCLIParser::processIndexFileSource(const string &indexFile
 shared_ptr<Sink> ModeCLIParser::processIndexFileSink(const string &_indexFile,
                                                      bool forceOverwrite,
                                                      const shared_ptr<Source> &fastqSource,
-                                                     const S3ServiceOptions &s3ServiceOptions) {
+                                                     S3Service_S s3Service) {
     string indexFile = resolveIndexFileName(_indexFile, fastqSource);
 
     if (isS3Path(indexFile)) {
-        return S3Sink::from(indexFile, forceOverwrite, s3ServiceOptions);
+        return S3Sink::from(FQIS3Client::from(indexFile, s3Service), forceOverwrite);
     } else {
         return FileSink::from(indexFile, forceOverwrite);
     }
@@ -147,11 +148,11 @@ shared_ptr<Sink> ModeCLIParser::processIndexFileSink(const string &_indexFile,
 
 shared_ptr<Sink> ModeCLIParser::processFileSink(const string &file,
                                                 bool forceOverwrite,
-                                                const S3ServiceOptions &s3ServiceOptions) {
+                                                S3Service_S s3Service) {
     if (file == "-") {
         return ConsoleSink::create();
     } else if (isS3Path(file)) {
-        return S3Sink::from(file, forceOverwrite, s3ServiceOptions);
+        return S3Sink::from(FQIS3Client::from(file, s3Service), forceOverwrite);
     } else {
         return FileSink::from(file, forceOverwrite);
     }

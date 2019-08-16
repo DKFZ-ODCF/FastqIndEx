@@ -20,9 +20,12 @@ public:
 
     const string message;
 
+    Result() : success(false) {}
+
     Result(const bool success, const R &result, const string &message = "")
             : success(success), result(result), message(message) {}
 
+    Result(const Result<R> &r) : Result(r.success, r.result, r.message) {}
 
     operator bool() const {
         return success;

@@ -64,7 +64,7 @@ SUITE (StarterTests) {
 //        // Strings in the array cannot be deleted, but delete the array itself immediately.
 //        CHECK(_runner && _runner->isCLIOptionsPrinter());
 //
-//        auto runner = static_pointer_cast<DoNothingRunner>(_runner);
+//        auto runner = static_pointer_cast<PrintCLIOptions>(_runner);
 
     }
 

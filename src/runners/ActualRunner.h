@@ -4,8 +4,7 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#ifndef FASTQINDEX_ACTUALRUNNER_H
-#define FASTQINDEX_ACTUALRUNNER_H
+#pragma once
 
 #include "process/io/Source.h"
 #include "process/io/Sink.h"
@@ -29,14 +28,16 @@ protected:
      * sourceFile can be piped in. All other sources (and results) are not pipeable or the piping (cout) is so trivial,
      * that no other class or complex mechanism is necessary.
      */
-    shared_ptr<Source> sourceFile = shared_ptr<Source>(nullptr);
+    shared_ptr<Source> sourceFile;
 
     /**
      * For index mode (writing)
      * @param sourceFile
      * @param indexFile
      */
-    explicit ActualRunner(const shared_ptr<Source> &sourceFile);
+    explicit ActualRunner(const shared_ptr<Source> &sourceFile) {
+        this->sourceFile = sourceFile;
+    }
 
 public:
 
@@ -46,7 +47,27 @@ public:
      * Used to check
      * @return
      */
-    bool fulfillsPremises() override;
+    bool fulfillsPremises() override {
+
+        // Fastq needs to be a (pipe AND piping allowed) or an ((existing file OR symlink with a file) AND readable)
+        bool fastqIsValid = false;
+
+        if (sourceFile->isFile()) {
+            if (!sourceFile->exists()) {
+                addErrorMessage("Source file '" + sourceFile->toString() + "' does not exist.");
+            } else {
+                fastqIsValid = true;
+            }
+        } else {
+            if (!allowsReadFromStreamedSource()) {
+                addErrorMessage("You are not allowed to use piped input for the current mode.");
+            } else {
+                fastqIsValid = true;
+            }
+        }
+
+        return fastqIsValid;
+    }
 
     /**
      * This is only valid for the Indexer. The Extractor cannot extract from piped input, as we need to hop around
@@ -57,70 +78,4 @@ public:
 
     shared_ptr<Source> getSourceFile() { return sourceFile; }
 
-
 };
-
-/**
- * For extract and stats, takes an Source for the FQI
- *
- * Normally, I'd say, that this class and the Writing class are not necessary and that the differentiation could be
- * handled with a template super class, but it somehow did not work.
- *
- * Either way, I will try to use this to make more detailed checks possible.
- */
-class IndexReadingRunner : public ActualRunner {
-
-protected:
-
-    /**
-     * The index file to work with.
-     */
-    shared_ptr<Source> indexFile;
-
-public:
-
-    IndexReadingRunner(const shared_ptr<Source> &sourceFile,
-                       const shared_ptr<Source> &indexFile)
-            : ActualRunner(sourceFile) {
-        this->indexFile = indexFile;
-    }
-
-
-    shared_ptr<Source> getIndexFile() { return indexFile; }
-
-    bool fulfillsPremises() override;
-
-    vector<string> getErrorMessages() override;
-};
-
-/**
- * For index (actually only for index, maybe we'll have another runner later.
- */
-class IndexWritingRunner : public ActualRunner {
-
-protected:
-
-    /**
-     * The index file for output...
-     */
-    shared_ptr<Sink> indexFile;
-
-public:
-
-    IndexWritingRunner(const shared_ptr<Source> &sourceFile,
-                       const shared_ptr<Sink> &indexFile) :
-            ActualRunner(sourceFile) {
-        this->indexFile = indexFile;
-    }
-
-    ~IndexWritingRunner() override = default;
-
-    shared_ptr<Sink> getIndexFile() { return indexFile; }
-
-    bool fulfillsPremises() override;
-
-    vector<string> getErrorMessages() override;
-};
-
-
-#endif //FASTQINDEX_ACTUALRUNNER_H

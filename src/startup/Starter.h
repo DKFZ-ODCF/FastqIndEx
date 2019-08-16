@@ -7,7 +7,7 @@
 #ifndef FASTQINDEX_STARTER_H
 #define FASTQINDEX_STARTER_H
 
-#include "runners/DoNothingRunner.h"
+#include "runners/PrintCLIOptions.h"
 #include "runners/ExtractorRunner.h"
 #include "runners/IndexerRunner.h"
 #include "runners/IndexStatsRunner.h"
@@ -39,7 +39,7 @@ public:
 
     Starter() = default;
 
-    DoNothingRunner *assembleSmallCmdLineParserAndParseOpts(int argc, const char **argv);
+    PrintCLIOptions *assembleSmallCmdLineParserAndParseOpts(int argc, const char **argv);
 
     IndexStatsRunner *assembleCmdLineParserForIndexStatsAndParseOpts(int argc, const char **argv);
 

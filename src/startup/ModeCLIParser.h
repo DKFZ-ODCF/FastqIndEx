@@ -106,22 +106,22 @@ public:
     /**
      * Processes several FASTQ related parameters and create a FASTQ FileSource from the input.
      */
-    static shared_ptr<Source> processSourceFileSource(const string &sourceFileArg, const S3ServiceOptions &s3ServiceOptions);
+    static shared_ptr<Source> processSourceFileSource(const string &sourceFileArg, S3Service_S s3Service);
 
     static shared_ptr<Source> processIndexFileSource(const string &indexFile,
                                                      const shared_ptr<Source> &fastqSource,
-                                                     const S3ServiceOptions &s3ServiceOptions);
+                                                     S3Service_S s3Service);
 
-    static shared_ptr<Source> processIndexFileSource(const string &indexFile, const S3ServiceOptions &s3ServiceOptions);
+    static shared_ptr<Source> processIndexFileSource(const string &indexFile, S3Service_S s3Service);
 
     static shared_ptr<Sink> processIndexFileSink(const string &_indexFile,
                                                  bool forceOverwrite,
                                                  const shared_ptr<Source> &fastqSource,
-                                                 const S3ServiceOptions &s3ServiceOptions);
+                                                 S3Service_S s3Service);
 
     static shared_ptr<Sink> processFileSink(const string &file,
                                             bool forceOverwrite,
-                                            const S3ServiceOptions &s3ServiceOptions);
+                                            S3Service_S s3Service);
 };
 
 

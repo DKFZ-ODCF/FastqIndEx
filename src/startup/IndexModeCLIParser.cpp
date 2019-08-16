@@ -55,10 +55,10 @@ IndexerRunner *IndexModeCLIParser::parse(int argc, const char **argv) {
     S3ServiceOptions s3ServiceOptions(s3ConfigFileArg->getValue(),
                                       s3CredentialsFileArg->getValue(),
                                       s3ConfigFileSectionArg->getValue());
-    S3Service::setS3ServiceOptions(s3ServiceOptions);
+    auto s3Service = S3Service::from(s3ServiceOptions);
 
-    auto fastq = processSourceFileSource(sourceFileArg->getValue(), s3ServiceOptions);
-    auto index = processIndexFileSink(indexFileArg->getValue(), forceOverwrite, fastq, s3ServiceOptions);
+    auto fastq = processSourceFileSource(sourceFileArg->getValue(), s3Service);
+    auto index = processIndexFileSink(indexFileArg->getValue(), forceOverwrite, fastq, s3Service);
 
     shared_ptr<IndexEntryStorageDecisionStrategy> storageStrategy;
     if (selectIndexMetricArg->getValue() == "BlockDistance") {

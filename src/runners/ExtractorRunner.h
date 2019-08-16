@@ -8,6 +8,7 @@
 #define FASTQINDEX_EXTRACTORRUNNER_H
 
 #include "runners/ActualRunner.h"
+#include "runners/IndexReadingRunner.h"
 #include "process/extract/Extractor.h"
 #include "process/io/FileSource.h"
 

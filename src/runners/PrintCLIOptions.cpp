@@ -4,11 +4,11 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "DoNothingRunner.h"
+#include "PrintCLIOptions.h"
 
 using namespace std;
 
-unsigned char DoNothingRunner::_run() {
+unsigned char PrintCLIOptions::_run() {
 //    cerr << *Starter::getInstance()->getCLIOptions();
     return 0;
 }

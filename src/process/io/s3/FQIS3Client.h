@@ -9,10 +9,11 @@
 
 #include "common/Result.h"
 #include "common/StringHelper.h"
-#include "process/io/s3/S3Service.h"
 #include "process/io/FileSink.h"
 #include "process/io/Sink.h"
 #include "process/io/s3/S3Config.h"
+#include "process/io/s3/S3Service.h"
+#include "process/io/s3/S3GetObjectProcessWrapper.h"
 #include <cstdio>
 #include <fcntl.h>
 #include <list>
@@ -36,9 +37,9 @@ typedef Result<bool> FQIS3ClientRequestBooleanResult;
 
 struct S3Object {
     string name;
-    int64_t size;
+    u_int64_t size;
 
-    S3Object(const string &name, int64_t size) {
+    S3Object(const string &name, u_int64_t size) {
         this->name = name;
         this->size = size;
     }
@@ -50,6 +51,8 @@ struct S3Object {
 class FQIS3Client : ErrorAccumulator {
 
 protected:
+
+    S3Service_S service;
 
     string s3Path;
 
@@ -63,11 +66,15 @@ protected:
 
 public:
 
-    FQIS3Client(const string &s3Path,
-                const S3ServiceOptions &s3ServiceOptions) {
+    static shared_ptr<FQIS3Client> from(const string &s3Path, S3Service_S service) {
+        return make_shared<FQIS3Client>(s3Path, service);
+    }
+
+    FQIS3Client(const string &s3Path, S3Service_S service) {
         this->s3Path = s3Path;
-        this->s3Config = S3Service::getInstance()->getConfig();
-        this->serviceOptions = s3ServiceOptions;
+        this->service = service;
+        this->s3Config = service->getConfig();
+        this->serviceOptions = service->getS3ServiceOptions();
         auto split = StringHelper::splitStr(s3Path, '/'); // s3://bucket/object
 
         if (split.size() != 4) {
@@ -78,8 +85,8 @@ public:
         }
     }
 
-    bool isValid() {
-        return S3Service::getInstance().get() && !bucketName.empty() && !objectName.empty() && s3Config.isValid();
+    virtual bool isValid() {
+        return service.get() && !bucketName.empty() && !objectName.empty() && s3Config.isValid();
     }
 
     string getS3Path() {
@@ -102,12 +109,11 @@ public:
         return serviceOptions;
     }
 
-
     template<typename T>
     bool request(function<T(S3Client &client)> s3Request) {
         bool result;
 
-        auto outcome = s3Request(*S3Service::getInstance()->getClient().get());
+        auto outcome = s3Request(*service->getClient().get());
         if (!outcome.IsSuccess()) {
             const auto &error = outcome.GetError();
             addErrorMessage("S3 error: ", string(error.GetExceptionName()), ": ", string(error.GetMessage()));
@@ -119,9 +125,13 @@ public:
         return result;
     }
 
-    tuple<bool, std::list<S3Object>> getObjectList() {
+    virtual Result<list<S3Object>> getObjectList() {
         bool objectExists = false;
-        tuple<bool, std::list<S3Object>> result;
+        // There is no copy constructor available for result because it has some const fields.
+        // If you do not have this as a shared_ptr (or pointer) and try to overwrite it from within the lambda, the
+        // compiler will fail and tell you, that the copy constructor was deleted implicitely. The manually added cc
+        // does not work as well.
+        shared_ptr<Result<list<S3Object>>> result;
 
         bool requestResult = request<ListObjectsOutcome>([&](S3Client &client) -> ListObjectsOutcome {
             ListObjectsRequest objectRequest;
@@ -131,41 +141,43 @@ public:
             if (outcome.IsSuccess()) {
                 auto objectList = outcome.GetResult().GetContents();
                 for (auto const &object : objectList) {
-                    entries.emplace_back(S3Object(string(object.GetKey()), object.GetSize()));
+                    entries.emplace_back(S3Object(string(object.GetKey()), static_cast<u_int64_t>(object.GetSize())));
                 }
             }
-            result = tuple<bool, std::list<S3Object>>(outcome.IsSuccess(), entries);
+            result = make_shared<Result<list<S3Object>>>(outcome.IsSuccess(), entries);
             return outcome;
         });
-        return result;
+        Result<list<S3Object>> _result = *result;
+        return _result;
     }
 
     FQIS3ClientRequestBooleanResult checkObjectExistence() {
-        auto list = getObjectList();
+        auto result = getObjectList();
         bool found = false;
-        if (std::get<0>(list)) {
-            for (const auto &entry : std::get<1>(list)) {
+
+        if (result.success) {
+            for (const auto &entry : result.result) {
                 if (entry.name == objectName) {
                     found = true;
                     break;
                 }
             }
         }
-        return FQIS3ClientRequestBooleanResult(std::get<0>(list), found);
+        return FQIS3ClientRequestBooleanResult(result.success, found);
     }
 
     /**
      * Returns the object size for this clients object.
      * @return A tuple indicating [success, size]
      */
-    tuple<bool, int64_t> getObjectSize() {
-        auto[success, list] = getObjectList();
+    virtual Result<uint64_t> getObjectSize() {
+        auto result = getObjectList();
         bool found = false;
-        int64_t size = 0;
-        if (!success)
+        uint64_t size = 0;
+        if (!result)
             return {false, 0};
 
-        for (const auto &entry : list) {
+        for (const auto &entry : result.result) {
             if (entry.name == objectName) {
                 found = true;
                 size = entry.size;
@@ -175,7 +187,11 @@ public:
         return {found, size};
     }
 
-    FQIS3ClientRequestBooleanResult putFile(const string &file) {
+    virtual S3GetObjectProcessWrapper_S createS3GetObjectProcessWrapper(const path &fifo, u_int64_t readStart) {
+        return make_shared<S3GetObjectProcessWrapper>(getS3ServiceOptions(), fifo, getS3Path(), readStart);
+    }
+
+    virtual FQIS3ClientRequestBooleanResult putFile(const string &file) {
         bool couldPut = false;
 
         bool requestResult = request<PutObjectOutcome>([=](S3Client &client) -> PutObjectOutcome {
@@ -202,7 +218,7 @@ public:
      * @param buffer   Where to store to. This buffer needs to be large enough to hold the data!
      * @return A tuple with a success indicator and the amount of read Bytes.
      */
-    tuple<bool, int64_t> readBlockOfData(int64_t position, int64_t length, Bytef *buffer) {
+    virtual tuple<bool, int64_t> readBlockOfData(int64_t position, int64_t length, Bytef *buffer) {
         int64_t readBytes{0};
         bool success = request<GetObjectOutcome>([&](S3Client &client) -> GetObjectOutcome {
             GetObjectRequest objectRequest;
@@ -226,5 +242,7 @@ public:
         return concatenateVectors(l, r);
     }
 };
+
+typedef shared_ptr<FQIS3Client> FQIS3Client_S;
 
 #endif //FASTQINDEX_FQIS3CLIENT_H

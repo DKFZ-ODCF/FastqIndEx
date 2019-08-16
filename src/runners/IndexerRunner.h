@@ -9,6 +9,7 @@
 
 
 #include "runners/ActualRunner.h"
+#include "runners/IndexWritingRunner.h"
 #include "process/index/Indexer.h"
 #include "process/io/Source.h"
 #include "process/io/FileSource.h"

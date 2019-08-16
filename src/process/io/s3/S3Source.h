@@ -43,6 +43,8 @@ class S3Source : public Source {
 
 private:
 
+    S3Service_S service;
+
     bool _isOpen{false};
 
     bool sizeRequested{false};
@@ -51,11 +53,11 @@ private:
 
     int64_t position{0};
 
-    FQIS3Client fqiS3Client;
+    shared_ptr<FQIS3Client> fqiS3Client;
 
     path fifo;
 
-    shared_ptr<S3GetObjectProcessWrapper> s3GetObjectWrapper;
+    S3GetObjectProcessWrapper_S s3GetObjectWrapper;
 
     FStream *s3FStream{nullptr};
 
@@ -73,69 +75,21 @@ public:
         return stream;
     }
 
-    static shared_ptr<S3Source> from(const string &file, const S3ServiceOptions &s3ServiceOptions) {
-        return make_shared<S3Source>(file, s3ServiceOptions);
+    static shared_ptr<S3Source> from(const string &s3Path, S3Service_S service) {
+        return from(FQIS3Client::from(s3Path, service));
+    }
+
+    static shared_ptr<S3Source> from(FQIS3Client_S client) {
+        return make_shared<S3Source>(client);
     }
 
     /**
      * Create an instance of this object with a path source. This will be read by fread and so on.
      * @param source
      */
-    explicit S3Source(const string &s3Path, const S3ServiceOptions &s3ServiceOptions);
+    explicit S3Source(FQIS3Client_S client);
 
     ~S3Source() override;
-
-    static void get_object_async_finished(const Aws::S3::S3Client *client,
-                                          const Aws::S3::Model::GetObjectRequest &request,
-                                          const Aws::S3::Model::GetObjectOutcome &outcome,
-                                          const std::shared_ptr<const Aws::Client::AsyncCallerContext> &context) {
-        if (outcome.IsSuccess()) {
-            std::cerr << "get_object_async_finished: " << context->GetUUID() << std::endl;
-        } else {
-            const auto& error = outcome.GetError();
-            std::cerr << "ERROR: " << error.GetExceptionName() << ": "
-                      << error.GetMessage() << std::endl;
-        }
-
-        // The example works with a thread notification. However, we are dealing with a fifo which is blocking until it
-        // fully read. So we do not need a notification. I'll just leave it in here for further reference.
-        //    upload_variable.notify_one();
-    }
-
-    bool openS3() {
-        if (s3FStream)
-            return true;
-
-        auto s3 = S3Service::getInstance();
-
-        // Create and start asynchronous request
-        Aws::S3::Model::GetObjectRequest object_request;
-        object_request.SetBucket(fqiS3Client.getBucketName().c_str());
-        object_request.SetKey(fqiS3Client.getObjectName().c_str());
-
-        if (readStart != 0) {
-            auto rangeString = string("bytes=") + to_string(readStart) + "-" + to_string(size());
-            object_request.SetRange(rangeString.c_str());
-        }
-        string object = fqiS3Client.getObjectName();
-        object_request.SetResponseStreamFactory([&]() {
-            always("Writing ", fqiS3Client.getObjectName(), " with S3 to ", this->fifo);
-            auto stream = Aws::New<FStream>(fqiS3Client.getObjectName().c_str(), this->fifo.c_str(),
-                                            std::ios_base::out | std::ios_base::binary);
-            this->s3FStream = stream;
-            return stream;
-        });
-
-        auto context = Aws::MakeShared<Aws::Client::AsyncCallerContext>("GetObjectAllocationTag");
-        context->SetUUID(fqiS3Client.getObjectName().c_str());
-        auto client = s3->getClient();
-        s3->getClient()->GetObjectAsync(object_request, get_object_async_finished, context);
-        // Will wait until stream was produced.
-
-        this->stream.open(this->fifo, ios_base::in | ios_base::binary);
-        this->streamSource = StreamSource::from(&this->stream);
-        return true;
-    }
 
     bool fulfillsPremises() override;
 
@@ -158,7 +112,8 @@ public:
     bool close() override;
 
     bool exists() override {
-        return true;
+        auto res = fqiS3Client->checkObjectExistence();
+        return res && res.result;
     }
 
     bool hasLock() override;
@@ -173,7 +128,7 @@ public:
 
     int64_t size() override {
         if (!sizeRequested) {
-            _size = std::get<1>(fqiS3Client.getObjectSize());
+            _size = fqiS3Client->getObjectSize().result;
             sizeRequested = true;
         }
         return _size;
@@ -203,7 +158,7 @@ public:
 
     vector<string> getErrorMessages() override {
         auto l = ErrorAccumulator::getErrorMessages();
-        auto r = fqiS3Client.getErrorMessages();
+        auto r = fqiS3Client->getErrorMessages();
         if (!streamSource.get()) {
             return concatenateVectors(l, r);
         } else {

@@ -14,7 +14,7 @@
 #include "Starter.h"
 #include <tclap/CmdLine.h>
 
-DoNothingRunner *Starter::assembleSmallCmdLineParserAndParseOpts(int argc, const char *argv[]) {
+PrintCLIOptions *Starter::assembleSmallCmdLineParserAndParseOpts(int argc, const char *argv[]) {
     CmdLine cmdLineParser("Command description message", '=', "0.0.1", false);
     vector<string> allowedValues;
     allowedValues.emplace_back("index");
@@ -24,7 +24,7 @@ DoNothingRunner *Starter::assembleSmallCmdLineParserAndParseOpts(int argc, const
     UnlabeledValueArg<string> mode("mode", "mode is either index, extract or stats", true, "", &allowedModesConstraint,
                                    cmdLineParser);
     cmdLineParser.parse(argc, argv);
-    return new DoNothingRunner();
+    return new PrintCLIOptions();
 }
 
 IndexStatsRunner *Starter::assembleCmdLineParserForIndexStatsAndParseOpts(int argc, const char **argv) {
@@ -57,7 +57,7 @@ Runner *Starter::assembleCLIOptions(int argc, const char *argv[]) {
                 mode != "stats")
                 ) {
             assembleSmallCmdLineParserAndParseOpts(argc, argv);
-            return new DoNothingRunner();
+            return new PrintCLIOptions();
         } else if (mode == "index") {
             return assembleCmdLineParserForIndexAndParseOpts(argc, argv);
         } else if (mode == "extract") {
@@ -68,7 +68,7 @@ Runner *Starter::assembleCLIOptions(int argc, const char *argv[]) {
     } catch (TCLAP::ArgException &e) { // catch any exceptions
         std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl;
     }
-    return new DoNothingRunner();
+    return new PrintCLIOptions();
 }
 
 shared_ptr<Runner> Starter::createRunner(int argc, const char *argv[]) {

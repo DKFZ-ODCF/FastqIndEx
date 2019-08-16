@@ -42,9 +42,9 @@ public:
         S3ServiceOptions s3ServiceOptions(s3ConfigFileArg->getValue(),
                                           s3CredentialsFileArg->getValue(),
                                           s3ConfigFileSectionArg->getValue());
-        S3Service::setS3ServiceOptions(s3ServiceOptions);
+        auto s3Service = S3Service::from(s3ServiceOptions);
 
-        auto index = processIndexFileSource(indexFileArg->getValue(), s3ServiceOptions);
+        auto index = processIndexFileSource(indexFileArg->getValue(), s3Service);
 
         auto runner = new IndexStatsRunner(index, startingReadArg->getValue(), numberOfReadsArg->getValue());
 

@@ -7,8 +7,8 @@
 #ifndef FASTQINDEX_S3SERVICE_H
 #define FASTQINDEX_S3SERVICE_H
 
-#include "process/io/s3/S3ServiceOptions.h"
 #include "process/io/s3/S3Config.h"
+#include "process/io/s3/S3ServiceOptions.h"
 
 #include <aws/core/auth/AWSAuthSigner.h>
 #include <aws/core/auth/AWSCredentialsProvider.h>
@@ -39,55 +39,57 @@ class S3Service {
 
 private:
 
+    static Aws::SDKOptions options;
+
     static mutex clientInstanceAccessorMutex;
 
-    static shared_ptr<S3Service> instance;
+    static int awsServicesCounter;
 
-    static S3ServiceOptions serviceOptions;
+    S3ServiceOptions serviceOptions;
 
     shared_ptr<S3Client> client;
 
     S3Config config;
 
-    Aws::SDKOptions options;
 
-    static shared_ptr<S3Service> initialize() {
-        if (!instance.get())
-            instance = shared_ptr<S3Service>(new S3Service());
-        return instance;
+    /**
+     * It must be guarantee, that Aws::InitAPI is only called once.
+     */
+    static void initializeAWS();
+
+    static void shutdownAWS();
+
+public:
+
+    static int getAWSInstanceCount() {
+        return awsServicesCounter;
     }
 
-    S3Service() {
-        Aws::InitAPI(options);
-        config = S3Config(S3Service::serviceOptions);
+    static shared_ptr<S3Service> getDefault() {
+        return from(S3ServiceOptions());
+    }
+
+    static shared_ptr<S3Service> from(const S3ServiceOptions &s3ServiceOptions) {
+        return make_shared<S3Service>(s3ServiceOptions);
+    }
+
+    S3Service(const S3ServiceOptions &serviceOptions) {
+        initializeAWS();
+        this->serviceOptions = serviceOptions;
+        config = S3Config(serviceOptions);
         auto credentials = Aws::Auth::AWSCredentials();
         auto cfg = Aws::Client::ClientConfiguration();
         config.fillAWSCredentials(credentials);
         config.fillAWSClientConfiguration(cfg);
         client = std::make_shared<S3Client>(credentials, cfg);
-    };
-
-public:
-
-    /**
-     * Use this to set the s3 service options BEFORE you call getInstance (which will initialize the service)
-     * This will not reinitialize the SDK or the instance! Use close, if you want to renew settings.
-     */
-    static void setS3ServiceOptions(const S3ServiceOptions &s3Opts) {
-        lock_guard<mutex> lock(S3Service::clientInstanceAccessorMutex);
-        S3Service::serviceOptions = s3Opts;
-    }
-
-    static shared_ptr<S3Service> getInstance() {
-        lock_guard<mutex> lock(S3Service::clientInstanceAccessorMutex);
-        if (!instance.get()) {
-            initialize();
-        }
-        return instance;
     }
 
     virtual ~S3Service() {
-        Aws::ShutdownAPI(options);
+        shutdownAWS();
+    }
+
+    S3ServiceOptions &getS3ServiceOptions() {
+        return serviceOptions;
     }
 
     shared_ptr<S3Client> getClient() {
@@ -98,5 +100,7 @@ public:
         return config;
     }
 };
+
+typedef std::shared_ptr<S3Service> S3Service_S;
 
 #endif //FASTQINDEX_S3SERVICE_H

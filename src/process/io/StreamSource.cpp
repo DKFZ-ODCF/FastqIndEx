@@ -85,7 +85,7 @@ int64_t StreamSource::readFromBuffer(Bytef *targetBuffer, int numberOfBytes) {
 
     // Copy copiedBytes of data from the right side!
     if (targetBuffer != nullptr)
-        memcpy(targetBuffer, buf + bufLen - rewoundBytes, copiedBytes); // TODO
+        memcpy(targetBuffer, buf + bufLen - rewoundBytes, copiedBytes); // TODO clang-tidy signed/unsigned warning
     rewoundBytes -= copiedBytes;
     currentPosition += copiedBytes;
 
@@ -103,7 +103,7 @@ int64_t StreamSource::readFromStream(Bytef *targetBuffer, int numberOfBytes) {
 
     if (amountRead > 0) {
         if (targetBuffer != nullptr)
-            memcpy(targetBuffer, readBuffer, amountRead);// TODO
+            memcpy(targetBuffer, readBuffer, amountRead); // TODO clang-tidy signed/unsigned warning
         rewindBuffer.emplace_back(readBuffer);
         rewindBufferEntryLength.emplace_back(amountRead);
         if (rewindBuffer.size() > maxSegmentsInBuffer) {
@@ -207,7 +207,7 @@ int64_t StreamSource::skip(int64_t nByte) {
             this->read(nullptr, defaultChunkSizeForReads);
         }
         if (skip > 0) {
-            this->read(nullptr, skip); // TODO
+            this->read(nullptr, skip); // TODO clang-tidy signed/unsigned warning
         }
     }
     return true;

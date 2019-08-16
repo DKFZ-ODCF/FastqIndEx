@@ -56,7 +56,11 @@ add_executable(
         process/io/locks/LockHandlerTest.cpp
         process/io/ConsoleSinkTest.cpp
         process/io/s3/S3ConfigTest.cpp
+        process/io/s3/S3ServiceTest.cpp
         process/io/s3/S3SinkTest.cpp
+        process/io/s3/S3SourceTest.cpp
+        process/io/s3/FQIS3TestClient.h
+        process/io/s3/FQIS3TestClientTests.cpp
         process/io/StreamSourceTest.cpp
         runners/ActualRunnerTest.cpp
         runners/ExtractorRunnerTest.cpp

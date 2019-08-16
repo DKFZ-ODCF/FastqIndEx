@@ -44,15 +44,16 @@ ExtractorRunner *ExtractModeCLIParser::parse(int argc, const char **argv) {
     S3ServiceOptions s3ServiceOptions(s3ConfigFileArg->getValue(),
                                       s3CredentialsFileArg->getValue(),
                                       s3ConfigFileSectionArg->getValue());
-    S3Service::setS3ServiceOptions(s3ServiceOptions);
 
-    auto sourceFile = processSourceFileSource(sourceFileArg->getValue(), s3ServiceOptions);
+    auto s3Service = S3Service::from(s3ServiceOptions);
 
-    auto indexFile = processIndexFileSource(indexFileArg->getValue(), sourceFile, s3ServiceOptions);
+    auto sourceFile = processSourceFileSource(sourceFileArg->getValue(), s3Service);
+
+    auto indexFile = processIndexFileSource(indexFileArg->getValue(), sourceFile, s3Service);
 
     bool forceOverwrite = forceOverwriteArg->getValue();
 
-    auto outputFile = processFileSink(outputFileArg->getValue(), forceOverwrite, s3ServiceOptions);
+    auto outputFile = processFileSink(outputFileArg->getValue(), forceOverwrite, s3Service);
 
     ErrorAccumulator::setVerbosity(verbosityArg->getValue());
     bool enableDebugging = debugSwitch->getValue();

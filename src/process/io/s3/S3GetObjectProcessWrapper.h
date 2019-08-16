@@ -8,7 +8,7 @@
 #define FASTQINDEX_S3GETOBJECTPROCESSWRAPPER_H
 
 #include "common/ErrorAccumulator.h"
-#include "S3ServiceOptions.h"
+#include "process/io/s3/S3ServiceOptions.h"
 #include <thread>
 #include <mutex>
 
@@ -24,6 +24,18 @@ using namespace std;
  */
 class S3GetObjectProcessWrapper : public ErrorAccumulator {
 private:
+
+    /**
+     * Mutex to perform thread-safe operations in this class
+     */
+    mutex mtx;
+
+    /**
+     * The Thread which is used to run the child S3 process.
+     */
+    shared_ptr<thread> processThread;
+
+protected:
 
     /**
      * The options for S3.
@@ -45,17 +57,7 @@ private:
      */
     int64_t readStart;
 
-    /**
-     * Mutex to perform thread-safe operations in this class
-     */
-    mutex mtx;
-
-    /**
-     * The Thread which is used to run the child S3 process.
-     */
-    shared_ptr<thread> processThread;
-
-    static void processThreadFunc(S3GetObjectProcessWrapper *wrapper);
+    virtual void processThreadFunc();
 
 public:
 
@@ -85,5 +87,7 @@ public:
      */
     void waitForFinish();
 };
+
+typedef shared_ptr<S3GetObjectProcessWrapper> S3GetObjectProcessWrapper_S;
 
 #endif //FASTQINDEX_S3GETOBJECTPROCESSWRAPPER_H

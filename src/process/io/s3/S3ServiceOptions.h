@@ -23,7 +23,14 @@ struct S3ServiceOptions {
 
     S3ServiceOptions() : S3ServiceOptions(string(""), string(""), "") {}
 
-    S3ServiceOptions(const string &credentialsFile, const string &configFile, const string &configSection);
+    S3ServiceOptions(
+            const string &credentialsFile,
+            const string &configFile,
+            const string &configSection) {
+        this->credentialsFile = path(credentialsFile);
+        this->configFile = path(configFile);
+        this->configSection = configSection;
+    }
 
     S3ServiceOptions(const S3ServiceOptions &opts)
             : S3ServiceOptions(opts.credentialsFile, opts.configFile, opts.configSection) {};

@@ -20,7 +20,7 @@ const char *const S3_PATH("s3://bucket/some.fastq.gz");
 #include <UnitTest++/UnitTest++.h>
 
 shared_ptr<S3Sink> createTestSink() {
-    return S3Sink::from(S3_PATH, true, S3ServiceOptions("", "", ""));
+    return S3Sink::from(FQIS3Client::from(S3_PATH, S3Service::from(S3ServiceOptions("", "", ""))), true);
 }
 
 SUITE (S3_SINK_TEST_SUITE) {

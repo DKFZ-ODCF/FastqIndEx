@@ -6,17 +6,24 @@
 
 #include "S3Service.h"
 
+Aws::SDKOptions S3Service::options;
+
 mutex S3Service::clientInstanceAccessorMutex;
 
-S3ServiceOptions S3Service::serviceOptions;
+int S3Service::awsServicesCounter = 0;
 
-shared_ptr<S3Service> S3Service::instance;
+void S3Service::initializeAWS() {
+    lock_guard<mutex> lock(S3Service::clientInstanceAccessorMutex);
+    if (!awsServicesCounter) {
+        Aws::InitAPI(S3Service::options);
+    }
+    awsServicesCounter++;
+}
 
-S3ServiceOptions::S3ServiceOptions(
-        const string &credentialsFile,
-        const string &configFile,
-        const string &configSection) {
-    this->credentialsFile = path(credentialsFile);
-    this->configFile = path(configFile);
-    this->configSection = configSection;
+void S3Service::shutdownAWS() {
+    lock_guard<mutex> lock(S3Service::clientInstanceAccessorMutex);
+    awsServicesCounter--;
+    if (awsServicesCounter == 0) {
+        Aws::ShutdownAPI(S3Service::options);
+    }
 }

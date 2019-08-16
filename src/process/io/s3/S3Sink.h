@@ -37,18 +37,17 @@ private:
 
     FileSink *tempFile{nullptr};
 
-    FQIS3Client fqiS3Client;
+    FQIS3Client_S fqiS3Client;
 
 public:
 
-    static shared_ptr<S3Sink> from(const string &file, bool forceOverwrite, const S3ServiceOptions &s3ServiceOptions) {
-        return make_shared<S3Sink>(file, forceOverwrite, s3ServiceOptions);
+    static shared_ptr<S3Sink> from(FQIS3Client_S client, bool forceOverwrite) {
+        return make_shared<S3Sink>(client, forceOverwrite);
     }
 
-    S3Sink(const string &s3Path, bool forceOverwrite, const S3ServiceOptions &s3ServiceOptions) :
-            fqiS3Client(s3Path, s3ServiceOptions),
-            Sink(forceOverwrite) {
-    }
+    S3Sink(FQIS3Client_S client, bool forceOverwrite)
+            : fqiS3Client(client),
+              Sink(forceOverwrite) {}
 
     ~S3Sink() override {
         close();
@@ -67,28 +66,28 @@ public:
         if (isOpen())
             return true;
 
-        if (!fqiS3Client.isValid()) {
+        if (!fqiS3Client->isValid()) {
             return false;
         }
 
         // Assign these values before running the program
         bool ok = true;
 
-        auto result = fqiS3Client.checkObjectExistence();
+        auto result = fqiS3Client->checkObjectExistence();
         if (!result.success)
             return false;
 
         objectAlreadyExists = result.result;
 
         if (objectAlreadyExists && !this->forceOverwrite) {
-            addErrorMessage("File '", this->fqiS3Client.getS3Path(), "' already exists. ",
+            addErrorMessage("File '", this->fqiS3Client->getS3Path(), "' already exists. ",
                             "Use -w to force the application to overwrite the file.");
             return false;
         }
 
         auto[success, tempFilePath] = IOHelper::createTempFile("FastqIndEx_S3TemporaryIndex");
         if (!success) {
-            addErrorMessage("Could not create an intermediate temporary file for '", fqiS3Client.getS3Path(), "'.");
+            addErrorMessage("Could not create an intermediate temporary file for '", fqiS3Client->getS3Path(), "'.");
             return false;
         }
 
@@ -107,10 +106,10 @@ public:
         if (!isOpen())
             return true;
 
-        auto result = fqiS3Client.putFile(tempFile->toString());
+        auto result = fqiS3Client->putFile(tempFile->toString());
         bool ok = result.success && result.result;
         if (result.result)
-            ErrorAccumulator::always("Uploaded FQI file to bucket s3://", fqiS3Client.getBucketName());
+            ErrorAccumulator::always("Uploaded FQI file to bucket s3://", fqiS3Client->getBucketName());
 
 
         if (tempFile) {
@@ -179,7 +178,7 @@ public:
     }
 
     string toString() override {
-        return fqiS3Client.getS3Path();
+        return fqiS3Client->getS3Path();
     }
 
     int64_t tell() override {
@@ -208,7 +207,7 @@ public:
 
     vector<string> getErrorMessages() override {
         auto l = ErrorAccumulator::getErrorMessages();
-        auto r = fqiS3Client.getErrorMessages();
+        auto r = fqiS3Client->getErrorMessages();
         if (!tempFile) {
             return concatenateVectors(l, r);
         } else {

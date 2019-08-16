@@ -4,8 +4,8 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#ifndef FASTQINDEX_DONOTHINGRUNNER_H
-#define FASTQINDEX_DONOTHINGRUNNER_H
+#ifndef FASTQINDEX_PRINTCLIOPTIONS_H
+#define FASTQINDEX_PRINTCLIOPTIONS_H
 
 #include "runners/Runner.h"
 
@@ -14,9 +14,9 @@
  * afterwards be used to create a Runner (Extractor, Indexer). If the options are somehow wrong and no valid mode could
  * be determined, a PrintCLIOptionsRunner will be created instead and this will then print out the command line options.
  */
-class DoNothingRunner : public Runner {
+class PrintCLIOptions : public Runner {
 public :
-    DoNothingRunner() = default;
+    PrintCLIOptions() = default;
 
     /**
      * Print CLI options to cerr
@@ -27,4 +27,4 @@ public :
 };
 
 
-#endif //FASTQINDEX_DONOTHINGRUNNER_H
+#endif //FASTQINDEX_PRINTCLIOPTIONS_H

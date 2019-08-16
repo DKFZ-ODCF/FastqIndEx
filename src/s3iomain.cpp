@@ -130,24 +130,24 @@ int main(int argc, char **argv) {
     S3ServiceOptions s3ServiceOptions(argv[5], argv[4], argv[3]);
     int64_t readStart = stoll(argv[6]);
 
-    FQIS3Client fqiS3Client(s3Object, s3ServiceOptions);
+    auto s3 = S3Service::from(s3ServiceOptions);
 
-    auto s3 = S3Service::getInstance();
+    FQIS3Client fqiS3Client(s3Object, s3);
 
     // Create and start asynchronous request
     Aws::S3::Model::GetObjectRequest object_request;
     object_request.SetBucket(fqiS3Client.getBucketName().c_str());
     object_request.SetKey(fqiS3Client.getObjectName().c_str());
 
-    auto[success, size] = fqiS3Client.getObjectSize();
+    auto result = fqiS3Client.getObjectSize();
 
-    if (!success) {
+    if (!result.success) {
         cerr << "Requesting size of '" << fqiS3Client.getS3Path() << "' failed. Will waitForFinish now.\n";
         return -2;
     }
 
     if (readStart != 0) {
-        auto rangeString = "bytes=" + to_string(readStart) + "-" + to_string(size);
+        auto rangeString = "bytes=" + to_string(readStart) + "-" + to_string(result.result);
         object_request.SetRange(rangeString.c_str());
     }
     string object = fqiS3Client.getObjectName();

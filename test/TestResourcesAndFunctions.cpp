@@ -108,7 +108,7 @@ void TestResourcesAndFunctions::CreateEmptyFile(const path &_path) {
 std::string TestResourcesAndFunctions::format(std::string format, ...) {
     va_list args;
     va_start(args, format);
-    size_t len = std::vsnprintf(nullptr, 0, format.c_str(), args);// TODO
+    size_t len = std::vsnprintf(nullptr, 0, format.c_str(), args); // TODO clang-tidy signed/unsigned warning
     va_end(args);
     std::vector<char> vec(len + 1);
     va_start(args, format);
@@ -216,7 +216,7 @@ string TestResourcesAndFunctions::readFile(const path &file) {
     std::string str;
 
     t.seekg(0, std::ios::end);
-    str.reserve(t.tellg());// TODO
+    str.reserve(t.tellg()); // TODO clang-tidy signed/unsigned warning
     t.seekg(0, std::ios::beg);
 
     str.assign((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());

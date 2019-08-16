@@ -9,6 +9,7 @@
 
 
 #include "ActualRunner.h"
+#include "IndexReadingRunner.h"
 #include "process/extract/IndexReader.h"
 
 class IndexStatsRunner : public IndexReadingRunner {

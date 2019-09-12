@@ -64,27 +64,43 @@ public:
      * Returns the pointer to the used stream.
      * @return
      */
-    istream *getStream() {
-        return inputStream;
-    }
+    istream *getStream() {        return inputStream;    }
 
-    int64_t skip(int64_t nByte) override;
+    int64_t getRewindBufferSize();
 
-    int64_t tell() override;
+    int64_t getSegmentsInRewindBuffer() { return rewindBuffer.size(); };
 
-    int lastError() override;
+    int64_t getRewoundBytes() { return rewoundBytes; }
+
+    bool fulfillsPremises() override;
 
     bool open() override;
 
+    bool openWithReadLock() override;
+
     bool close() override;
+
+    bool isOpen() override;
+
+    bool eof() override;
+
+    bool isGood() override;
+
+    bool isFile() override;
+
+    bool isStream() override;
+
+    bool isSymlink() override;
 
     bool exists() override;
 
     int64_t size() override;
 
-    bool isFile() override;
+    bool empty() override;
 
-    bool isStream() override;
+    bool canRead() override;
+
+    bool canWrite() override;
 
     int64_t read(Bytef *targetBuffer, int numberOfBytes) override;
 
@@ -94,37 +110,19 @@ public:
 
     int readChar() override;
 
+    char *joinRewindBuffer();
+
     int64_t seek(int64_t nByte, bool absolute) override;
+
+    int64_t skip(int64_t nBytes) override;
 
     int64_t rewind(int64_t nByte) override;
 
-    int64_t getRewindBufferSize();
+    int64_t tell() override;
 
-    char *joinRewindBuffer();
-
-    int64_t getSegmentsInRewindBuffer() { return rewindBuffer.size(); };
-
-    int64_t getRewoundBytes() { return rewoundBytes; }
-
-    bool canRead() override;
-
-    bool fulfillsPremises() override;
-
-    bool isOpen() override;
-
-    bool eof() override;
-
-    bool isGood() override;
-
-    bool isSymlink() override;
-
-    bool empty() override;
-
-    bool canWrite() override;
+    int lastError() override;
 
     string toString() override;
-
-    bool openWithReadLock() override;
 
 };
 

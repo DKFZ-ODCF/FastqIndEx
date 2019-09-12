@@ -7,17 +7,52 @@
 #include "StreamSource.h"
 #include <cstring>
 
+int64_t StreamSource::getRewindBufferSize() {
+    int total = 0;
+    for (auto length : rewindBufferEntryLength) {
+        total += length;
+    }
+    return total;
+}
 
 int64_t StreamSource::getTotalReadBytes() {
     return Source::getTotalReadBytes();
+}
+
+bool StreamSource::fulfillsPremises() {
+    return false;
 }
 
 bool StreamSource::open() {
     return true;
 }
 
+bool StreamSource::openWithReadLock() {
+    return false;
+}
+
 bool StreamSource::close() {
     return true;
+}
+
+bool StreamSource::isOpen() {
+    return false;
+}
+
+bool StreamSource::eof() {
+    return false;
+}
+
+bool StreamSource::isGood() {
+    return false;
+}
+
+bool StreamSource::isFile() { return false; }
+
+bool StreamSource::isStream() { return true; }
+
+bool StreamSource::isSymlink() {
+    return false;
 }
 
 bool StreamSource::exists() {
@@ -32,27 +67,22 @@ int64_t StreamSource::size() {
     return -1;
 }
 
-int64_t StreamSource::getRewindBufferSize() {
-    int total = 0;
-    for (auto length : rewindBufferEntryLength) {
-        total += length;
-    }
-    return total;
+bool StreamSource::empty() {
+    return false;
 }
 
-char *StreamSource::joinRewindBuffer() {
-    char *buf = new char[getRewindBufferSize()];
-    int bufPos = 0;
-    for (u_int64_t i = 0; i < rewindBuffer.size(); i++) {
-        memcpy(buf + bufPos, rewindBuffer[i], static_cast<size_t>(rewindBufferEntryLength[i]));
-        bufPos += rewindBufferEntryLength[i];
-    }
-    return buf;
+/**
+ * Peek and check for eof()
+ * @return
+ */
+bool StreamSource::canRead() {
+    this->inputStream->peek();
+    return !this->inputStream->eof();
 }
 
-bool StreamSource::isFile() { return false; }
-
-bool StreamSource::isStream() { return true; }
+bool StreamSource::canWrite() {
+    return false;
+}
 
 /**
  * Reads numberOfBytes into the targetBuffer.
@@ -125,6 +155,16 @@ int StreamSource::readChar() {
     return res < 0 ? res : (int) result;
 }
 
+char *StreamSource::joinRewindBuffer() {
+    char *buf = new char[getRewindBufferSize()];
+    int bufPos = 0;
+    for (u_int64_t i = 0; i < rewindBuffer.size(); i++) {
+        memcpy(buf + bufPos, rewindBuffer[i], static_cast<size_t>(rewindBufferEntryLength[i]));
+        bufPos += rewindBufferEntryLength[i];
+    }
+    return buf;
+}
+
 /**
  * A lot of cases apply here:
  * - if absolute:
@@ -161,30 +201,6 @@ int64_t StreamSource::seek(int64_t nByte, bool absolute) {
 }
 
 /**
- * @param nByte
- * @return
- */
-int64_t StreamSource::rewind(int64_t nByte) {
-
-    // Make sure, rewind won't go over the border.
-    if (nByte > currentPosition) {
-        nByte = currentPosition;
-    }
-
-    // Check, if the rewind is too far
-    // We also need to be aware of a previous rewind!
-    if (nByte + rewoundBytes > getRewindBufferSize()) {
-        return -1; // We cannot go back further than the rewind buffer. This counts as an error
-    }
-
-    // All good? Let's do the actual rewind.
-    currentPosition -= nByte; // Set position
-    rewoundBytes += nByte;
-
-    return nByte;
-}
-
-/**
  * Skips nByte bytes and stores them in the buffer for possible rewinds.
  * @param nByte
  * @return
@@ -213,6 +229,30 @@ int64_t StreamSource::skip(int64_t nByte) {
     return true;
 }
 
+/**
+ * @param nByte
+ * @return
+ */
+int64_t StreamSource::rewind(int64_t nByte) {
+
+    // Make sure, rewind won't go over the border.
+    if (nByte > currentPosition) {
+        nByte = currentPosition;
+    }
+
+    // Check, if the rewind is too far
+    // We also need to be aware of a previous rewind!
+    if (nByte + rewoundBytes > getRewindBufferSize()) {
+        return -1; // We cannot go back further than the rewind buffer. This counts as an error
+    }
+
+    // All good? Let's do the actual rewind.
+    currentPosition -= nByte; // Set position
+    rewoundBytes += nByte;
+
+    return nByte;
+}
+
 int64_t StreamSource::tell() {
     return currentPosition;
 }
@@ -221,48 +261,6 @@ int StreamSource::lastError() {
     return 0;
 }
 
-
-/**
- * Peek and check for eof()
- * @return
- */
-bool StreamSource::canRead() {
-    this->inputStream->peek();
-    return !this->inputStream->eof();
-}
-
-bool StreamSource::fulfillsPremises() {
-    return false;
-}
-
-bool StreamSource::isOpen() {
-    return false;
-}
-
-bool StreamSource::eof() {
-    return false;
-}
-
-bool StreamSource::isGood() {
-    return false;
-}
-
-bool StreamSource::isSymlink() {
-    return false;
-}
-
-bool StreamSource::empty() {
-    return false;
-}
-
-bool StreamSource::canWrite() {
-    return false;
-}
-
 string StreamSource::toString() {
-    return std::__cxx11::string();
-}
-
-bool StreamSource::openWithReadLock() {
-    return false;
+    return "Streamed or piped source";
 }

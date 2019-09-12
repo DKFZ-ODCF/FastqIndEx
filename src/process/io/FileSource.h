@@ -21,8 +21,6 @@ private:
 
     path file;
 
-//    FILE *filePointer{nullptr};
-
     std::ifstream fStream;
 
     FileLockHandler lockHandler;
@@ -32,12 +30,6 @@ public:
     static shared_ptr<FileSource> from(const path &file) {
         return make_shared<FileSource>(file);
     }
-
-    bool hasLock() override;
-
-    bool unlock() override;
-
-    int64_t rewind(int64_t nByte) override;
 
     /**
      * Create an instance of this object with a path source. This will be read by fread and so on.
@@ -55,25 +47,35 @@ public:
 
     bool close() override;
 
-    bool exists() override { return v1::exists(file); };
+    bool isOpen() override;
 
-    bool isSymlink() override { return is_symlink(symlink_status(file)); }
+    bool hasLock() override;
 
-    bool isRegularFile() {
-        if (isSymlink()) {
-            return is_regular_file(read_symlink(file));
-        } else {
-            return is_regular_file(file);
-        }
-    }
+    bool unlock() override;
 
-    int64_t size() override { return exists() ? file_size(file) : 0; }
+    bool eof() override;
 
-    string absolutePath() { return file.string(); }
+    bool isGood() override { return fStream.good(); }
 
     bool isFile() override { return true; };
 
     bool isStream() override { return false; };
+
+    bool isSymlink() override { return is_symlink(symlink_status(file)); }
+
+    bool exists() override { return v1::exists(file); };
+
+    int64_t size() override { return exists() ? file_size(file) : 0; }
+
+    bool empty() override { return size() == 0; }
+
+    bool canRead() override { return tell() < size(); }
+
+    bool canWrite() override { return false; }
+
+    path getPath() { return file; }
+
+    string absolutePath() { return file.string(); }
 
     int64_t read(Bytef *targetBuffer, int numberOfBytes) override;
 
@@ -83,23 +85,11 @@ public:
 
     int64_t skip(int64_t nBytes) override;
 
+    int64_t rewind(int64_t nByte) override;
+
     int64_t tell() override;
 
-    bool canRead() override;
-
     int lastError() override;
-
-    path getPath() { return file; }
-
-    bool isOpen() override;
-
-    bool eof() override;
-
-    bool isGood() override;
-
-    bool empty() override;
-
-    bool canWrite() override;
 
     string toString() override;
 };

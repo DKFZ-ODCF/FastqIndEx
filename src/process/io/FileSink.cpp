@@ -46,43 +46,25 @@ bool FileSink::openWithWriteLock() {
     return true;
 }
 
-void FileSink::write(const char *message) {
-    write(string(message));
-}
-
-void FileSink::write(const char *message, int streamSize) {
-    if (!isOpen()) {
-        addErrorMessage("BUG: You cannot write to a closed file.");
-        return;
-    }
-    this->fStream.write(message, streamSize);
-}
-
-void FileSink::write(const string &message) {
-    if (!isOpen()) {
-        addErrorMessage("BUG: You cannot write to a closed file.");
-        return;
-    }
-    this->fStream.write(message.c_str(), message.length());
-}
-
-void FileSink::flush() {
-    if (fStream && fStream.is_open()) {
-        fStream.flush();
-    }
-}
-
 bool FileSink::close() {
     if (fStream.is_open())
         fStream.close();
     if (lockHandler.hasLock())
         lockHandler.unlock();
     return true;
-
 }
 
 bool FileSink::isOpen() {
     return fStream.is_open();
+}
+
+bool FileSink::hasLock() {
+    return lockHandler.hasLock();
+}
+
+bool FileSink::unlock() {
+    lockHandler.unlock();
+    return !hasLock();
 }
 
 bool FileSink::eof() {
@@ -127,6 +109,32 @@ bool FileSink::canWrite() {
     return IOHelper::checkFileWriteability(this->file, "output", this);
 }
 
+void FileSink::write(const char *message) {
+    write(string(message));
+}
+
+void FileSink::write(const char *message, int streamSize) {
+    if (!isOpen()) {
+        addErrorMessage("BUG: You cannot write to a closed file.");
+        return;
+    }
+    this->fStream.write(message, streamSize);
+}
+
+void FileSink::write(const string &message) {
+    if (!isOpen()) {
+        addErrorMessage("BUG: You cannot write to a closed file.");
+        return;
+    }
+    this->fStream.write(message.c_str(), message.length());
+}
+
+void FileSink::flush() {
+    if (fStream && fStream.is_open()) {
+        fStream.flush();
+    }
+}
+
 int64_t FileSink::seek(int64_t nByte, bool absolute) {
     if (lastError()) {
         // Seek / Read can run over file borders and it might be necessary to just reopen it. We do this here.
@@ -145,8 +153,8 @@ int64_t FileSink::skip(int64_t nBytes) {
     return seek(nBytes, false);
 }
 
-string FileSink::toString() {
-    return file.string();
+int64_t FileSink::rewind(int64_t nByte) {
+    return seek(-nByte, false);
 }
 
 int64_t FileSink::tell() {
@@ -163,15 +171,6 @@ vector<string> FileSink::getErrorMessages() {
     return concatenateVectors(ErrorAccumulator::getErrorMessages(), lockHandler.getErrorMessages());
 }
 
-bool FileSink::hasLock() {
-    return lockHandler.hasLock();
-}
-
-bool FileSink::unlock() {
-    lockHandler.unlock();
-    return !hasLock();
-}
-
-int64_t FileSink::rewind(int64_t nByte) {
-    return seek(-nByte, false);
+string FileSink::toString() {
+    return file.string();
 }

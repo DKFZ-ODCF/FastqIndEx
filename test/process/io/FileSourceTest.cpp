@@ -34,7 +34,7 @@ SUITE (FILE_SOURCE_TEST_SUITE) {
                 CHECK(!p.isStream());
                 CHECK(p.toString() == ps.string());
                 CHECK(p.size() > 0);
-                CHECK(p.tell() == 0);
+                CHECK(p.tell() == -1);
                 CHECK(p.getErrorMessages().empty());
                 CHECK(p.canRead());
                 CHECK(!p.canWrite());

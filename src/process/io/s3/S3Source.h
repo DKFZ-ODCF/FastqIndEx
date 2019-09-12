@@ -91,40 +91,36 @@ public:
 
     ~S3Source() override;
 
+    void setReadStart(int64_t startBytes) override;
+
     bool fulfillsPremises() override;
-
-    bool isOpen() override;
-
-    bool eof() override;
-
-    bool isGood() override;
-
-    bool empty() override;
-
-    bool canWrite() override;
-
-    string toString() override;
-
-    bool openWithReadLock() override;
 
     bool open() override;
 
+    bool openWithReadLock() override;
+
     bool close() override;
 
-    bool exists() override {
-        auto res = fqiS3Client->checkObjectExistence();
-        return res && res.result;
-    }
+    bool isOpen() override;
 
     bool hasLock() override;
 
     bool unlock() override;
 
-    int64_t getTotalReadBytes() override;
+    bool eof() override;
+
+    bool isGood() override;
+
+    bool isFile() override { return true; };
+
+    bool isStream() override { return true; };
 
     bool isSymlink() override { return false; }
 
-    bool isRegularFile() { return true; }
+    bool exists() override {
+        auto res = fqiS3Client->checkObjectExistence();
+        return res && res.result;
+    }
 
     int64_t size() override {
         if (!sizeRequested) {
@@ -134,11 +130,15 @@ public:
         return _size;
     }
 
+    bool empty() override;
+
+    bool canRead() override;
+
+    bool canWrite() override;
+
+    int64_t getTotalReadBytes() override;
+
     string absolutePath() { return "S3"; }
-
-    bool isFile() override { return true; };
-
-    bool isStream() override { return true; };
 
     int64_t read(Bytef *targetBuffer, int numberOfBytes) override;
 
@@ -148,13 +148,11 @@ public:
 
     int64_t skip(int64_t nBytes) override;
 
+    int64_t rewind(int64_t nByte) override;
+
     int64_t tell() override;
 
-    bool canRead() override;
-
     int lastError() override;
-
-    int64_t rewind(int64_t nByte) override;
 
     vector<string> getErrorMessages() override {
         auto l = ErrorAccumulator::getErrorMessages();
@@ -167,9 +165,7 @@ public:
         }
     }
 
-    void setReadStart(int64_t startBytes) override;
-
-
+    string toString() override;
 };
 
 #include "process/io/Source.h"

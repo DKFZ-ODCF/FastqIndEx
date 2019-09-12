@@ -141,7 +141,7 @@ bool S3Source::eof() {
 }
 
 bool S3Source::isGood() {
-    return true;//streamSource->isGood();
+    return true;
 }
 
 bool S3Source::empty() {

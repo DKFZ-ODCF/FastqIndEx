@@ -53,14 +53,9 @@ public:
         close();
     }
 
-    bool openWithWriteLock() override {
-        return open();
-    }
-
     bool fulfillsPremises() override {
         return true;
     }
-
 
     bool open() override {
         if (isOpen())
@@ -100,6 +95,10 @@ public:
 
         _isOpen = ok;
         return ok;
+    }
+
+    bool openWithWriteLock() override {
+        return open();
     }
 
     bool close() override {
@@ -168,26 +167,6 @@ public:
         return tempFile && tempFile->canWrite();
     }
 
-    int64_t seek(int64_t nByte, bool absolute) override {
-        return tempFile ? tempFile->seek(nByte, absolute) : -1;
-    }
-
-    int64_t skip(int64_t nByte) override {
-        return tempFile ? tempFile->skip(nByte) : -1;
-    }
-
-    string toString() override {
-        return fqiS3Client->getS3Path();
-    }
-
-    int64_t tell() override {
-        return tempFile ? tempFile->tell() : -1;
-    }
-
-    int lastError() override {
-        return 0;
-    }
-
     void write(const char *message) override {
         if (tempFile)tempFile->write(message);
     }
@@ -204,6 +183,20 @@ public:
         if (tempFile) tempFile->flush();
     }
 
+    int64_t seek(int64_t nByte, bool absolute) override {
+        return tempFile ? tempFile->seek(nByte, absolute) : -1;
+    }
+
+    int64_t skip(int64_t nByte) override {
+        return tempFile ? tempFile->skip(nByte) : -1;
+    }
+
+    int64_t tell() override {
+        return tempFile ? tempFile->tell() : -1;
+    }
+
+    int lastError() override { return 0; }
+
     vector<string> getErrorMessages() override {
         auto l = ErrorAccumulator::getErrorMessages();
         auto r = fqiS3Client->getErrorMessages();
@@ -214,6 +207,8 @@ public:
             return concatenateVectors(l, r, s);
         }
     }
+
+    string toString() override { return fqiS3Client->getS3Path(); }
 
 };
 

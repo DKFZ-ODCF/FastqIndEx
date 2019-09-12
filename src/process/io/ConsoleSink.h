@@ -44,102 +44,40 @@ public:
             this->stream = &std::cout;
     }
 
-    bool hasLock() override {
-        return true;
-    }
 
-    bool unlock() override {
-        return true;
-    }
+    bool fulfillsPremises() override { return stream == &std::cout || stream == &std::cerr; }
 
-    int64_t rewind(int64_t nByte) override {
-        return 0;
-    }
+    bool open() override { return true; }
 
-    bool openWithWriteLock() override {
-        return true;
-    }
+    bool openWithWriteLock() override { return true; }
 
-    bool fulfillsPremises() override {
-        return stream == &std::cout || stream == &std::cerr;
-    }
+    bool close() override { return true; }
 
-    bool open() override {
-        return true;//stream != nullptr;
-    }
+    bool isOpen() override { return true; }
 
-    bool close() override {
-        return true;
-    }
+    bool hasLock() override { return true; }
 
-    bool isOpen() override {
-        return true;//stream != nullptr;
-    }
+    bool unlock() override { return true; }
 
-    bool eof() override {
-        return false;
-    }
+    bool eof() override { return false; }
 
-    bool isGood() override {
-        return stream->good();
-    }
+    bool isGood() override { return stream->good(); }
 
-    bool isFile() override {
-        return false;
-    }
+    bool isFile() override { return false; }
 
-    bool isStream() override {
-        return true;
-    }
+    bool isStream() override { return true; }
 
-    bool isSymlink() override {
-        return false;
-    }
+    bool isSymlink() override { return false; }
 
-    bool exists() override {
-        return true;//stream;
-    }
+    bool exists() override { return true; }
 
-    int64_t size() override {
-        return 0;
-    }
+    int64_t size() override { return 0; }
 
-    bool empty() override {
-        return false;
-    }
+    bool empty() override { return false; }
 
-    bool canRead() override {
-        return false;
-    }
+    bool canRead() override { return false; }
 
-    bool canWrite() override {
-        return true;// stream;
-    }
-
-    int64_t seek(int64_t nByte, bool absolute) override {
-        return 0;
-    }
-
-    int64_t skip(int64_t nByte) override {
-        return 0;
-    }
-
-    string toString() override {
-        if (stream == &std::cout)
-            return "cout";
-        else if (stream == &std::cout)
-            return "cerr";
-        else
-            return "unknown stream type or no stream";
-    }
-
-    int64_t tell() override {
-        return 0;
-    }
-
-    int lastError() override {
-        return 0;
-    }
+    bool canWrite() override { return true; }
 
     void write(const char *message) override {
         lock_guard<mutex> lock(_mtx);
@@ -162,6 +100,25 @@ public:
     void flush() override {
         lock_guard<mutex> lock(_mtx);
         stream->flush();
+    }
+
+    int64_t seek(int64_t nByte, bool absolute) override { return 0; }
+
+    int64_t skip(int64_t nByte) override { return 0; }
+
+    int64_t rewind(int64_t nByte) override { return 0; }
+
+    int64_t tell() override { return 0; }
+
+    int lastError() override { return 0; }
+
+    string toString() override {
+        if (stream == &std::cout)
+            return "cout";
+        else if (stream == &std::cout)
+            return "cerr";
+        else
+            return "unknown stream type or no stream";
     }
 };
 

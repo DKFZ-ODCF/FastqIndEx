@@ -6,9 +6,7 @@
 
 #include "FileSource.h"
 
-FileSource::FileSource(const path &file) : file(IOHelper::fullPath(file)), lockHandler(file) {
-//    fStream = std::ifstream(file, std::ifstream::binary);
-}
+FileSource::FileSource(const path &file) : file(IOHelper::fullPath(file)), lockHandler(file) {}
 
 FileSource::~FileSource() {
     close();
@@ -54,6 +52,24 @@ bool FileSource::close() {
     return true;
 }
 
+bool FileSource::hasLock() {
+    return lockHandler.hasLock();
+}
+
+bool FileSource::unlock() {
+    lockHandler.unlock();
+    return !hasLock();
+}
+
+bool FileSource::isOpen() {
+    return fStream.is_open();
+}
+
+bool FileSource::eof() {
+    fStream.peek();
+    return fStream.eof() == 1 ? true : false;
+}
+
 int64_t FileSource::read(Bytef *targetBuffer, int numberOfBytes) {
     fStream.read(reinterpret_cast<char *>(targetBuffer), numberOfBytes);
     int64_t amountRead = fStream.gcount();
@@ -84,54 +100,20 @@ int64_t FileSource::skip(int64_t nBytes) {
     return seek(nBytes, false);
 }
 
+int64_t FileSource::rewind(int64_t nByte) {
+    return seek(-nByte, false);
+}
+
 int64_t FileSource::tell() {
     if (fStream.is_open())
         return fStream.tellg();
-    return 0;
-}
-
-bool FileSource::canRead() {
-    return tell() < size();
+    return -1;
 }
 
 int FileSource::lastError() {
     return fStream.fail() || fStream.bad();
 }
 
-bool FileSource::isOpen() {
-    return fStream.is_open();
-}
-
-bool FileSource::eof() {
-    fStream.peek();
-    return fStream.eof() == 1 ? true : false;
-}
-
-bool FileSource::isGood() {
-    return fStream.good();
-}
-
-bool FileSource::empty() {
-    return size() == 0;
-}
-
-bool FileSource::canWrite() {
-    return false;
-}
-
 string FileSource::toString() {
     return file.string();
-}
-
-bool FileSource::hasLock() {
-    return lockHandler.hasLock();
-}
-
-bool FileSource::unlock() {
-    lockHandler.unlock();
-    return !hasLock();
-}
-
-int64_t FileSource::rewind(int64_t nByte) {
-    return seek(-nByte, false);
 }

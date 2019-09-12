@@ -42,25 +42,13 @@ public:
 
     bool openWithWriteLock() override;
 
-    path getPath() {
-        return file;
-    }
-
-    path parentPath() {
-        return file.parent_path();
-    }
-
-    void write(const char *message) override;
-
-    void write(const char *message, int streamSize) override;
-
-    void write(const string &message) override;
-
-    void flush() override;
-
     bool close() override;
 
     bool isOpen() override;
+
+    bool hasLock() override;
+
+    bool unlock() override;
 
     bool eof() override;
 
@@ -82,11 +70,23 @@ public:
 
     bool canWrite() override;
 
+    path getPath() { return file; }
+
+    path parentPath() { return file.parent_path(); }
+
+    void write(const char *message) override;
+
+    void write(const char *message, int streamSize) override;
+
+    void write(const string &message) override;
+
+    void flush() override;
+
     int64_t seek(int64_t nByte, bool absolute) override;
 
     int64_t skip(int64_t nByte) override;
 
-    string toString() override;
+    int64_t rewind(int64_t nByte) override;
 
     int64_t tell() override;
 
@@ -94,11 +94,7 @@ public:
 
     vector<string> getErrorMessages() override;
 
-    bool hasLock() override;
-
-    bool unlock() override;
-
-    int64_t rewind(int64_t nByte) override;
+    string toString() override;
 };
 
 #endif //FASTQINDEX_FILESINK_H

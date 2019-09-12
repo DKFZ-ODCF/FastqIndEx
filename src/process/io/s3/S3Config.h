@@ -160,7 +160,7 @@ public:
         string value = getStringSafe(key, to_string(_default));
         int result = _default;
         try {
-            result = stoi(allValues[key]);
+            result = stoi(value);
         } catch (const invalid_argument &e) {
             addErrorMessage("'", key, "':'", value, "' cannot be converted to an integer.");
         } catch (const out_of_range &e) {
@@ -173,7 +173,7 @@ public:
         string value = getStringSafe(key, to_string(_default));
         uint result = _default;
         try {
-            result = stoui(allValues[key]);
+            result = stoui(value);
         } catch (const invalid_argument &e) {
             addErrorMessage("'", key, "':'", value, "' cannot be converted to an unsigned integer.");
         } catch (const out_of_range &e) {
@@ -186,7 +186,7 @@ public:
         string value = getStringSafe(key, to_string(_default));
         long result = _default;
         try {
-            result = stol(allValues[key]);
+            result = stol(value);
         } catch (const invalid_argument &e) {
             addErrorMessage("'", key, "':'", value, "' cannot be converted to a long.");
         } catch (const out_of_range &e) {

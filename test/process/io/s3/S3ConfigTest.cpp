@@ -170,9 +170,8 @@ SUITE (S3_CONFIG_TESTS) {
                 CHECK(cfg.getAWSAccessKeyId() == "aaa");
                 CHECK(cfg.getAWSSecretKey() == "bbb");
                 CHECK(cfg.getConnectTimeoutMs() == 10000);
-        // Now default values
-
-                CHECK(false);
+                CHECK(cfg.getProxyHost() == "someproxy");
+                CHECK(cfg.getProxyPort() == 3128);
     }
 
     TEST (TEST_FILL_AWSCREDENTIALS) {
@@ -181,6 +180,8 @@ SUITE (S3_CONFIG_TESTS) {
         S3TestConfig cfg(&res, "awsCredentialsExample", "awsConfigExample");
         Aws::Auth::AWSCredentials credentials;
         cfg.fillAWSCredentials(credentials);
+                CHECK(credentials.GetAWSSecretKey() == "bbb");
+                CHECK(credentials.GetAWSAccessKeyId() == "aaa");
     }
 
     TEST (TEST_FILL_AWSOPTIONS) {

@@ -5,32 +5,44 @@
  */
 
 const char *const S3_SINK_TEST_SUITE = "Test suite for the S3Sink class";
-const char *const S3_SINK_CONSTRUCT = "Test construction and fulfillsPremises()";
-const char *const S3_SINK_OPEN = "Test open and close";
-const char *const S3_SINK_OPENLOCKED = "Test open and close with lock_unlock";
-const char *const S3_SINK_AQUIRELOCK_LATER = "Test aquire lock after file open";
-const char *const S3_SINK_WRITE_TELL_SEEK = "Test write tell seek rewind functions";
-const char *const S3_SINK_WRITE_OVERWRITEBYTES = "Test write rewind_seek overwrite bytes";
-const char *const S3_PATH("s3://bucket/some.fastq.gz");
 
 #include "process/io/s3/S3Sink.h"
+#include "process/io/s3/FQIS3TestClient.h"
 #include "process/io/FileSource.h"
 #include "TestConstants.h"
 #include "TestResourcesAndFunctions.h"
 #include <UnitTest++/UnitTest++.h>
 
-shared_ptr<S3Sink> createTestSink() {
-    return S3Sink::from(FQIS3Client::from(S3_PATH, S3Service::from(S3ServiceOptions("", "", ""))), true);
-}
-
 SUITE (S3_SINK_TEST_SUITE) {
+
+    const char *const S3_SINK_CONSTRUCT = "Test construction and fulfillsPremises()";
+    const char *const S3_SINK_OPEN = "Test open and close";
+    const char *const S3_SINK_OPENLOCKED = "Test open and close with lock_unlock";
+    const char *const S3_SINK_AQUIRELOCK_LATER = "Test aquire lock after file open";
+    const char *const S3_SINK_WRITE_TELL_SEEK = "Test write tell seek rewind functions";
+    const char *const S3_SINK_WRITE_OVERWRITEBYTES = "Test write rewind_seek overwrite bytes";
+
+    shared_ptr<S3Sink> createTestSinkWithBackingFile(const path &file) {
+        auto client = FQIS3TestClient::from(
+                TestResourcesAndFunctions::getResource(file),
+                S3Service::getDefault()
+        );
+        return S3Sink::from(client, true);
+    }
+
+    shared_ptr<S3Sink> createTestSink() {
+        return createTestSinkWithBackingFile(TEST_FASTQ_SMALL);
+    }
+
+    const char *const S3_PATH("s3://TestBucket/test.fastq.gz");
+
     TEST (S3_SINK_CONSTRUCT) {
         TestResourcesAndFunctions res(S3_SINK_TEST_SUITE, S3_SINK_CONSTRUCT);
 
-        auto p = createTestSink();
+        auto p = createTestSinkWithBackingFile(TEST_FASTQ_SMALL);
                 CHECK(p->fulfillsPremises());
                 CHECK(!p->exists());
-                CHECK(!p->hasLock());
+                CHECK(p->hasLock());  // Always true for S3 now
                 CHECK(!p->isOpen());
                 CHECK(p->isGood());
                 CHECK(!p->isBad());
@@ -38,11 +50,12 @@ SUITE (S3_SINK_TEST_SUITE) {
                 CHECK(p->isFile());
                 CHECK(p->isStream());
                 CHECK(p->toString() == S3_PATH);
-                CHECK(p->size() == 0);
-                CHECK(p->tell() == 0);
+                CHECK_EQUAL(string(S3_PATH), p->toString());
+                CHECK_EQUAL(-1, p->size());
+                CHECK_EQUAL(-1, p->tell());
                 CHECK(p->getErrorMessages().empty());
                 CHECK(!p->canRead());
-                CHECK(p->canWrite());
+                CHECK(!p->canWrite()); // Not open yet
 
 //        auto p2 = S3Sink(res.createEmptyFile("noOverwrite"));
 //                CHECK(p2.exists());
@@ -77,7 +90,7 @@ SUITE (S3_SINK_TEST_SUITE) {
 
         p->close();
                 CHECK(!p->isOpen());
-                CHECK(!p->hasLock());
+                CHECK(p->hasLock());
     }
 
     TEST (S3_SINK_AQUIRELOCK_LATER) {
@@ -87,7 +100,7 @@ SUITE (S3_SINK_TEST_SUITE) {
                 CHECK(!p->isOpen());
 
         p->open();
-                CHECK(!p->hasLock());
+                CHECK(p->hasLock());
                 CHECK(p->isOpen());
 
         p->openWithWriteLock();
@@ -114,7 +127,8 @@ SUITE (S3_SINK_TEST_SUITE) {
                 CHECK(p->tell() == static_cast<int64_t>(test1.length() - 2));
 
         p->seek(p->size() + 1, true);
-                CHECK(p->tell() == static_cast<int64_t>(test1.length() + 1)); // This is only working, because of our opening mode!
+                CHECK(p->tell() ==
+                      static_cast<int64_t>(test1.length() + 1)); // This is only working, because of our opening mode!
 //                CHECK(p->eof());                            // This is not working, because of our opening mode!
 
         const char *c_str = test1.c_str();

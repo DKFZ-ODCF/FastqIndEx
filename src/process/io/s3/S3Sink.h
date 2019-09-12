@@ -132,8 +132,7 @@ public:
     }
 
     bool isGood() override {
-
-        return tempFile && tempFile->isGood();
+        return tempFile ? tempFile->isGood() : true;
     }
 
     bool isFile() override {
@@ -153,7 +152,7 @@ public:
     }
 
     int64_t size() override {
-        return tempFile ? tempFile->size() : 0;
+        return tempFile ? tempFile->size() : -1;
     }
 
     bool empty() override {
@@ -170,11 +169,11 @@ public:
     }
 
     int64_t seek(int64_t nByte, bool absolute) override {
-        return tempFile ? tempFile->seek(nByte, absolute) : 0;
+        return tempFile ? tempFile->seek(nByte, absolute) : -1;
     }
 
     int64_t skip(int64_t nByte) override {
-        return tempFile ? tempFile->skip(nByte) : 0;
+        return tempFile ? tempFile->skip(nByte) : -1;
     }
 
     string toString() override {
@@ -182,7 +181,7 @@ public:
     }
 
     int64_t tell() override {
-        return tempFile ? tempFile->tell() : 0;
+        return tempFile ? tempFile->tell() : -1;
     }
 
     int lastError() override {

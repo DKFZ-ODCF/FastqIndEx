@@ -64,6 +64,19 @@ protected:
 
     S3ServiceOptions serviceOptions;
 
+protected:
+
+    /**
+     * Constructor specifically created for tests! Do not use in standard code.
+     * This constructor effectifely disables the check for
+     * @param service
+     */
+    FQIS3Client(S3Service_S service) {
+        this->service = service;
+        this->s3Config = service->getConfig();
+        this->serviceOptions = service->getS3ServiceOptions();
+    }
+
 public:
 
     static shared_ptr<FQIS3Client> from(const string &s3Path, S3Service_S service) {
@@ -86,7 +99,11 @@ public:
     }
 
     virtual bool isValid() {
-        return service.get() && !bucketName.empty() && !objectName.empty() && s3Config.isValid();
+        return !getErrorMessages().empty() &&
+               service.get() &&
+               !bucketName.empty() &&
+               !objectName.empty() &&
+               s3Config.isValid();
     }
 
     string getS3Path() {

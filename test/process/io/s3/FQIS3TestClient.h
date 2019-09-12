@@ -44,11 +44,17 @@ private:
     path s3FakeObject;
 
 public:
+
+    static shared_ptr<FQIS3TestClient> from(const string &s3FakeObject, const S3Service_S &service) {
+        return make_shared<FQIS3TestClient>(s3FakeObject, service);
+    }
+
     FQIS3TestClient(const string &s3FakeObject, const S3Service_S &service)
-            : FQIS3Client(s3FakeObject, service) {
+            : FQIS3Client(service) {
         this->s3FakeObject = s3FakeObject;
         this->bucketName = "TestBucket";
         this->objectName = this->s3FakeObject.filename().string();
+        this->s3Path = string("s3://") + this->bucketName + "/" + this->objectName;
     }
 
     bool isValid() override {

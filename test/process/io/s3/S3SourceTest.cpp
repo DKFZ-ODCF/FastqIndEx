@@ -19,14 +19,14 @@ SUITE (S3_SOURCE_TEST_SUITE) {
     //const char *const S3_SOURCE_AQUIRELOCK_LATER = "Test aquire lock after file open";
     //const char *const S3_SOURCE_WRITE_TELL_SEEK = "Test write tell seek rewind functions";
     //const char *const S3_SOURCE_WRITE_OVERWRITEBYTES = "Test write rewind_seek overwrite bytes";
-    const char *const S3_PATH("s3://bucket/some.fastq.gz");
-
-    shared_ptr<S3Source> createTestSource() {
-        return S3Source::from(FQIS3Client::from(S3_PATH, S3Service::from(S3ServiceOptions("", "", ""))));
-    }
+    const char *const S3_PATH("s3://TestBucket/test.fastq.gz");
+//
+//    shared_ptr<S3Source> createTestSource() {
+//        return S3Source::from(FQIS3Client::from(S3_PATH, S3Service::from(S3ServiceOptions("", "", ""))));
+//    }
 
     shared_ptr<S3Source> createTestSourceWithBackingFile(const path &file) {
-        auto client = make_shared<FQIS3TestClient>(
+        auto client = FQIS3TestClient::from(
                 TestResourcesAndFunctions::getResource(file),
                 S3Service::getDefault()
         );
@@ -39,19 +39,19 @@ SUITE (S3_SOURCE_TEST_SUITE) {
         auto p = createTestSourceWithBackingFile(TEST_FASTQ_SMALL);
                 CHECK(p->fulfillsPremises());
                 CHECK(p->exists());
-                CHECK(!p->hasLock());
+                CHECK(p->hasLock());
                 CHECK(!p->isOpen());
                 CHECK(p->isGood());
                 CHECK(!p->isBad());
                 CHECK(!p->eof());
                 CHECK(p->isFile());
                 CHECK(p->isStream());
-                CHECK(p->toString() == S3_PATH);
-                CHECK(p->size() == 0);
-                CHECK(p->tell() == 0);
+                CHECK_EQUAL(string(S3_PATH), p->toString());
+                CHECK_EQUAL(81068, p->size());
+                CHECK_EQUAL(-1, p->tell());
                 CHECK(p->getErrorMessages().empty());
                 CHECK(!p->canRead());
-                CHECK(p->canWrite());
+                CHECK(!p->canWrite());
 
 //        auto p2 = S3Source(res.createEmptyFile("noOverwrite"));
 //                CHECK(p2.exists());

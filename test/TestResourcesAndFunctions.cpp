@@ -47,7 +47,7 @@ path TestResourcesAndFunctions::getTestPath() {
     lock.lock();
     if (testPath.empty()) {
         string prefix = "FastqIndExTest_" + testSuite + "_" + testName;
-        auto[result, tempDir] = IOHelper::createTempDir(prefix);
+        auto[result, tempDir, message] = IOHelper::createTempDir(prefix);
         if (!result) {
             cerr << "## The temporary folder for pattern '" << prefix << "' could not be created!\n";
         }

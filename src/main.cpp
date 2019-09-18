@@ -23,12 +23,12 @@ int main(int argc, const char *argv[]) {
     int exitCode = 0;
     if (!runner->fulfillsPremises()) {
         cerr << "There were errors preventing FastqIndEx to start:\n";
-        for (auto const &message : runner->getErrorMessages()) {
-            cerr << "\t" << message << "\n";
-        }
         exitCode = 1;
     } else {
         exitCode = runner->run();
+    }
+    for (auto const &message : runner->getErrorMessages()) {
+        cerr << "\t" << message << "\n";
     }
 
     return exitCode;

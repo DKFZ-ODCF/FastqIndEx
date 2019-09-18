@@ -72,10 +72,12 @@ add_library(
         runners/IndexWritingRunner.h
         runners/Runner.cpp runners/Runner.h
         runners/PrintCLIOptions.cpp runners/PrintCLIOptions.h
+        runners/S3TestRunner.h
         startup/ExtractModeCLIParser.cpp startup/ExtractModeCLIParser.h
         startup/IndexModeCLIParser.cpp startup/IndexModeCLIParser.h
         startup/IndexStatsModeCLIParser.h
         startup/ModeCLIParser.cpp startup/ModeCLIParser.h
+        startup/S3TestModeCLIParser.h
         startup/Starter.cpp startup/Starter.h
 )
 

@@ -27,6 +27,7 @@ const char *const TEST_PROCESS_INDEX_FILE_SINK_PATH_NONAME = "Test ::processInde
 const char *const TEST_PROCESS_INDEX_FILE_SINK_S3 = "Test ::processIndexFileSink() with S3Sink result";
 const char *const TEST_PROCESS_INDEX_FILE_SINK_S3_NONAME = "Test ::processIndexFileSink() without a filename and with S3Sink result";
 const char *const TEST_PROCESS_FILE_SINK = "Test ::processFileSink()";
+//const char *const TEST_TESTS3SERVICECOMPATIBILITY = "Test TEST_TESTS3SERVICECOMPATIBILITY";
 
 S3Service_S getTestService() {
     return S3Service::from(S3ServiceOptions(string(""), "", ""));
@@ -121,4 +122,7 @@ SUITE (SUITE_MODECLIPARSER_TESTS) {
                 CHECK(dynamic_pointer_cast<S3Sink>(src)->toString() == "s3://abc/test.fastq.fqi");
     }
 
+//    TEST (TEST_TESTS3SERVICECOMPATIBILITY) {
+//
+//    }
 }

@@ -35,7 +35,7 @@ bool S3Source::open() {
         return true;
 
     // Create fifo
-    auto[success, fifo] = IOHelper::createTempFifo("FASTQIndEx_S3SourceFIFO");
+    auto[success, fifo, errorMessage] = IOHelper::createTempFifo("FASTQIndEx_S3SourceFIFO");
     if (!success) {
         ErrorAccumulator::addErrorMessage("Could not create a named pipe for the S3 source '", fqiS3Client->getS3Path(),
                                           "' in the temp folder. Please check, if there are leftover ",

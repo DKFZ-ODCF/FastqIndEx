@@ -12,6 +12,7 @@
 #include "runners/IndexerRunner.h"
 #include "runners/IndexStatsRunner.h"
 #include "runners/Runner.h"
+#include "runners/S3TestRunner.h"
 #include <tclap/CmdLine.h>
 #include <cstring>
 #include <memory>
@@ -46,6 +47,8 @@ public:
     IndexerRunner *assembleCmdLineParserForIndexAndParseOpts(int argc, const char **argv);
 
     ExtractorRunner *assembleCmdLineParserForExtractAndParseOpts(int argc, const char **argv);
+
+    S3TestRunner *assembleCmdLineParserForTestS3AndParseOpts(int argc, const char **argv);
 
     Runner *assembleCLIOptions(int argc, const char *argv[]);
 

@@ -8,10 +8,11 @@
 #include "process/io/FileSource.h"
 #include "runners/ExtractorRunner.h"
 #include "runners/IndexerRunner.h"
-#include "ExtractModeCLIParser.h"
-#include "IndexModeCLIParser.h"
-#include "IndexStatsModeCLIParser.h"
-#include "Starter.h"
+#include "startup/ExtractModeCLIParser.h"
+#include "startup/IndexModeCLIParser.h"
+#include "startup/IndexStatsModeCLIParser.h"
+#include "startup/Starter.h"
+#include "startup/S3TestModeCLIParser.h"
 #include <tclap/CmdLine.h>
 
 PrintCLIOptions *Starter::assembleSmallCmdLineParserAndParseOpts(int argc, const char *argv[]) {
@@ -20,8 +21,9 @@ PrintCLIOptions *Starter::assembleSmallCmdLineParserAndParseOpts(int argc, const
     allowedValues.emplace_back("index");
     allowedValues.emplace_back("extract");
     allowedValues.emplace_back("stats");
+    allowedValues.emplace_back("tests3");
     ValuesConstraint<string> allowedModesConstraint(allowedValues);
-    UnlabeledValueArg<string> mode("mode", "mode is either index, extract or stats", true, "", &allowedModesConstraint,
+    UnlabeledValueArg<string> mode("mode", "mode is either index, extract, stats or tests3", true, "", &allowedModesConstraint,
                                    cmdLineParser);
     cmdLineParser.parse(argc, argv);
     return new PrintCLIOptions();
@@ -39,6 +41,10 @@ ExtractorRunner *Starter::assembleCmdLineParserForExtractAndParseOpts(int argc, 
     return ExtractModeCLIParser().parse(argc, argv);
 }
 
+S3TestRunner *Starter::assembleCmdLineParserForTestS3AndParseOpts(int argc, const char **argv) {
+    return S3TestModeCLIParser().parse(argc, argv);
+}
+
 /**
  * Effectively checks parameter count and file existence and accessibility
  * @param argc parameter count
@@ -54,7 +60,8 @@ Runner *Starter::assembleCLIOptions(int argc, const char *argv[]) {
         if (argc == 1 || (
                 mode != "index" &&
                 mode != "extract" &&
-                mode != "stats")
+                mode != "stats" &&
+                mode != "tests3")
                 ) {
             assembleSmallCmdLineParserAndParseOpts(argc, argv);
             return new PrintCLIOptions();
@@ -64,6 +71,8 @@ Runner *Starter::assembleCLIOptions(int argc, const char *argv[]) {
             return assembleCmdLineParserForExtractAndParseOpts(argc, argv);
         } else if (mode == "stats") {
             return assembleCmdLineParserForIndexStatsAndParseOpts(argc, argv);
+        } else if (mode == "tests3") {
+            return assembleCmdLineParserForTestS3AndParseOpts(argc, argv);
         }
     } catch (TCLAP::ArgException &e) { // catch any exceptions
         std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl;

@@ -80,7 +80,7 @@ public:
             return false;
         }
 
-        auto[success, tempFilePath] = IOHelper::createTempFile("FastqIndEx_S3TemporaryIndex");
+        auto[success, tempFilePath, message] = IOHelper::createTempFile("FastqIndEx_S3TemporaryIndex");
         if (!success) {
             addErrorMessage("Could not create an intermediate temporary file for '", fqiS3Client->getS3Path(), "'.");
             return false;

@@ -23,6 +23,7 @@
 #include <aws/core/auth/AWSCredentialsProvider.h>
 #include <aws/core/utils/HashingUtils.h>
 #include <aws/core/Aws.h>
+#include <aws/s3/model/DeleteObjectRequest.h>
 #include <aws/s3/model/GetObjectRequest.h>
 #include <aws/s3/model/ListObjectsRequest.h>
 #include <aws/s3/model/PutObjectRequest.h>
@@ -185,7 +186,6 @@ public:
 
     /**
      * Returns the object size for this clients object.
-     * @return A tuple indicating [success, size]
      */
     virtual Result<uint64_t> getObjectSize() {
         auto result = getObjectList();
@@ -233,9 +233,9 @@ public:
      * @param position From where to take
      * @param length   How much to take
      * @param buffer   Where to store to. This buffer needs to be large enough to hold the data!
-     * @return A tuple with a success indicator and the amount of read Bytes.
+     * @return A result with a success indicator and the amount of read Bytes.
      */
-    virtual tuple<bool, int64_t> readBlockOfData(int64_t position, int64_t length, Bytef *buffer) {
+    virtual Result<int64_t> readBlockOfData(int64_t position, int64_t length, Bytef *buffer) {
         int64_t readBytes{0};
         bool success = request<GetObjectOutcome>([&](S3Client &client) -> GetObjectOutcome {
             GetObjectRequest objectRequest;
@@ -250,7 +250,22 @@ public:
             return getObjectOutcome;
         });
 
-        return tuple<bool, int64_t>(success, readBytes);
+        return {success, readBytes};
+    }
+
+    virtual Result<bool> deleteObjectFromBucket() {
+        bool deleted{false};
+        bool success = request<DeleteObjectOutcome>([&](S3Client &client) -> DeleteObjectOutcome {
+            DeleteObjectRequest objectRequest;
+            objectRequest.SetBucket(bucketName.c_str());
+            objectRequest.SetKey(objectName.c_str());
+            auto getObjectOutcome = client.DeleteObject(objectRequest);
+            if(getObjectOutcome.IsSuccess()) {
+                deleted = true;
+            }
+            return getObjectOutcome;
+        });
+        return {success, deleted};
     }
 
     vector<string> getErrorMessages() override {

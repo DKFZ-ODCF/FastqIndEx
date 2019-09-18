@@ -21,12 +21,6 @@ using namespace std;
  */
 class Runner : public ErrorAccumulator {
 
-private:
-
-    S3ServiceOptions s3Options;
-
-    bool s3Enabled{false};
-
 protected:
     Runner() = default;
 

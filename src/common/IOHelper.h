@@ -7,7 +7,8 @@
 #ifndef FASTQINDEX_IOHELPER_H
 #define FASTQINDEX_IOHELPER_H
 
-#include "ErrorAccumulator.h"
+#include "common/ErrorAccumulator.h"
+#include "common/Result.h"
 #include <cstdio>
 #include <experimental/filesystem>
 #include <map>
@@ -40,20 +41,20 @@ public:
      * Try to create a temporary file
      * @return A tuple indicating [success, temp directory path]
      */
-    static tuple<bool, path> createTempDir(const string &prefix);
+    static Result <path> createTempDir(const string &prefix);
 
     /**
      * Try to create a temporary file
      * @return A tuple indicating [success, temp file path]
      */
-    static tuple<bool, path> createTempFile(const string &prefix);
+    static Result <path> createTempFile(const string &prefix);
 
     /**
      * Create a unique fifo in the temp folder.
      * Needs to be cleaned before the application exits.
      * @return A tuple indicating [success, fifo path]
      */
-    static tuple<bool, path> createTempFifo(const string &prefix);
+    static Result <path> createTempFifo(const string &prefix);
 
     /**
      * Check file existence and read / write capability for it. Report to either cerr or the pointed to errorAccumulator

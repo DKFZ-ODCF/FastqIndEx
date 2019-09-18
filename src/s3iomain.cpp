@@ -4,9 +4,10 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
+#include "common/CommonStructsAndConstants.h"
+#include "common/StringHelper.h"
 #include "process/io/s3/FQIS3Client.h"
 #include "process/io/s3/S3Service.h"
-#include "common/CommonStructsAndConstants.h"
 #include <experimental/filesystem>
 #include <iostream>
 #include <stdio.h>
@@ -84,13 +85,13 @@ tuple<bool, pid_t> getProcessParentID(const pid_t pid) {
 tuple<bool, path> getParentPath() {
     int myPid = getpid();
     auto[processParentIDValid, processParentID] = getProcessParentID(myPid);
-    if(!processParentIDValid) {
+    if (!processParentIDValid) {
         std::cerr << "Could not get process id for parent process.\n";
         return {false, ""};
     }
 
     auto[processNameValid, processName] = getProcessName(processParentID);
-    if(!processNameValid) {
+    if (!processNameValid) {
         std::cerr << "Could not get the name of the process.\n";
         return {false, ""};
     }
@@ -111,13 +112,13 @@ tuple<bool, path> getParentPath() {
  *              [6] - The starting position.
  * @return Some value, most likely an error value as we are not able to properly abort S3 GetObject
  */
-int main(int argc, char **argv) {
-    auto [parentPathRetrieved, parentPath] = getParentPath();
-    if(!parentPathRetrieved) {
+int main(int argc, const char **argv) {
+    auto[parentPathRetrieved, parentPath] = getParentPath();
+    if (!parentPathRetrieved) {
         std::cerr << "Could not get the parent processes path.\n";
         return -1;
     }
-    if (parentPath != "fastqindex") {
+    if (parentPath.filename().string() != "fastqindex") {
         std::cerr << "The FastqIndEx S3 helper binary was not started by FastqIndEx itself! "
                   << "Only do this for tests.\n";
     }
@@ -125,10 +126,11 @@ int main(int argc, char **argv) {
     if (argc != 7)
         return 1;
 
-    path fifo = argv[1];
-    string s3Object = argv[2];
-    S3ServiceOptions s3ServiceOptions(argv[5], argv[4], argv[3]);
-    int64_t readStart = stoll(argv[6]);
+    path fifo = StringHelper::trim_copy(argv[1]);
+    string s3Object = StringHelper::trim_copy(argv[2]);
+    S3ServiceOptions s3ServiceOptions(StringHelper::trim_copy(argv[5]), StringHelper::trim_copy(argv[4]),
+                                      StringHelper::trim_copy(argv[3]));
+    int64_t readStart = stoll(StringHelper::trim_copy(argv[6]));
 
     auto s3 = S3Service::from(s3ServiceOptions);
 

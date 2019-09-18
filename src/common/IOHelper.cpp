@@ -4,7 +4,7 @@
  * Distributed under the MIT License (license terms are at https://github.com/dkfz-odcf/FastqIndEx/blob/master/LICENSE.txt).
  */
 
-#include "IOHelper.h"
+#include "common/IOHelper.h"
 #include <fstream>
 #include <pwd.h>
 #include <unistd.h>
@@ -65,9 +65,10 @@ bool IOHelper::checkFileWriteability(const path &file, const string &fileType, E
         sstream << "The '" << fileType << "' file '" << file.string() << "' exists but is not writeable.";
         error = true;
     } else if (exists(file.parent_path()) && access(file.parent_path().string().c_str(), W_OK) != 0) {
-        sstream << "The parent folder for '" << fileType << "' file '" << file.string() << "' exists but is not writeable.";
+        sstream << "The parent folder for '" << fileType << "' file '" << file.string()
+                << "' exists but is not writeable.";
         error = true;
-    } else if(!exists(file.parent_path())) {
+    } else if (!exists(file.parent_path())) {
         sstream << "The parent folder for '" << fileType << "' file '" << file.string() << "' does not exist.";
         error = true;
     }
@@ -77,7 +78,7 @@ bool IOHelper::checkFileWriteability(const path &file, const string &fileType, E
     return !error;
 }
 
-tuple<bool, path> IOHelper::createTempDir(const string &prefix) {
+Result<path> IOHelper::createTempDir(const string &prefix) {
     lock_guard<recursive_mutex> lockGuard(IOHelper::iohelper_mtx);
     auto tempDir = temp_directory_path();
     string testDir = tempDir.string() + "/" + prefix + "_XXXXXXXXXXXXXX";
@@ -89,7 +90,7 @@ tuple<bool, path> IOHelper::createTempDir(const string &prefix) {
     return {result != nullptr, _path};
 }
 
-tuple<bool, path> IOHelper::createTempFile(const string &prefix) {
+Result<path> IOHelper::createTempFile(const string &prefix) {
     lock_guard<recursive_mutex> lockGuard(IOHelper::iohelper_mtx);
     auto _tempDir = temp_directory_path();
     string _tempS3File = _tempDir.string() + "/" + prefix + "_XXXXXXXXXXXXXX";
@@ -102,9 +103,9 @@ tuple<bool, path> IOHelper::createTempFile(const string &prefix) {
     return {result != -1, tmp};
 }
 
-tuple<bool, path> IOHelper::createTempFifo(const string &prefix) {
+Result<path> IOHelper::createTempFifo(const string &prefix) {
     lock_guard<recursive_mutex> lockGuard(IOHelper::iohelper_mtx);
-    auto[success, fifoPath] = createTempFile(prefix);
+    auto[success, fifoPath, message] = createTempFile(prefix);
     remove(fifoPath);
     // The mkfifo manpage states, that the requested mode is &'ded with the users umask.
     mkfifo(fifoPath.string().c_str(), 0600);

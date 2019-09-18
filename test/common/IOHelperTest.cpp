@@ -55,7 +55,7 @@ SUITE (IOHELPER_TESTS) {
     }
 
     TEST (TEST_CREATE_TEMPDIR) {
-        auto[success, tempDir] = IOHelper::createTempDir("createTempDirTest");
+        auto[success, tempDir, message] = IOHelper::createTempDir("createTempDirTest");
                 CHECK(success);
                 CHECK(exists(tempDir));
                 CHECK(is_directory(tempDir));
@@ -65,7 +65,7 @@ SUITE (IOHELPER_TESTS) {
     }
 
     TEST (TEST_CREATE_TEMPFILE) {
-        auto[success, tempFile] = IOHelper::createTempFile("createTempFileTest");
+        auto[success, tempFile, message] = IOHelper::createTempFile("createTempFileTest");
                 CHECK(success);
                 CHECK(exists(tempFile));
                 CHECK(is_regular_file(tempFile));
@@ -75,7 +75,7 @@ SUITE (IOHELPER_TESTS) {
     }
 
     TEST (TEST_CREATE_TEMPFIFO) {
-        auto[success, tempFifo] = IOHelper::createTempFifo("createTempFifoTest");
+        auto[success, tempFifo, message] = IOHelper::createTempFifo("createTempFifoTest");
                 CHECK(success);
                 CHECK(exists(tempFifo));
                 CHECK(is_fifo(tempFifo));

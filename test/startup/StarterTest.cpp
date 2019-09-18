@@ -7,8 +7,10 @@
 #include "process/io/ConsoleSink.h"
 #include "process/io/FileSource.h"
 #include "process/io/FileSink.h"
+#include "process/io/s3/S3Source.h"
 #include "runners/ExtractorRunner.h"
 #include "runners/IndexerRunner.h"
+#include "runners/S3TestRunner.h"
 #include "startup/Starter.h"
 #include "TestConstants.h"
 
@@ -167,5 +169,13 @@ SUITE (StarterTests) {
         auto index = dynamic_pointer_cast<FileSource>(runner->getIndexFile());
                 CHECK(index.get());
                 CHECK(index->toString() == IOHelper::fullPath("test2.fastq.gz.fqi"));
+    }
+
+    TEST (TEST_S3TESTMODE_RUNNER_CREATE) {
+        const char *argv[] = {TEST_BINARY, "tests3", "-b=abc"};
+
+        Starter starter;
+        auto _runner = starter.createRunner(2, argv);
+        auto runner = dynamic_pointer_cast<S3TestRunner>(_runner);
     }
 }

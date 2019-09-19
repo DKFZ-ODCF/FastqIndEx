@@ -125,7 +125,7 @@ As we work with network file systems, we need to deal with several
 problems:
 - flock only works correctly with NFS on newer Linux kernels.
 - However, we cannot guarantee, that a file which was not locked, will
-  be overriden during our read.
+  be overridden during our read.
 
 To overcome these problems:
 - We can use flock for our writer. So writing will be safe, as long as

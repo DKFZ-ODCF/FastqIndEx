@@ -175,7 +175,7 @@ SUITE (StarterTests) {
         const char *argv[] = {TEST_BINARY, "tests3", "-b=abc"};
 
         Starter starter;
-        auto _runner = starter.createRunner(2, argv);
+        auto _runner = starter.createRunner(3, argv);
         auto runner = dynamic_pointer_cast<S3TestRunner>(_runner);
     }
 }

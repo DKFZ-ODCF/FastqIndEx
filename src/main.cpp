@@ -11,7 +11,7 @@
 int main(int argc, const char *argv[]) {
     // Store the application binary path.
     path fqiBinaryPath = IOHelper::getApplicationPath();
-    path s3HelperBinary = IOHelper::fullPath(fqiBinaryPath.parent_path().string() + "/fastqindexs3iohelper");
+    path s3HelperBinary = IOHelper::fullPath(fqiBinaryPath.parent_path().string() + "/S3IOHelperForFastqIndEx");
     strcpy(FQI_BINARY, fqiBinaryPath.string().c_str());
     strcpy(S3HELPER_BINARY, s3HelperBinary.string().c_str());
     ErrorAccumulator::always("FQI binary path:       '", fqiBinaryPath, "'");
@@ -27,9 +27,10 @@ int main(int argc, const char *argv[]) {
     } else {
         exitCode = runner->run();
     }
-    for (auto const &message : runner->getErrorMessages()) {
-        cerr << "\t" << message << "\n";
-    }
+    if (exitCode != 0)
+        for (auto const &message : runner->getErrorMessages()) {
+            cerr << "\t" << message << "\n";
+        }
 
     return exitCode;
 }

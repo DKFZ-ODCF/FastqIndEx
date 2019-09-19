@@ -23,7 +23,7 @@ SUITE (COMMONSTUFF_TESTS) {
 
     TEST (TEST_STOUI_INVALID) {
         try {
-            stoui(to_string((u_int64_t) 0x01ffffffff));
+            stoui(to_string(static_cast<u_int64_t>( 0x01ffffffff)));
         } catch (const out_of_range &e) {
         }
         try {

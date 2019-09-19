@@ -32,6 +32,9 @@ const char *const TEST_CHECK_FILE_WRITEABILITY_FAIL_NOTEXISTING = "Test check fi
 const char *const TEST_CHECK_FILE_WRITEABILITY_FAIL_NOTREADABLE = "Test check file writeability (access)";
 const char *const TEST_CHECK_FILE_WRITEABILITY_SUCCEED = "Test check file writeability";
 
+const char *const TEST_FULLPATH = "Test fullpath()";
+const char *const TEST_FULLPATH_WITH_HOME_SHORTCUT = "Test fullpath() with home shortcut (tilde)";
+
 SUITE (IOHELPER_TESTS) {
 
     TEST (TEST_REPORT_WITH_ACCUMULATOR) {
@@ -119,11 +122,19 @@ SUITE (IOHELPER_TESTS) {
                 CHECK(accumulator.getErrorMessages().empty());
     }
 
-    TEST (fullPath) {
-        TestResourcesAndFunctions res(IOHELPER_TESTS, "fullPath");
+    TEST (TEST_FULLPATH) {
+        TestResourcesAndFunctions res(IOHELPER_TESTS, TEST_FULLPATH);
 
         path l("file.txt");
 
                 CHECK_EQUAL(current_path().string() + "/file.txt", IOHelper::fullPath(l).string());
+    }
+
+    TEST (TEST_FULLPATH_WITH_HOME_SHORTCUT) {
+        TestResourcesAndFunctions res(IOHELPER_TESTS, TEST_FULLPATH_WITH_HOME_SHORTCUT);
+
+        path l("~/file.txt");
+
+                CHECK_EQUAL(IOHelper::getUserHomeDirectory().string() + "/file.txt", IOHelper::fullPath(l).string());
     }
 }

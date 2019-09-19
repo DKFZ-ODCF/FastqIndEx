@@ -14,7 +14,7 @@ add_executable(fastqindex main.cpp main.h)
 
 # Helper application for S3
 # Refer to s3iomain for more info.
-add_executable(fastqindexs3iohelper s3iomain.cpp)
+add_executable(S3IOHelperForFastqIndEx s3iomain.cpp)
 
 include_directories(
         ${CMAKE_SOURCE_DIR}/src
@@ -97,7 +97,7 @@ target_link_libraries(
 )
 
 target_link_libraries(
-        fastqindexs3iohelper
+        S3IOHelperForFastqIndEx
         fastqindexlib
 )
 

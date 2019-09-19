@@ -96,7 +96,7 @@ _SwitchArg ModeCLIParser::createForceOverwriteSwitchArg(CmdLine *cmdLineParser) 
             cmdLineParser);
 }
 
-tuple<shared_ptr<UnlabeledValueArg<string>>, shared_ptr<ValuesConstraint<string>>>
+tuple<_UnlabedeledStringValueArg, _ValuesConstraint>
 ModeCLIParser::createAllowedModeArg(const string &mode, CmdLine *cmdLineParser) const {
     vector<string> allowedMode{mode};
     auto allowedModesConstraint = make_shared<ValuesConstraint<string>>(allowedMode);

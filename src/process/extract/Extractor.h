@@ -156,7 +156,7 @@ public:
     bool fulfillsPremises();
 
     /**
-     * For debugging and testing , will be overriden by extract(). Sets the initial amount of lines which will be
+     * For debugging and testing , will be overridden by extract(). Sets the initial amount of lines which will be
      * omitted.
      * TODO Move to test-aware subclass.
      */
@@ -165,7 +165,7 @@ public:
     }
 
     /**
-     * For debugging and testing , will be overriden by extract(). Sets the initial amount of lines which will be
+     * For debugging and testing , will be overridden by extract(). Sets the initial amount of lines which will be
      * omitted.
      * TODO Move to test-aware subclass.
      */

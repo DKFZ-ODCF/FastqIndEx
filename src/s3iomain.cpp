@@ -42,7 +42,7 @@ tuple<FILE *, string> openProcOrUserFile(const pid_t &pid, const string &suffix)
  *
  * @see https://gist.github.com/fclairamb/a16a4237c46440bdb172
  */
-tuple<bool, string> getProcessName(const pid_t pid) {
+Result<string> getProcessName(const pid_t pid) {
     auto[filePointer, file] = openProcOrUserFile(pid, "cmdline");
     if (!filePointer) return {false, ""};
 
@@ -59,7 +59,7 @@ tuple<bool, string> getProcessName(const pid_t pid) {
  *
  * @see https://gist.github.com/fclairamb/a16a4237c46440bdb172
  */
-tuple<bool, pid_t> getProcessParentID(const pid_t pid) {
+Result<pid_t> getProcessParentID(const pid_t pid) {
     auto[filePointer, file] = openProcOrUserFile(pid, "stat");
     if (!filePointer) return {false, 0};
 
@@ -82,15 +82,15 @@ tuple<bool, pid_t> getProcessParentID(const pid_t pid) {
 /**
  * Returns the parent path of the this binary.
  */
-tuple<bool, path> getParentPath() {
+Result<path> getParentPath() {
     int myPid = getpid();
-    auto[processParentIDValid, processParentID] = getProcessParentID(myPid);
+    auto[processParentIDValid, processParentID, message1] = getProcessParentID(myPid);
     if (!processParentIDValid) {
         std::cerr << "Could not get process id for parent process.\n";
         return {false, ""};
     }
 
-    auto[processNameValid, processName] = getProcessName(processParentID);
+    auto[processNameValid, processName, message2] = getProcessName(processParentID);
     if (!processNameValid) {
         std::cerr << "Could not get the name of the process.\n";
         return {false, ""};
@@ -113,7 +113,7 @@ tuple<bool, path> getParentPath() {
  * @return Some value, most likely an error value as we are not able to properly abort S3 GetObject
  */
 int main(int argc, const char **argv) {
-    auto[parentPathRetrieved, parentPath] = getParentPath();
+    auto[parentPathRetrieved, parentPath, message] = getParentPath();
     if (!parentPathRetrieved) {
         std::cerr << "Could not get the parent processes path.\n";
         return -1;

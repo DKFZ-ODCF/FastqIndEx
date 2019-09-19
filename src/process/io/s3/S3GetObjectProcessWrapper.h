@@ -15,7 +15,7 @@
 using namespace std;
 
 /**
- * The class is a wrapper for the tool binary "fastqindexs3iohelper".
+ * The class is a wrapper for the tool binary "S3IOHelperForFastqIndEx".
  * The whole purpose of this is to get a better user experience by swallowing error messages like:
  * - SIGABRT
  * - SIGSEV
@@ -83,7 +83,6 @@ public:
 
     /**
      * Will call join on the underlying thread and thus wait until the download process ends.
-     * To really end
      */
     void waitForFinish();
 };

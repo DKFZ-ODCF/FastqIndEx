@@ -26,6 +26,8 @@ const char *const TEST_CREATE_INDEX_W_STREAMED_DATA = "Test create index with st
 const char *const TEST_CREATE_INDEX_LARGE = "Test create index with more fastq test data.";
 const char *const TEST_CREATE_INDEX_CONCAT = "Test create index with the small fastq concatenated two times.";
 const char *const TEST_CREATE_INDEX_CONCAT_SINGLEBLOCKS = "Test create index with several concatenated FASTQ with single compressed blocks.";
+const char *const TEST_INDEX_WITH_MISSING_FASTQ = "Test create index with a missing input file.";
+const char *const TEST_INDEX_WITH_EMPTY_FASTQ = "Test create index with an empty (size 0) input file.";
 
 SUITE (INDEXER_SUITE_TESTS) {
 
@@ -138,7 +140,8 @@ SUITE (INDEXER_SUITE_TESTS) {
                                     false,
                                     true
         );
-                CHECK(indexer->fulfillsPremises());  // We need to make sure things are good. Also this opens the I-Writer.
+                CHECK(
+                indexer->fulfillsPremises());  // We need to make sure things are good. Also this opens the I-Writer.
 
         bool result = indexer->createIndex();
 
@@ -192,7 +195,8 @@ SUITE (INDEXER_SUITE_TESTS) {
                                     false,
                                     true
         );
-                CHECK(indexer->fulfillsPremises());  // We need to make sure things are good. Also this opens the I-Writer.
+                CHECK(
+                indexer->fulfillsPremises());  // We need to make sure things are good. Also this opens the I-Writer.
 
         result = indexer->createIndex();
 
@@ -235,7 +239,8 @@ SUITE (INDEXER_SUITE_TESTS) {
         auto indexer = new Indexer(make_shared<FileSource>(fastq), make_shared<FileSink>(index),
                                    BlockDistanceStorageDecisionStrategy::getDefault(), true, false, false,
                                    true);
-                CHECK(indexer->fulfillsPremises());  // We need to make sure things are good. Also this opens the I-Writer.
+                CHECK(
+                indexer->fulfillsPremises());  // We need to make sure things are good. Also this opens the I-Writer.
 
         bool result = indexer->createIndex();
 
@@ -327,7 +332,8 @@ SUITE (INDEXER_SUITE_TESTS) {
                 BlockDistanceStorageDecisionStrategy::from(blockSize),
                 true, false, false, true
         ); // Tell the indexer to store entries. This is solely a debug feature but it
-                CHECK(indexer->fulfillsPremises());  // We need to make sure things are good. Also this opens the I-Writer.
+        // We need to make sure things are good. Also this opens the I-Writer.
+                CHECK(indexer->fulfillsPremises());
 
         bool result = indexer->createIndex();
 
@@ -443,5 +449,37 @@ SUITE (INDEXER_SUITE_TESTS) {
         }
 
         delete ir;
+    }
+
+    TEST (TEST_INDEX_WITH_MISSING_FASTQ) {
+        TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_INDEX_WITH_EMPTY_FASTQ);
+
+        path fastq = res.filePath(string(TEST_FASTQ_LARGE));
+        path index = res.filePath(string(TEST_INDEX_LARGE));
+
+        Indexer indexer(
+                FileSource::from(fastq),
+                FileSink::from(index),
+                BlockDistanceStorageDecisionStrategy::getDefault()
+        );
+
+                CHECK(indexer.fulfillsPremises());
+                CHECK(!indexer.createIndex());
+    }
+
+    TEST (TEST_INDEX_WITH_EMPTY_FASTQ) {
+        TestResourcesAndFunctions res(INDEXER_SUITE_TESTS, TEST_INDEX_WITH_EMPTY_FASTQ);
+
+        path fastq = res.createEmptyFile(string(TEST_FASTQ_LARGE));
+        path index = res.filePath(string(TEST_INDEX_LARGE));
+
+        Indexer indexer(
+                FileSource::from(fastq),
+                FileSink::from(index),
+                BlockDistanceStorageDecisionStrategy::getDefault()
+        );
+
+                CHECK(indexer.fulfillsPremises());
+                CHECK(!indexer.createIndex());
     }
 }

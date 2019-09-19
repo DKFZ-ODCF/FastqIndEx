@@ -118,8 +118,10 @@ Result<path> IOHelper::createTempFifo(const string &prefix) {
  */
 path IOHelper::fullPath(const path &file) {
     char buf[32768]{0};
-    //    readlink(file.string().c_str(), buf, 32768); // Not working! Returns \0
-    realpath(file.string().c_str(), buf);
+    if (file.c_str()[0] == '~')
+        realpath((IOHelper::getUserHomeDirectory().string() + file.string().substr(1)).c_str(), buf);
+    else
+        realpath(file.string().c_str(), buf);
     return path(string(buf));
 }
 

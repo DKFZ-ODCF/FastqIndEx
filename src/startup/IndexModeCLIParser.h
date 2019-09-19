@@ -17,7 +17,7 @@ class IndexModeCLIParser : public ModeCLIParser {
 public:
     IndexerRunner *parse(int argc, const char **argv) override;
 
-    tuple<_StringValueArg, shared_ptr<ValuesConstraint<string>>> createSelectIndexEntryStorageStrategyArg(CmdLine *cmdLineParser) const;
+    tuple<_StringValueArg, _ValuesConstraint> createSelectIndexEntryStorageStrategyArg(CmdLine *cmdLineParser) const;
 
     _IntValueArg createBlockIntervalArg(CmdLine *cmdLineParser) const;
 

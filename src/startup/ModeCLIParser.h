@@ -24,6 +24,8 @@ typedef shared_ptr<ValueArg<string>> _StringValueArg;
 typedef shared_ptr<ValueArg<int>> _IntValueArg;
 typedef shared_ptr<ValueArg<uint>> _UIntValueArg;
 typedef shared_ptr<ValueArg<int64_t>> _UInt64ValueArg;
+typedef shared_ptr<UnlabeledValueArg<string>> _UnlabedeledStringValueArg;
+typedef shared_ptr<ValuesConstraint<string>> _ValuesConstraint;
 
 class ModeCLIParser : public ErrorAccumulator {
 
@@ -57,7 +59,7 @@ protected:
 public:
 
     /**
-     * Needs to be overriden by specialized mode parsers and is used to parse the application arguments.
+     * Needs to be overridden by specialized mode parsers and is used to parse the application arguments.
      * Note, that subclasses may use derived classes of Runner as a return type (C++ allows this). However, e.g. CLion
      * will not recognize parse as used!
      */
@@ -85,7 +87,7 @@ public:
 
     _SwitchArg createForceOverwriteSwitchArg(CmdLine *cmdLineParser) const;
 
-    tuple<shared_ptr<UnlabeledValueArg<string>>, shared_ptr<ValuesConstraint<string>>>
+    tuple<_UnlabedeledStringValueArg, _ValuesConstraint>
     createAllowedModeArg(const string &mode, CmdLine *cmdLineParser) const;
     
     static bool isS3Path(const string& str) {

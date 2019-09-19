@@ -13,6 +13,7 @@
 const char *INDEXERRUNNER_SUITE_TESTS = "IndexerRunnerTests";
 const char *TEST_INDEXERRUNNER_CREATION = "IndexerRunnerCreation";
 const char *TEST_INDEXERRUNNER_ERRORMESSAGE_PASSTHROUGH = "IndexerRunnerWithErrorMessagPassthrough";
+//const char *TEST_INDEXERRUNNER_EMPTY_FASTQ = "Test IndexerRunner with an empty input file.";
 
 SUITE (INDEXERRUNNER_SUITE_TESTS) {
     TEST (TEST_INDEXERRUNNER_CREATION) {
@@ -40,4 +41,17 @@ SUITE (INDEXERRUNNER_SUITE_TESTS) {
                 CHECK(r->isIndexer());
                 CHECK(!r->getErrorMessages().empty());
     }
+//
+//    TEST (TEST_INDEXERRUNNER_EMPTY_FASTQ) {
+//        TestResourcesAndFunctions res(INDEXERRUNNER_SUITE_TESTS, TEST_INDEXERRUNNER_ERRORMESSAGE_PASSTHROUGH);
+//        path fastq = res.createEmptyFile("fastq.fastq");
+//        path index = res.createEmptyFile("fastq.fastq.fqi");
+//
+//        auto r = make_shared<IndexerRunner>(make_shared<FileSource>(fastq), make_shared<FileSink>(index), BlockDistanceStorageDecisionStrategy::getDefault());
+//                CHECK(!r->fulfillsPremises()); // Index exists. Not indexable!
+//                CHECK(!r->isCLIOptionsPrinter());
+//                CHECK(!r->isExtractor());
+//                CHECK(r->isIndexer());
+//                CHECK(!r->getErrorMessages().empty());
+//    }
 }

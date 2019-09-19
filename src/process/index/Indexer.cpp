@@ -100,7 +100,7 @@ bool Indexer::createIndex() {
         partialBlockinfoStream.open(storageForPartialDecompressedBlocks);
     }
 
-    while (keepProcessing) {
+    while (keepProcessing && !errorWasRaised) {
 
         do {
             if (!sourceFile->canRead()) {
@@ -165,9 +165,14 @@ bool Indexer::createIndex() {
         addErrorMessage("There were errors during index creation. Index file '", outputIndexFile->toString(),
                         "' is corrupt.");
     } else {
-        cerr << "Finished indexing with the last entry for compressed block #" << lastStoredEntry->blockIndex
-             << " starting with line number " << lastStoredEntry->startingLineInEntry << "\n"
-             << " The indexed file contains " << this->lineCountForNextIndexEntry << " lines\n";
+        if(lastStoredEntry) {
+            cerr << "Finished indexing with the last entry for compressed block #" << lastStoredEntry->blockIndex
+                 << " starting with line number " << lastStoredEntry->startingLineInEntry << "\n"
+                 << " The indexed file contains " << this->lineCountForNextIndexEntry << " lines\n";
+        } else {
+            cerr << "There was no input data available. No index was created.\n";
+            finishedSuccessful = false;
+        }
         if (numberOfConcatenatedFiles > 1) {
             cerr << " The source data consisted of " << numberOfConcatenatedFiles << " concatenated gzip streams.\n";
         }

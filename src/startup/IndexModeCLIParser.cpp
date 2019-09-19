@@ -107,7 +107,7 @@ IndexerRunner *IndexModeCLIParser::parse(int argc, const char **argv) {
     return runner;
 }
 
-tuple<_StringValueArg, shared_ptr<ValuesConstraint<string>>>
+tuple<_StringValueArg, _ValuesConstraint>
 IndexModeCLIParser::createSelectIndexEntryStorageStrategyArg(CmdLine *cmdLineParser) const {
     vector<string> allowedMetrics{"ByteDistance", "BlockDistance"};
     auto allowedMetricsConstraint = make_shared<ValuesConstraint<string>>(allowedMetrics);

@@ -122,8 +122,9 @@ FastqIndEx has the following dependencies, which should be met before building i
 | gcc           | yes   | 7.2                 | Compiler and debugger suite      |
 | tclap         | yes   | 1.2.1               | Command line interpreter library |
 | zlib          | yes   | 1.2.11              | Compression library              |
-| AWS SDK       | no    | 1.7.125             | S3 Support library               |
+| AWS SDK       | yes   | 1.7.160             | S3 Support library               |
 | UnitTest++    | no    | bc5d87f             | Unit testing framework           |
+| simpleini     | no    | 4.17                | Simple parser for header files   |
 
 ##### Use Conda to manage your dependencies
 
@@ -152,11 +153,13 @@ to the proper locations of your gcc/g++ binaries.
 ``` Bash
 wget https://github.com/Kitware/CMake/releases/download/v3.13.4/cmake-3.13.4.tar.gz
 tar -xvzf cmake-3.13.4.tar.gz
+rm cmake-3.13.4.tar.gz
 # Configure and build afterwards
 
 wget https://www.zlib.net/zlib-1.2.11.tar.gz
 tar -xvzf zlib-1.2.11.tar.gz
-cd zlib-1.2.11 && ./configure && make
+(cd zlib-1.2.11 && ./configure && make)
+rm zlib-1.2.11.tar.gz
 ```
 
 ###### UnitTest++
@@ -169,6 +172,15 @@ cd builds
 cmake -G "Unix Makefiles" -D CMAKE_INSTALL_PREFIX=/custom/lib/path ..
 cmake --build . --target all
 cmake --build . --target install
+```
+
+###### simpleini / tclap
+
+Place the directory alongside the FastqIndEx directory.
+
+``` Bash
+git clone -b "4.17" --single-branch --depth 1 https://github.com/brofield/simpleini.git simpleini_4.17
+wget https://vorboss.dl.sourceforge.net/project/tclap/tclap-1.2.1.tar.gz && tar -xvzf tclap-1.2.1.tar.gz && rm tclap-1.2.1.tar.gz 
 ```
 
 ##### AWS S3

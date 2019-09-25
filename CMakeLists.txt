@@ -15,28 +15,18 @@ SET(CMAKE_EXE_LINKER_FLAGS " -static-libstdc++ -static-libgcc")
 project(FASTQIndEx)
 
 # General libraries
-# Download and place next to FastqIndEx
-set(SIMPLEINI_INCLUDE_DIR ../simpleini_4.17/)
 
-# Make cmake aware of an existing conda environment and try to load zlib and tclap from there.
-# The variable CONDA_DEFAULT_ENV is set, if a Conda environment is active.
-set(CONDA_DEFAULT_ENV $ENV{CONDA_DEFAULT_ENV})
-set(CONDA_PREFIX $ENV{CONDA_PREFIX})
-set(TCLAP_INCLUDE_DIR ../tclap-1.2.1/include)
+set(SIMPLEINI_INCLUDE_DIR $ENV{SIMPLEINI_INCLUDE_DIR})
+set(TCLAP_INCLUDE_DIR $ENV{TCLAP_INCLUDE_DIR})
 
-# Conda overrides - Really, use conda if possible!
-if (CONDA_DEFAULT_ENV)
-    set(ZLIB_LIBRARY "${CONDA_PREFIX}/lib/libz.a")
-    set(ZLIB_INCLUDE_DIR "${CONDA_PREFIX}/include")
-    set(TCLAP_INCLUDE_DIR "${CONDA_PREFIX}/include/tclap")
+set(ZLIB_LIBRARY      "${CONDA_PREFIX}/lib/libz.a")
+set(ZLIB_INCLUDE_DIR  "${CONDA_PREFIX}/include")
+set(TCLAP_INCLUDE_DIR "${CONDA_PREFIX}/include/tclap")
 
-    message("Loading a conda environment '${CONDA_DEFAULT_ENV}':")
-    message("  Prefix:   ${CONDA_PREFIX}")
-    message("  TCLAP:    ${TCLAP_INCLUDE_DIR}")
-    message("  ZLIB")
-    message("   library: ${ZLIB_LIBRARY}")
-    message("   include: ${ZLIB_INCLUDE_DIR}")
-endif (CONDA_DEFAULT_ENV)
+message("  TCLAP:    ${TCLAP_INCLUDE_DIR}")
+message("  ZLIB")
+message("   library: ${ZLIB_LIBRARY}")
+message("   include: ${ZLIB_INCLUDE_DIR}")
 
 find_package(AWSSDK REQUIRED s3 )
 

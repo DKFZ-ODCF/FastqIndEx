@@ -1,0 +1,5 @@
+[default]
+socket_timeout = 10000
+proxy_host = someproxy
+proxy_port = 3128
+host_base = https://a.nice.s3.host.com

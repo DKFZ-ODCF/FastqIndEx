@@ -57,7 +57,7 @@ protected:
 public:
 
     /**
-     * Needs to be overriden by specialized mode parsers and is used to parse the application arguments.
+     * Needs to be overridden by specialized mode parsers and is used to parse the application arguments.
      * Note, that subclasses may use derived classes of Runner as a return type (C++ allows this). However, e.g. CLion
      * will not recognize parse as used!
      */
